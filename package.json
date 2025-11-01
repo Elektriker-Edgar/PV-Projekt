@@ -1,0 +1,23 @@
+{
+  "name": "pv-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Elektriker-Edgar/PV-Projekt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Elektriker-Edgar/PV-Projekt/issues"
+  },
+  "homepage": "https://github.com/Elektriker-Edgar/PV-Projekt#readme",
+  "description": "",
+  "devDependencies": {
+    "@openai/codex": "^0.53.0"
+  }
+}

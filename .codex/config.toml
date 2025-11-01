@@ -1,5 +1,0 @@
-[projects.'\\?\E:\ANPR\anpr_system']
-trust_level = "trusted"
-
-[projects.'\\?\E:\ANPR\ANPR_NEW']
-trust_level = "trusted"
