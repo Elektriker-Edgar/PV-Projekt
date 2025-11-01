@@ -11,7 +11,7 @@
 - `python -m venv venv && venv\Scripts\activate` prepares and activates the Windows virtual environment.
 - `pip install -r requirements.txt` installs Python dependencies, including Django REST Framework and Celery.
 - `python manage.py migrate` applies database schema updates to the default SQLite store.
-- `python manage.py runserver 0.0.0.0:8000` launches the API with debug toolbar enabled.
+- `python manage.py runserver 192.168.178.30:8020` launches the API with debug toolbar enabled.
 - `python manage.py test` executes the Django test runner across all installed apps; add `apps.quotes` or similar to scope runs.
 
 ## Coding Style & Naming Conventions
