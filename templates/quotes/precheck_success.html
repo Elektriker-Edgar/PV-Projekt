@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ihre PV-Vorprüfung wurde erfolgreich übermittelt - EDGARD Elektro meldet sich binnen 24h">
+    <meta name="keywords" content="PV-Anlage, Vorprüfung, Erfolg, EDGARD Elektro, Hamburg">
+    <title>Vorprüfung eingegangen | EDGARD -- Elektro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --edgard-blue: #2c5aa0;
+            --edgard-green: #28a745;
+            --edgard-gray: #6c757d;
+            --edgard-light: #f8f9fa;
+            --edgard-dark: #343a40;
+            --shadow-light: 0 2px 10px rgba(0,0,0,0.1);
+            --shadow-medium: 0 4px 20px rgba(0,0,0,0.15);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .success-header {
+            background: white;
+            box-shadow: var(--shadow-light);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .brand-logo {
+            color: var(--edgard-blue);
+            font-weight: 700;
+            font-size: 1.5rem;
+            text-decoration: none;
+        }
+
+        .brand-logo:hover {
+            color: var(--edgard-blue);
+        }
+
+        /* Success Section */
+        .success-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .success-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow-medium);
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .success-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--edgard-green), var(--edgard-blue));
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--edgard-green), #20754a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            color: white;
+            font-size: 2.5rem;
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+            animation: successPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .success-title {
+            color: var(--edgard-blue);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .success-subtitle {
+            color: var(--edgard-gray);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .reference-number {
+            background: rgba(40, 167, 69, 0.1);
+            border: 2px solid rgba(40, 167, 69, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            display: inline-block;
+        }
+
+        .reference-label {
+            color: var(--edgard-gray);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .reference-value {
+            color: var(--edgard-green);
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Timeline */
+        .timeline-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-light);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .timeline-title {
+            color: var(--edgard-blue);
+            font-weight: 600;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, var(--edgard-green), var(--edgard-blue));
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            padding-left: 2rem;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-icon {
+            position: absolute;
+            left: -2rem;
+            top: 0;
+            width: 30px;
+            height: 30px;
+            background: var(--edgard-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 4px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .timeline-item.active .timeline-icon {
+            background: var(--edgard-green);
+            animation: timelinePulse 2s ease-in-out infinite;
+        }
+
+        .timeline-item.pending .timeline-icon {
+            background: #dee2e6;
+            color: var(--edgard-gray);
+        }
+
+        @keyframes timelinePulse {
+            0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+            50% { box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4), 0 0 0 8px rgba(40, 167, 69, 0.1); }
+        }
+
+        .timeline-time {
+            color: var(--edgard-green);
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-title-item {
+            color: var(--edgard-dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-description {
+            color: var(--edgard-gray);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Contact Cards */
+        .contact-section {
+            margin-top: 3rem;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .contact-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            transition: var(--transition-smooth);
+            border: 2px solid transparent;
+        }
+
+        .contact-card:hover {
+            border-color: var(--edgard-green);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .contact-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--edgard-green), var(--edgard-blue));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .contact-title {
+            color: var(--edgard-dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .contact-value {
+            color: var(--edgard-green);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .contact-description {
+            color: var(--edgard-gray);
+            font-size: 0.9rem;
+        }
+
+        /* Buttons */
+        .btn-edgard {
+            background: linear-gradient(135deg, var(--edgard-green), #20754a);
+            border: none;
+            color: white;
+            padding: 14px 32px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: var(--transition-smooth);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            text-decoration: none;
+            display: inline-block;
+            min-height: 48px;
+            min-width: 160px;
+        }
+
+        .btn-edgard:hover {
+            background: linear-gradient(135deg, #218838, #1a5f35);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-outline-edgard {
+            background: transparent;
+            border: 2px solid var(--edgard-blue);
+            color: var(--edgard-blue);
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: var(--transition-smooth);
+            text-decoration: none;
+            display: inline-block;
+            min-height: 48px;
+        }
+
+        .btn-outline-edgard:hover {
+            background: var(--edgard-blue);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(44, 90, 160, 0.05);
+            border: 1px solid rgba(44, 90, 160, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .info-box-title {
+            color: var(--edgard-blue);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-box-content {
+            color: var(--edgard-dark);
+            line-height: 1.6;
+        }
+
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .info-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-list li i {
+            color: var(--edgard-green);
+            margin-right: 0.75rem;
+            width: 16px;
+            flex-shrink: 0;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .success-card {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+
+            .timeline-card {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+
+            .success-title {
+                font-size: 1.75rem;
+            }
+
+            .success-icon {
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
+            }
+
+            .reference-number {
+                padding: 1rem;
+            }
+
+            .reference-value {
+                font-size: 1.25rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn-edgard, .btn-outline-edgard {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .success-header, .action-buttons, .contact-section {
+                display: none;
+            }
+            
+            .success-card, .timeline-card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="success-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center py-3">
+                <a href="{% url 'quotes:home' %}" class="brand-logo">
+                    <i class="fas fa-bolt me-2"></i>
+                    EDGARD -- Elektro
+                </a>
+                <div class="d-flex align-items-center">
+                    <span class="text-muted me-3">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Sicher übertragen
+                    </span>
+                    <a href="tel:040123456789" class="text-decoration-none">
+                        <i class="fas fa-phone text-success me-1"></i>
+                        040 123 456 789
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Success Content -->
+    <div class="container">
+        <div class="success-container">
+            
+            <!-- Success Card -->
+            <div class="success-card fade-in">
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                
+                <h1 class="success-title">
+                    Vielen Dank!
+                </h1>
+                
+                <p class="success-subtitle">
+                    Ihre Vorprüfung wurde erfolgreich übermittelt und wird umgehend bearbeitet.
+                </p>
+                
+                <div class="reference-number">
+                    <div class="reference-label">Ihre Referenznummer</div>
+                    <div class="reference-value">PV-2024-{{ request.session.precheck_id|default:"0001" }}</div>
+                </div>
+                
+                <p class="text-muted">
+                    <i class="fas fa-envelope me-2"></i>
+                    Eine Bestätigung wurde an <strong>{{ form.customer_email.value|default:"ihre@email.de" }}</strong> gesendet.
+                </p>
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline-card slide-in">
+                <h3 class="timeline-title">
+                    <i class="fas fa-clock me-2"></i>
+                    Wie geht es weiter?
+                </h3>
+                
+                <div class="timeline">
+                    <div class="timeline-item active">
+                        <div class="timeline-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="timeline-time">Sofort</div>
+                        <div class="timeline-title-item">Vorprüfung eingegangen</div>
+                        <div class="timeline-description">
+                            Ihre Daten wurden sicher übertragen und eine Bestätigung per E-Mail versendet.
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item active">
+                        <div class="timeline-icon">2</div>
+                        <div class="timeline-time">Binnen 2 Stunden</div>
+                        <div class="timeline-title-item">Erste Prüfung</div>
+                        <div class="timeline-description">
+                            Unser Technik-Team überprüft Ihre Angaben auf Plausibilität und technische Machbarkeit.
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item pending">
+                        <div class="timeline-icon">3</div>
+                        <div class="timeline-time">Binnen 24 Stunden</div>
+                        <div class="timeline-title-item">Persönliche Kontaktaufnahme</div>
+                        <div class="timeline-description">
+                            Wir rufen Sie an, um offene Fragen zu klären und einen Besichtigungstermin zu vereinbaren.
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item pending">
+                        <div class="timeline-icon">4</div>
+                        <div class="timeline-time">Binnen 48 Stunden</div>
+                        <div class="timeline-title-item">Detailliertes Angebot</div>
+                        <div class="timeline-description">
+                            Sie erhalten ein transparentes, detailliertes Angebot mit allen Kosten und Leistungen.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Information Box -->
+            <div class="info-box">
+                <h4 class="info-box-title">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Das ist in Ihrem Angebot enthalten
+                </h4>
+                <div class="info-box-content">
+                    <ul class="info-list">
+                        <li>
+                            <i class="fas fa-check"></i>
+                            Komplette Elektroinstallation nach VDE-Normen
+                        </li>
+                        <li>
+                            <i class="fas fa-check"></i>
+                            Zählerplatz-Ertüchtigung und Überspannungsschutz
+                        </li>
+                        <li>
+                            <i class="fas fa-check"></i>
+                            Anmeldung beim Netzbetreiber und im Marktstammdatenregister
+                        </li>
+                        <li>
+                            <i class="fas fa-check"></i>
+                            Inbetriebnahme und Funktionsprüfung
+                        </li>
+                        <li>
+                            <i class="fas fa-check"></i>
+                            2 Jahre Garantie auf unsere Arbeiten
+                        </li>
+                        <li>
+                            <i class="fas fa-info-circle"></i>
+                            Mechanische Montage erfolgt durch Sie oder einen Dachdecker Ihrer Wahl
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Contact Section -->
+            <div class="contact-section">
+                <h3 class="text-center mb-4" style="color: var(--edgard-blue);">
+                    <i class="fas fa-headset me-2"></i>
+                    Haben Sie Fragen?
+                </h3>
+                
+                <div class="contact-grid">
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="contact-title">24/7 Hotline</div>
+                        <div class="contact-value">040 123 456 789</div>
+                        <div class="contact-description">Rund um die Uhr für Sie erreichbar</div>
+                    </div>
+                    
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="contact-title">E-Mail Support</div>
+                        <div class="contact-value">info@edgard-elektro.de</div>
+                        <div class="contact-description">Antwort binnen 2 Stunden</div>
+                    </div>
+                    
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="contact-title">WhatsApp</div>
+                        <div class="contact-value">040 123 456 789</div>
+                        <div class="contact-description">Schnelle Antworten per Chat</div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <a href="{% url 'quotes:home' %}" class="btn btn-outline-edgard">
+                        <i class="fas fa-home me-2"></i>
+                        Zur Startseite
+                    </a>
+                    <a href="tel:040123456789" class="btn btn-edgard">
+                        <i class="fas fa-phone me-2"></i>
+                        Jetzt anrufen
+                    </a>
+                </div>
+            </div>
+
+            <!-- Footer Note -->
+            <div class="text-center mt-4 mb-5">
+                <p class="text-muted">
+                    <i class="fas fa-print me-2"></i>
+                    Diese Seite können Sie für Ihre Unterlagen ausdrucken.
+                </p>
+                <small class="text-muted">
+                    EDGARD -- Elektro | Zertifizierter Elektrofachbetrieb | Hamburg & Umgebung
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Animate timeline items
+        document.addEventListener('DOMContentLoaded', function() {
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            
+            timelineItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.style.opacity = '0';
+                    item.style.transform = 'translateX(-20px)';
+                    item.style.transition = 'all 0.5s ease-out';
+                    
+                    setTimeout(() => {
+                        item.style.opacity = '1';
+                        item.style.transform = 'translateX(0)';
+                    }, 100);
+                }, index * 200);
+            });
+            
+            // Auto-scroll to content after load
+            setTimeout(() => {
+                document.querySelector('.success-card').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }, 500);
+        });
+
+        // Print functionality
+        function printPage() {
+            window.print();
+        }
+
+        // Add print button dynamically
+        document.addEventListener('DOMContentLoaded', function() {
+            const actionButtons = document.querySelector('.action-buttons');
+            const printBtn = document.createElement('button');
+            printBtn.className = 'btn btn-outline-edgard';
+            printBtn.innerHTML = '<i class="fas fa-print me-2"></i>Seite drucken';
+            printBtn.onclick = printPage;
+            actionButtons.appendChild(printBtn);
+        });
+
+        // Social sharing (optional)
+        function shareOnSocial(platform) {
+            const url = encodeURIComponent(window.location.href);
+            const text = encodeURIComponent('Meine PV-Anlage Vorprüfung bei EDGARD Elektro ist eingegangen!');
+            
+            let shareUrl = '';
+            switch(platform) {
+                case 'whatsapp':
+                    shareUrl = `https://wa.me/?text=${text} ${url}`;
+                    break;
+                case 'email':
+                    shareUrl = `mailto:?subject=PV-Anlage Vorprüfung&body=${text} ${url}`;
+                    break;
+            }
+            
+            if (shareUrl) {
+                window.open(shareUrl, '_blank');
+            }
+        }
+
+        // Copy reference number to clipboard
+        function copyReferenceNumber() {
+            const referenceNumber = document.querySelector('.reference-value').textContent;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(referenceNumber).then(() => {
+                    showToast('Referenznummer kopiert!');
+                });
+            } else {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = referenceNumber;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('Referenznummer kopiert!');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed top-0 start-50 translate-middle-x mt-3';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Make reference number clickable to copy
+        document.addEventListener('DOMContentLoaded', function() {
+            const referenceElement = document.querySelector('.reference-number');
+            referenceElement.style.cursor = 'pointer';
+            referenceElement.title = 'Klicken zum Kopieren';
+            referenceElement.addEventListener('click', copyReferenceNumber);
+        });
+
+        // Save reference to local storage for potential future use
+        document.addEventListener('DOMContentLoaded', function() {
+            const referenceNumber = document.querySelector('.reference-value').textContent;
+            localStorage.setItem('lastPrecheckReference', referenceNumber);
+            localStorage.setItem('lastPrecheckDate', new Date().toISOString());
+        });
+    </script>
+</body>
+</html>

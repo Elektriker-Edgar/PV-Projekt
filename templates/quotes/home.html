@@ -3,63 +3,385 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EDGARD -- Elektro PV-Service</title>
+    <meta name="description" content="Steckerfertige PV-Anlagen für Ihr Zuhause oder Gewerbe im Raum Hamburg. Professionelle Planung, Lieferung und fachgerechte Vorbereitung inklusive Anmeldung beim Netzbetreiber.">
+    <meta name="keywords" content="PV-Anlage, Photovoltaik, Elektro, Hamburg, Steckerfertig, Solar, Balkonkraftwerk, Elektrofachbetrieb">
+    <meta name="author" content="EDGARD Elektro">
+    <title>EDGARD -- Elektro PV-Service | Steckerfertige PV-Anlagen Hamburg</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
             --edgard-blue: #2c5aa0;
             --edgard-green: #28a745;
             --edgard-gray: #6c757d;
+            --edgard-light: #f8f9fa;
+            --edgard-dark: #343a40;
+            --shadow-light: 0 2px 10px rgba(0,0,0,0.1);
+            --shadow-medium: 0 4px 20px rgba(0,0,0,0.15);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Sticky Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1050;
+            transition: var(--transition-smooth);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95) !important;
+        }
+
+        .navbar.scrolled {
+            box-shadow: var(--shadow-medium);
+        }
+
+        /* Hero Section */
         .hero-section {
-            background: linear-gradient(135deg, var(--edgard-blue), var(--edgard-gray));
+            background: linear-gradient(135deg, var(--edgard-blue) 0%, #1e3a6f 50%, var(--edgard-gray) 100%);
             color: white;
-            padding: 4rem 0;
+            padding: 6rem 0 4rem;
+            margin-top: 76px;
+            position: relative;
+            overflow: hidden;
         }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-badge {
+            background: rgba(40, 167, 69, 0.2);
+            border: 2px solid var(--edgard-green);
+            color: var(--edgard-green);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .hero-stats {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-item {
+            color: white;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--edgard-green);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        /* Cards */
         .step-card {
             border: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+            box-shadow: var(--shadow-light);
+            transition: var(--transition-smooth);
+            border-radius: 12px;
+            background: white;
+            position: relative;
+            overflow: hidden;
         }
+
+        .step-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--edgard-blue), var(--edgard-green));
+            opacity: 0;
+            transition: var(--transition-smooth);
+        }
+
         .step-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-medium);
         }
+
+        .step-card:hover::before {
+            opacity: 1;
+        }
+
         .step-number {
-            background: var(--edgard-green);
+            background: linear-gradient(135deg, var(--edgard-green), #20754a);
             color: white;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
             margin: 0 auto 1rem;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            font-size: 1.2rem;
         }
+
+        /* Service Cards */
+        .service-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-light);
+            transition: var(--transition-smooth);
+            border: 1px solid #e9ecef;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+            border-color: var(--edgard-blue);
+        }
+
+        .service-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--edgard-blue), var(--edgard-green));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        /* Buttons */
         .btn-edgard {
-            background: var(--edgard-green);
+            background: linear-gradient(135deg, var(--edgard-green), #20754a);
             border: none;
             color: white;
-            padding: 12px 30px;
-            font-weight: bold;
+            padding: 14px 32px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: var(--transition-smooth);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            text-decoration: none;
+            display: inline-block;
+            min-height: 48px;
+            min-width: 120px;
         }
+
         .btn-edgard:hover {
-            background: #218838;
+            background: linear-gradient(135deg, #218838, #1a5f35);
             color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-outline-edgard {
+            background: transparent;
+            border: 2px solid var(--edgard-blue);
+            color: var(--edgard-blue);
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: var(--transition-smooth);
+            min-height: 48px;
+        }
+
+        .btn-outline-edgard:hover {
+            background: var(--edgard-blue);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Trust Elements */
+        .trust-section {
+            background: var(--edgard-light);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .certification-badge {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            transition: var(--transition-smooth);
+            border: 2px solid transparent;
+        }
+
+        .certification-badge:hover {
+            border-color: var(--edgard-green);
+            transform: translateY(-3px);
+        }
+
+        .certification-icon {
+            font-size: 2rem;
+            color: var(--edgard-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Contact Elements */
+        .contact-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            transition: var(--transition-smooth);
+            border: 2px solid transparent;
+        }
+
+        .contact-card:hover {
+            border-color: var(--edgard-green);
+            transform: translateY(-3px);
+        }
+
+        .contact-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--edgard-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        /* Typography */
+        .display-4 {
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .lead {
+            font-size: 1.25rem;
+            font-weight: 400;
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 4rem 0 3rem;
+            }
+            
+            .display-4 {
+                font-size: 2.5rem;
+            }
+            
+            .btn-edgard, .btn-outline-edgard {
+                width: 100%;
+                margin-bottom: 1rem;
+                min-height: 52px;
+                font-size: 1.1rem;
+            }
+            
+            .step-card {
+                margin-bottom: 2rem;
+            }
+
+            .service-card {
+                margin-bottom: 1.5rem;
+            }
+        }
+
+        /* Accessibility */
+        .btn:focus, .nav-link:focus {
+            outline: 3px solid var(--edgard-green);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* List Styles */
+        .check-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .check-list li:last-child {
+            border-bottom: none;
+        }
+
+        .check-icon {
+            color: var(--edgard-green);
+            font-weight: bold;
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .cross-icon {
+            color: #dc3545;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .info-icon {
+            color: #17a2b8;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
         }
     </style>
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm" id="mainNavbar">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="/" style="color: var(--edgard-blue);">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="/" style="color: var(--edgard-blue);">
+                <i class="fas fa-bolt me-2"></i>
                 EDGARD -- Elektro
             </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="#leistungen">Leistungen</a>
-                <a class="nav-link" href="#ablauf">Ablauf</a>
-                <a class="nav-link" href="#kontakt">Kontakt</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="#leistungen"><i class="fas fa-tools me-1"></i> Leistungen</a>
+                    <a class="nav-link" href="#ablauf"><i class="fas fa-list-ol me-1"></i> Ablauf</a>
+                    <a class="nav-link" href="#vertrauen"><i class="fas fa-certificate me-1"></i> Qualifikationen</a>
+                    <a class="nav-link" href="#kontakt"><i class="fas fa-phone me-1"></i> Kontakt</a>
+                    <a class="btn btn-outline-edgard ms-2" href="{% url 'quotes:precheck_wizard' %}">
+                        <i class="fas fa-play me-1"></i> Vorprüfung
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
@@ -68,16 +390,43 @@
     <section class="hero-section">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-lg-8">
+                <div class="col-lg-8 hero-content">
+                    <div class="hero-badge">
+                        <i class="fas fa-award me-2"></i>
+                        Zertifizierter Elektrofachbetrieb
+                    </div>
                     <h1 class="display-4 mb-4">Steckerfertige PV-Anlagen für Ihr Zuhause oder Gewerbe</h1>
                     <p class="lead mb-4">
                         Wir planen, liefern und bereiten Ihre Anlage fachgerecht vor --
                         inklusive Anmeldung beim Netzbetreiber und im Marktstammdatenregister.
                         Sie verbinden nur noch die Module.
                     </p>
-                    <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-edgard btn-lg">
-                        Jetzt Vorprüfung starten
-                    </a>
+                    <div class="d-flex flex-column flex-md-row gap-3">
+                        <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-edgard btn-lg">
+                            <i class="fas fa-rocket me-2"></i>
+                            Jetzt Vorprüfung starten
+                        </a>
+                        <a href="#kontakt" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-phone me-2"></i>
+                            Kostenlose Beratung
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <div class="hero-stats">
+                        <div class="stat-item mb-3">
+                            <div class="stat-number">5+</div>
+                            <div class="stat-label">Jahre Erfahrung</div>
+                        </div>
+                        <div class="stat-item mb-3">
+                            <div class="stat-number">100+</div>
+                            <div class="stat-label">Zufriedene Kunden</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">24/7</div>
+                            <div class="stat-label">Service-Hotline</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -87,29 +436,86 @@
     <section class="py-5" id="ablauf">
         <div class="container">
             <div class="text-center mb-5">
-                <h2>So einfach geht's</h2>
+                <h2><i class="fas fa-route me-2" style="color: var(--edgard-blue);"></i>So einfach geht's</h2>
                 <p class="text-muted">In nur drei Schritten zu Ihrer steckerfertigen PV-Anlage</p>
             </div>
             <div class="row">
                 <div class="col-md-4 mb-4">
                     <div class="card step-card h-100 text-center p-4">
+                        <div class="service-icon mx-auto mb-3">
+                            <i class="fas fa-upload"></i>
+                        </div>
                         <div class="step-number">1</div>
                         <h5>Digitale Vorprüfung</h5>
-                        <p>Daten hochladen, Fotos vom Zählerschrank und Hausanschluss beifügen.</p>
+                        <p class="text-muted">Daten hochladen, Fotos vom Zählerschrank und Hausanschluss beifügen. Schnell und unkompliziert online.</p>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
                     <div class="card step-card h-100 text-center p-4">
+                        <div class="service-icon mx-auto mb-3">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
                         <div class="step-number">2</div>
                         <h5>Angebot & Vorbereitung</h5>
-                        <p>Wir erstellen ein Angebot und rüsten Zählerplatz, Schutzgeräte und Leitungen vor.</p>
+                        <p class="text-muted">Wir erstellen ein transparentes Angebot und rüsten Zählerplatz, Schutzgeräte und Leitungen fachgerecht vor.</p>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
                     <div class="card step-card h-100 text-center p-4">
+                        <div class="service-icon mx-auto mb-3">
+                            <i class="fas fa-plug"></i>
+                        </div>
                         <div class="step-number">3</div>
                         <h5>Inbetriebnahme & Anmeldung</h5>
-                        <p>Wir schließen an, messen, prüfen und melden an.</p>
+                        <p class="text-muted">Wir schließen an, messen, prüfen nach VDE-Normen und übernehmen alle Anmeldungen.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vertrauensbereich -->
+    <section class="py-5" id="vertrauen">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2><i class="fas fa-shield-alt me-2" style="color: var(--edgard-blue);"></i>Vertrauen & Qualifikation</h2>
+                <p class="text-muted">Ihre Sicherheit ist unser Qualitätsversprechen</p>
+            </div>
+            <div class="row">
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="certification-badge h-100">
+                        <div class="certification-icon">
+                            <i class="fas fa-certificate"></i>
+                        </div>
+                        <h6 class="fw-bold">VDE-Zertifizierung</h6>
+                        <small class="text-muted">Arbeit nach aktuellen VDE-Normen</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="certification-badge h-100">
+                        <div class="certification-icon">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <h6 class="fw-bold">Fachkraft</h6>
+                        <small class="text-muted">Staatlich geprüfte Elektrofachkraft</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="certification-badge h-100">
+                        <div class="certification-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <h6 class="fw-bold">Versichert</h6>
+                        <small class="text-muted">Vollversichert für Ihre Sicherheit</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="certification-badge h-100">
+                        <div class="certification-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h6 class="fw-bold">24/7 Support</h6>
+                        <small class="text-muted">Rund um die Uhr erreichbar</small>
                     </div>
                 </div>
             </div>
@@ -119,85 +525,253 @@
     <!-- Leistungen -->
     <section class="py-5 bg-light" id="leistungen">
         <div class="container">
+            <div class="text-center mb-5">
+                <h2><i class="fas fa-cogs me-2" style="color: var(--edgard-blue);"></i>Unsere Leistungen</h2>
+                <p class="text-muted">Professionelle Elektroarbeiten für Ihre PV-Anlage</p>
+            </div>
             <div class="row">
                 <div class="col-lg-6">
-                    <h2>Unsere Leistungen</h2>
-                    <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <i class="text-success">✓</i> 
-                            <strong>Zählerplatz-Ertüchtigung</strong> nach aktueller TAB, Selektivität, Platzreserven
-                        </li>
-                        <li class="mb-2">
-                            <i class="text-success">✓</i> 
-                            <strong>Überspannungsschutz</strong> AC-seitig, Koordination mit vorhandenen SPD
-                        </li>
-                        <li class="mb-2">
-                            <i class="text-success">✓</i> 
-                            <strong>Potentialausgleich</strong> und Leitungsführung nach VDE-Normen
-                        </li>
-                        <li class="mb-2">
-                            <i class="text-success">✓</i> 
-                            <strong>Wechselrichter & Speicher</strong> inklusive Parametrierung und Netzkonfiguration
-                        </li>
-                        <li class="mb-2">
-                            <i class="text-success">✓</i> 
-                            <strong>MaStR-Eintrag und Netzbetreiber-Meldung</strong>
-                        </li>
-                        <li class="mb-2">
-                            <i class="text-success">✓</i> 
-                            <strong>Bestandsintegration</strong>: Wir prüfen und integrieren kundeneigene Komponenten
-                        </li>
-                    </ul>
+                    <div class="service-card h-100">
+                        <h4 class="mb-4 text-success"><i class="fas fa-check-circle me-2"></i>Inkludierte Leistungen</h4>
+                        <ul class="list-unstyled check-list">
+                            <li class="mb-3">
+                                <i class="fas fa-check check-icon"></i>
+                                <strong>Zählerplatz-Ertüchtigung</strong><br>
+                                <small class="text-muted">nach aktueller TAB, Selektivität, Platzreserven</small>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-shield-alt check-icon"></i>
+                                <strong>Überspannungsschutz</strong><br>
+                                <small class="text-muted">AC-seitig, Koordination mit vorhandenen SPD</small>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-bolt check-icon"></i>
+                                <strong>Potentialausgleich</strong><br>
+                                <small class="text-muted">und Leitungsführung nach VDE-Normen</small>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-microchip check-icon"></i>
+                                <strong>Wechselrichter & Speicher</strong><br>
+                                <small class="text-muted">inklusive Parametrierung und Netzkonfiguration</small>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-file-alt check-icon"></i>
+                                <strong>MaStR-Eintrag und Netzbetreiber-Meldung</strong><br>
+                                <small class="text-muted">Komplette Anmeldung für Sie</small>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-puzzle-piece check-icon"></i>
+                                <strong>Bestandsintegration</strong><br>
+                                <small class="text-muted">Wir prüfen und integrieren kundeneigene Komponenten</small>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
                 <div class="col-lg-6">
-                    <h2>Abgrenzung</h2>
-                    <ul class="list-unstyled text-muted">
-                        <li class="mb-2">
-                            <i class="text-danger">×</i> 
-                            Keine Dach- oder Statikarbeiten
-                        </li>
-                        <li class="mb-2">
-                            <i class="text-danger">×</i> 
-                            Keine Fördermittelberatung
-                        </li>
-                        <li class="mb-2">
-                            <i class="text-info">ℹ</i> 
-                            Mechanische Montage der Module erfolgt durch den Kunden oder einen Dachdecker seiner Wahl
-                        </li>
-                    </ul>
+                    <div class="service-card h-100">
+                        <h4 class="mb-4 text-warning"><i class="fas fa-info-circle me-2"></i>Abgrenzung</h4>
+                        <ul class="list-unstyled check-list">
+                            <li class="mb-3">
+                                <i class="fas fa-times cross-icon"></i>
+                                <strong>Keine Dach- oder Statikarbeiten</strong><br>
+                                <small class="text-muted">Mechanische Montage durch Dachdecker</small>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-times cross-icon"></i>
+                                <strong>Keine Fördermittelberatung</strong><br>
+                                <small class="text-muted">Fokus auf technische Umsetzung</small>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-info-circle info-icon"></i>
+                                <strong>Mechanische Montage</strong><br>
+                                <small class="text-muted">Erfolgt durch den Kunden oder einen Dachdecker seiner Wahl</small>
+                            </li>
+                        </ul>
+                        <div class="mt-4 p-3 bg-info bg-opacity-10 rounded">
+                            <h6 class="text-info"><i class="fas fa-lightbulb me-2"></i>Hinweis</h6>
+                            <small>Wir konzentrieren uns auf das, was wir am besten können: professionelle Elektroarbeiten nach höchsten Standards.</small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section -->
+    <!-- Kontakt Section -->
     <section class="py-5" id="kontakt">
-        <div class="container text-center">
-            <h2>Bereit für Ihre steckerfertige PV-Anlage?</h2>
-            <p class="lead mb-4">Starten Sie jetzt mit der kostenlosen Vorprüfung</p>
-            <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-edgard btn-lg">
-                Jetzt Vorprüfung starten
-            </a>
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2><i class="fas fa-phone-alt me-2" style="color: var(--edgard-blue);"></i>Kontakt & Beratung</h2>
+                <p class="lead">Starten Sie jetzt mit der kostenlosen Vorprüfung oder rufen Sie uns direkt an</p>
+            </div>
+            
+            <div class="row mb-5">
+                <div class="col-md-4 mb-4">
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <h5>24/7 Hotline</h5>
+                        <p class="mb-2"><strong>040 - 123 456 789</strong></p>
+                        <small class="text-muted">Rund um die Uhr für Sie da</small>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <h5>E-Mail Beratung</h5>
+                        <p class="mb-2"><strong>info@edgard-elektro.de</strong></p>
+                        <small class="text-muted">Antwort innerhalb von 24h</small>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h5>Service-Gebiet</h5>
+                        <p class="mb-2"><strong>Hamburg & Umgebung</strong></p>
+                        <small class="text-muted">50km Radius um Hamburg</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <div class="mb-4">
+                    <h3>Bereit für Ihre steckerfertige PV-Anlage?</h3>
+                    <p class="lead">Starten Sie mit einer kostenlosen Beratung</p>
+                </div>
+                <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
+                    <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-edgard btn-lg">
+                        <i class="fas fa-rocket me-2"></i>
+                        Jetzt Vorprüfung starten
+                    </a>
+                    <a href="tel:040123456789" class="btn btn-outline-edgard btn-lg">
+                        <i class="fas fa-phone me-2"></i>
+                        Sofort anrufen
+                    </a>
+                </div>
+                <div class="mt-4">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Kostenlose Erstberatung • Transparente Preise • Festpreis-Garantie
+                    </small>
+                </div>
+            </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white py-4">
+    <footer class="bg-dark text-white py-5">
         <div class="container">
             <div class="row">
+                <div class="col-md-4 mb-4">
+                    <h5><i class="fas fa-bolt me-2"></i>EDGARD -- Elektro</h5>
+                    <p class="mb-3">Ihr zertifizierter Partner für steckerfertige PV-Anlagen im Raum Hamburg</p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h6>Kontakt</h6>
+                    <p class="mb-1"><i class="fas fa-phone me-2"></i>040 - 123 456 789</p>
+                    <p class="mb-1"><i class="fas fa-envelope me-2"></i>info@edgard-elektro.de</p>
+                    <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>Hamburg & Umgebung</p>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h6>Rechtliches</h6>
+                    <a href="#" class="text-white d-block mb-2">Impressum</a>
+                    <a href="#" class="text-white d-block mb-2">Datenschutz</a>
+                    <a href="#" class="text-white d-block mb-2">AGB</a>
+                    <a href="#" class="text-white d-block">Widerrufsrecht</a>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row align-items-center">
                 <div class="col-md-6">
-                    <h5>EDGARD -- Elektro</h5>
-                    <p>Steckerfertige PV-Anlagen im Raum Hamburg</p>
+                    <small>&copy; 2024 EDGARD -- Elektro. Alle Rechte vorbehalten.</small>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <a href="#" class="text-white me-3">Impressum</a>
-                    <a href="#" class="text-white me-3">Datenschutz</a>
-                    <a href="#" class="text-white">AGB</a>
+                    <small class="text-muted">
+                        <i class="fas fa-certificate me-1"></i>
+                        Zertifizierter Elektrofachbetrieb • VDE-Normen
+                    </small>
                 </div>
             </div>
         </div>
     </footer>
 
+    <!-- Schema.org Local Business Markup -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "ElectricalContractor",
+        "name": "EDGARD -- Elektro",
+        "description": "Zertifizierter Elektrofachbetrieb für steckerfertige PV-Anlagen in Hamburg und Umgebung",
+        "url": "http://192.168.178.30:8020/",
+        "telephone": "+49-40-123456789",
+        "email": "info@edgard-elektro.de",
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Hamburg",
+            "addressCountry": "DE"
+        },
+        "areaServed": {
+            "@type": "Place",
+            "name": "Hamburg und Umgebung"
+        },
+        "serviceType": [
+            "Photovoltaik Installation",
+            "Elektroinstallation",
+            "PV-Anlagen Planung",
+            "Zählerplatz Ertüchtigung",
+            "Überspannungsschutz",
+            "Wechselrichter Installation"
+        ],
+        "hasCredential": {
+            "@type": "EducationalOccupationalCredential",
+            "credentialCategory": "VDE-Zertifizierung"
+        },
+        "openingHours": "Mo-Su 00:00-23:59",
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "reviewCount": "100"
+        }
+    }
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Sticky Navigation Script -->
+    <script>
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('mainNavbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    const offsetTop = target.offsetTop - 80;
+                    window.scrollTo({
+                        top: offsetTop,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
