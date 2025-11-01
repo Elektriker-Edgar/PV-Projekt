@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDGARD -- Elektro PV-Service</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --edgard-blue: #2c5aa0;
+            --edgard-green: #28a745;
+            --edgard-gray: #6c757d;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, var(--edgard-blue), var(--edgard-gray));
+            color: white;
+            padding: 4rem 0;
+        }
+        .step-card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+        }
+        .step-number {
+            background: var(--edgard-green);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 auto 1rem;
+        }
+        .btn-edgard {
+            background: var(--edgard-green);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            font-weight: bold;
+        }
+        .btn-edgard:hover {
+            background: #218838;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/" style="color: var(--edgard-blue);">
+                EDGARD -- Elektro
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="#leistungen">Leistungen</a>
+                <a class="nav-link" href="#ablauf">Ablauf</a>
+                <a class="nav-link" href="#kontakt">Kontakt</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="display-4 mb-4">Steckerfertige PV-Anlagen für Ihr Zuhause oder Gewerbe</h1>
+                    <p class="lead mb-4">
+                        Wir planen, liefern und bereiten Ihre Anlage fachgerecht vor --
+                        inklusive Anmeldung beim Netzbetreiber und im Marktstammdatenregister.
+                        Sie verbinden nur noch die Module.
+                    </p>
+                    <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-edgard btn-lg">
+                        Jetzt Vorprüfung starten
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Drei Schritte -->
+    <section class="py-5" id="ablauf">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2>So einfach geht's</h2>
+                <p class="text-muted">In nur drei Schritten zu Ihrer steckerfertigen PV-Anlage</p>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card step-card h-100 text-center p-4">
+                        <div class="step-number">1</div>
+                        <h5>Digitale Vorprüfung</h5>
+                        <p>Daten hochladen, Fotos vom Zählerschrank und Hausanschluss beifügen.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card step-card h-100 text-center p-4">
+                        <div class="step-number">2</div>
+                        <h5>Angebot & Vorbereitung</h5>
+                        <p>Wir erstellen ein Angebot und rüsten Zählerplatz, Schutzgeräte und Leitungen vor.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card step-card h-100 text-center p-4">
+                        <div class="step-number">3</div>
+                        <h5>Inbetriebnahme & Anmeldung</h5>
+                        <p>Wir schließen an, messen, prüfen und melden an.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Leistungen -->
+    <section class="py-5 bg-light" id="leistungen">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6">
+                    <h2>Unsere Leistungen</h2>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="text-success">✓</i> 
+                            <strong>Zählerplatz-Ertüchtigung</strong> nach aktueller TAB, Selektivität, Platzreserven
+                        </li>
+                        <li class="mb-2">
+                            <i class="text-success">✓</i> 
+                            <strong>Überspannungsschutz</strong> AC-seitig, Koordination mit vorhandenen SPD
+                        </li>
+                        <li class="mb-2">
+                            <i class="text-success">✓</i> 
+                            <strong>Potentialausgleich</strong> und Leitungsführung nach VDE-Normen
+                        </li>
+                        <li class="mb-2">
+                            <i class="text-success">✓</i> 
+                            <strong>Wechselrichter & Speicher</strong> inklusive Parametrierung und Netzkonfiguration
+                        </li>
+                        <li class="mb-2">
+                            <i class="text-success">✓</i> 
+                            <strong>MaStR-Eintrag und Netzbetreiber-Meldung</strong>
+                        </li>
+                        <li class="mb-2">
+                            <i class="text-success">✓</i> 
+                            <strong>Bestandsintegration</strong>: Wir prüfen und integrieren kundeneigene Komponenten
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-lg-6">
+                    <h2>Abgrenzung</h2>
+                    <ul class="list-unstyled text-muted">
+                        <li class="mb-2">
+                            <i class="text-danger">×</i> 
+                            Keine Dach- oder Statikarbeiten
+                        </li>
+                        <li class="mb-2">
+                            <i class="text-danger">×</i> 
+                            Keine Fördermittelberatung
+                        </li>
+                        <li class="mb-2">
+                            <i class="text-info">ℹ</i> 
+                            Mechanische Montage der Module erfolgt durch den Kunden oder einen Dachdecker seiner Wahl
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-5" id="kontakt">
+        <div class="container text-center">
+            <h2>Bereit für Ihre steckerfertige PV-Anlage?</h2>
+            <p class="lead mb-4">Starten Sie jetzt mit der kostenlosen Vorprüfung</p>
+            <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-edgard btn-lg">
+                Jetzt Vorprüfung starten
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>EDGARD -- Elektro</h5>
+                    <p>Steckerfertige PV-Anlagen im Raum Hamburg</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="#" class="text-white me-3">Impressum</a>
+                    <a href="#" class="text-white me-3">Datenschutz</a>
+                    <a href="#" class="text-white">AGB</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

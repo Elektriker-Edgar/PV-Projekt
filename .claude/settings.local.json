@@ -1,10 +1,24 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(django-admin startproject:*)",
+      "Bash(.venvScriptsactivate)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(mkdir:*)",
+      "Bash(for app in customers inventory quotes orders grid scheduler integrations)",
+      "Bash(do sed -i \"s/name = ''$app''/name = ''apps.$app''/\" $app/apps.py)",
+      "Bash(done)",
+      "Bash(rm:*)",
+      "Bash(taskkill:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "Ref",
     "semgrep22",
     "playwright",
     "context7",
     "context77"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

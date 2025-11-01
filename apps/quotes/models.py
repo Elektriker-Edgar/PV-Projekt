@@ -1,0 +1,143 @@
+from django.db import models
+from django.utils import timezone
+from decimal import Decimal
+from apps.customers.models import Site
+from apps.core.models import User
+
+
+class Component(models.Model):
+    """Komponenten-Katalog"""
+    COMPONENT_TYPES = [
+        ('inverter', 'Wechselrichter'),
+        ('battery', 'Speicher'),
+        ('spd', 'Überspannungsschutz'),
+        ('meter', 'Zählerplatz'),
+        ('cable', 'Kabel'),
+        ('switch', 'Schalter'),
+        ('other', 'Sonstiges'),
+    ]
+    
+    name = models.CharField(max_length=200)
+    type = models.CharField(max_length=20, choices=COMPONENT_TYPES)
+    vendor = models.CharField(max_length=100)
+    sku = models.CharField(max_length=100, unique=True)
+    datasheet_url = models.URLField(blank=True)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    compatible_with = models.ManyToManyField('self', blank=True, symmetrical=False)
+    
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['type', 'vendor', 'name']
+
+    def __str__(self):
+        return f"{self.vendor} {self.name}"
+
+
+class Precheck(models.Model):
+    """Vorprüfung"""
+    INVERTER_CLASSES = [
+        ('1kva', 'bis 1 kVA'),
+        ('3kva', 'bis 3 kVA'),
+        ('5kva', 'bis 5 kVA'),
+        ('10kva', 'bis 10 kVA'),
+    ]
+    
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    desired_power_kw = models.DecimalField(max_digits=5, decimal_places=2)
+    inverter_class = models.CharField(max_length=10, choices=INVERTER_CLASSES)
+    storage_kwh = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    own_components = models.BooleanField(default=False, help_text="Kunde bringt eigene Komponenten mit")
+    component_files = models.TextField(default='[]', help_text="JSON Liste der hochgeladenen Komponentendatenblätter")
+    
+    # Terminwunsch
+    preferred_timeframes = models.TextField(default='[]', help_text="JSON Gewünschte Zeitfenster")
+    
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Vorprüfung {self.site.customer.name} - {self.desired_power_kw} kW"
+
+
+class Quote(models.Model):
+    """Angebot"""
+    STATUS_CHOICES = [
+        ('draft', 'Entwurf'),
+        ('review', 'In Prüfung'),
+        ('approved', 'Freigegeben'),
+        ('sent', 'Versendet'),
+        ('accepted', 'Angenommen'),
+        ('rejected', 'Abgelehnt'),
+        ('expired', 'Abgelaufen'),
+    ]
+    
+    precheck = models.OneToOneField(Precheck, on_delete=models.CASCADE)
+    quote_number = models.CharField(max_length=20, unique=True)
+    
+    # Preise
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('19.00'))
+    vat_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    pdf_url = models.URLField(blank=True)
+    
+    # Metadaten
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_quotes')
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_quotes')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    
+    valid_until = models.DateField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Angebot {self.quote_number}"
+
+    def save(self, *args, **kwargs):
+        if not self.quote_number:
+            # Generiere Angebotsnummer
+            year = timezone.now().year
+            count = Quote.objects.filter(created_at__year=year).count() + 1
+            self.quote_number = f"PV-{year}-{count:04d}"
+        
+        # Berechne Totalsumme
+        self.vat_amount = self.subtotal * (self.vat_rate / 100)
+        self.total = self.subtotal + self.vat_amount
+        
+        super().save(*args, **kwargs)
+
+
+class QuoteItem(models.Model):
+    """Angebots-Position"""
+    quote = models.ForeignKey(Quote, on_delete=models.CASCADE, related_name='items')
+    component = models.ForeignKey(Component, on_delete=models.CASCADE, null=True, blank=True)
+    
+    # Überschreibbare Felder
+    text = models.CharField(max_length=200)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1.00'))
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    line_total = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['id']
+
+    def save(self, *args, **kwargs):
+        self.line_total = self.quantity * self.unit_price
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.text} - {self.quantity} x {self.unit_price}€"
