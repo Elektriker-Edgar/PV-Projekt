@@ -1,0 +1,6 @@
+# Python dependencies
+# Add your project dependencies here
+# Example:
+# requests>=2.28.0
+# numpy>=1.21.0
+# flask>=2.2.0

@@ -1,0 +1,10 @@
+{
+  "enabledMcpjsonServers": [
+    "Ref",
+    "semgrep22",
+    "playwright",
+    "context7",
+    "context77"
+  ],
+  "enableAllProjectMcpServers": true
+}

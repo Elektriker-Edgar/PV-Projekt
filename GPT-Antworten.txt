@@ -1,0 +1,24 @@
+ zu 1 : 
+gerne EDGARD - Elektro mit Hinweis über den PV-Service.
+Ich bin nur im Hamburger umgebung ca. 60km umkreis tätig.
+Es ist meine bestehene Firma. Aktuell biete ich reine elektroservice als Einzelunternehmen unter den NAmen Eduard Dunst elektrotechnik.
+ zu 2:
+Ja je nach dem, was der Kunde möchte. z.B ein komplettes, funktionsfähigen Kit aus WR, Speicher, Überspannungsschutz, Potentialausgleich, Zählerplatzertüchtigung.
+Anmeldung in allen notwendigen Portalen, ohne fördermittelberatung. 
+Ich werde alle notwendigen Komponenten für Kunden anbieten. Er soll aber auch eine möglichkteit haben seine eingene Komponentetn bereteitzustellen.
+Der ablauf wie von dir beschrieben. Es soll digitale Vorprüfung erfolgen und ein passender Angebot erstellt werden. Vor absendung soll ich nochmal darüber sehen.
+Eventuell soll einbindung des n8n erfolgen.
+ zu 3:
+auf der Seite soll die Informationen bereitgestellt werden.
+Der Kunde Soll seine gegebenfalls einzelheiten eingeben und absenden. auf grundlage dessen soll ein angebot erstellt werden. 
+Als Domain kann "edgard-gruppe.de" verwendet werden. 
+ zu 4:
+es soll Technisch seriös wirken. Als logo habe ich schon ein Logo für Baustromservice. ein neues Logo für die neue Seite soll ähnlich aussehen.
+Die Seite soll nur auf deutsch verfügbar sein.
+
+ zu 5:
+ich habe erfahrungen mit Django. Die Seite soll Djnago-Basiert aufgebaut werden.
+Die Termine sollen mit mir abgestimmt dem kunden zu verfügung gestellt werden.
+
+
+
