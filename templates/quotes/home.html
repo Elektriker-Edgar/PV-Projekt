@@ -43,52 +43,233 @@
             box-shadow: var(--shadow-medium);
         }
 
-        /* Hero Section */
+        /* Hero Section - Optimized for hero-townhouse.jpg */
         .hero-section {
-            background: linear-gradient(135deg, rgba(44, 90, 160, 0.88) 0%, rgba(30, 58, 111, 0.82) 50%, rgba(52, 58, 64, 0.78) 100%), url("{% static 'img/hero-townhouse.jpg' %}");
+            background: linear-gradient(135deg, 
+                rgba(44, 90, 160, 0.75) 0%, 
+                rgba(30, 58, 111, 0.65) 25%, 
+                rgba(52, 58, 64, 0.45) 60%, 
+                rgba(0, 0, 0, 0.3) 100%), 
+                url("{% static 'img/hero-townhouse.jpg' %}");
             background-size: cover;
-            background-position: center;
+            background-position: center 20%;
             background-repeat: no-repeat;
+            background-attachment: fixed;
             color: white;
-            padding: 6rem 0 4rem;
+            padding: 8rem 0 6rem;
             margin-top: 76px;
             position: relative;
             overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
         }
 
+        /* Mobile optimization for background image */
+        @media (max-width: 768px) {
+            .hero-section {
+                background-attachment: scroll;
+                background-position: center center;
+                min-height: 90vh;
+                padding: 6rem 0 4rem;
+            }
+        }
+
+        /* Text readability overlay - positioned for left content area */
         .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 50%;
+            bottom: 0;
+            background: 
+                linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 70%, transparent 100%),
+                radial-gradient(ellipse at center left, rgba(44, 90, 160, 0.2) 0%, transparent 80%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Warm lighting effect inspired by the house windows */
+        .hero-section::after {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
-            opacity: 0.3;
+            background: 
+                radial-gradient(circle at 75% 35%, rgba(255, 193, 7, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 25% 65%, rgba(40, 167, 69, 0.06) 0%, transparent 35%);
+            animation: heroGlow 12s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: 0;
         }
 
+        @keyframes heroGlow {
+            0% { 
+                opacity: 0.4; 
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.7; 
+                transform: scale(1.02);
+            }
+            100% { 
+                opacity: 0.5; 
+                transform: scale(1);
+            }
+        }
+
+        /* Hero content positioning */
         .hero-content {
             position: relative;
             z-index: 2;
         }
 
+        /* Enhanced text shadows for better readability */
+        .hero-section h1 {
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            font-weight: 700;
+        }
+
+        .hero-section .lead {
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+            font-weight: 400;
+        }
+
+        /* Enhanced badge styling */
         .hero-badge {
-            background: rgba(40, 167, 69, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Hero Statistics Styling */
+        .hero-stats {
+            padding: 2rem 0;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: var(--transition-smooth);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            font-weight: 500;
+        }
+
+        /* Legacy stat-card for other sections */
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: var(--transition-smooth);
+        }
+
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Responsive adjustments for the house image */
+        @media (max-width: 991px) {
+            .hero-section::before {
+                right: 0;
+                background: 
+                    linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.3) 70%, transparent 100%),
+                    radial-gradient(ellipse at center top, rgba(44, 90, 160, 0.3) 0%, transparent 70%);
+            }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            animation: heroContentFadeIn 1.2s ease-out;
+        }
+
+        @keyframes heroContentFadeIn {
+            0% { 
+                opacity: 0; 
+                transform: translateY(30px);
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+        }
+
+        .hero-badge {
+            background: rgba(40, 167, 69, 0.25);
             border: 2px solid var(--edgard-green);
             color: var(--edgard-green);
-            padding: 0.5rem 1rem;
-            border-radius: 25px;
-            font-weight: 600;
-            font-size: 0.9rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.95rem;
             display: inline-block;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
+            transition: var(--transition-smooth);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .hero-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
         }
 
         .hero-stats {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 2rem;
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 2.5rem;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: var(--transition-smooth);
+            animation: heroStatsFloat 1.5s ease-out 0.3s both;
+        }
+
+        @keyframes heroStatsFloat {
+            0% { 
+                opacity: 0; 
+                transform: translateX(50px) scale(0.9);
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        .hero-stats:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
         }
 
         .stat-item {
@@ -184,29 +365,78 @@
             font-size: 1.5rem;
         }
 
-        /* Buttons */
+        /* Enhanced Buttons for Hero Section */
         .btn-edgard {
             background: linear-gradient(135deg, var(--edgard-green), #20754a);
             border: none;
             color: white;
-            padding: 14px 32px;
-            font-weight: 600;
-            border-radius: 8px;
+            padding: 16px 40px;
+            font-weight: 700;
+            border-radius: 12px;
             transition: var(--transition-smooth);
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            box-shadow: 
+                0 6px 20px rgba(40, 167, 69, 0.4),
+                0 2px 8px rgba(0, 0, 0, 0.1);
             text-decoration: none;
             display: inline-block;
-            min-height: 48px;
-            min-width: 120px;
+            min-height: 56px;
+            min-width: 200px;
+            font-size: 1.1rem;
+            position: relative;
+            overflow: hidden;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-edgard::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-edgard:hover::before {
+            left: 100%;
         }
 
         .btn-edgard:hover {
             background: linear-gradient(135deg, #218838, #1a5f35);
             color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 
+                0 8px 25px rgba(40, 167, 69, 0.5),
+                0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
+        /* Hero specific outline button - optimized for dark backgrounds */
+        .btn-outline-light-enhanced {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            color: white;
+            padding: 14px 38px;
+            font-weight: 700;
+            border-radius: 12px;
+            transition: var(--transition-smooth);
+            min-height: 56px;
+            min-width: 200px;
+            font-size: 1.1rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-outline-light-enhanced:hover {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--edgard-blue);
+            border-color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Legacy outline button for other sections */
         .btn-outline-edgard {
             background: transparent;
             border: 2px solid var(--edgard-blue);
@@ -293,21 +523,60 @@
             font-weight: 400;
         }
 
-        /* Mobile Optimizations */
+        /* Enhanced Mobile Optimizations */
+        @media (max-width: 1200px) {
+            .hero-section {
+                background-attachment: scroll; /* Better performance on tablets */
+                min-height: 90vh;
+            }
+        }
+
         @media (max-width: 768px) {
             .hero-section {
-                padding: 4rem 0 3rem;
+                padding: 5rem 0 4rem;
+                min-height: 100vh;
+                background-attachment: scroll;
+                background-position: center top;
+            }
+            
+            .hero-section::before {
+                background: 
+                    radial-gradient(ellipse at center, rgba(44, 90, 160, 0.4) 0%, transparent 70%),
+                    linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.1) 100%);
             }
             
             .display-4 {
-                font-size: 2.5rem;
+                font-size: 2.2rem;
+                line-height: 1.1;
+                margin-bottom: 1.5rem;
+            }
+
+            .lead {
+                font-size: 1.1rem;
+                margin-bottom: 2rem;
             }
             
-            .btn-edgard, .btn-outline-edgard {
+            .hero-badge {
+                font-size: 0.9rem;
+                padding: 0.6rem 1.2rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .hero-stats {
+                padding: 1.5rem;
+                margin-top: 2rem;
+            }
+
+            .stat-number {
+                font-size: 2rem;
+            }
+
+            .btn-edgard, .btn-outline-light-enhanced {
                 width: 100%;
                 margin-bottom: 1rem;
-                min-height: 52px;
+                min-height: 56px;
                 font-size: 1.1rem;
+                padding: 16px 20px;
             }
             
             .step-card {
@@ -319,17 +588,94 @@
             }
         }
 
+        @media (max-width: 480px) {
+            .hero-section {
+                padding: 4rem 0 3rem;
+                min-height: 100vh;
+            }
+
+            .display-4 {
+                font-size: 1.8rem;
+            }
+
+            .hero-stats {
+                padding: 1.25rem;
+            }
+
+            .stat-number {
+                font-size: 1.75rem;
+            }
+
+            .btn-edgard, .btn-outline-light-enhanced {
+                min-height: 52px;
+                font-size: 1rem;
+            }
+        }
+
         /* Accessibility */
         .btn:focus, .nav-link:focus {
             outline: 3px solid var(--edgard-green);
             outline-offset: 2px;
         }
 
+        /* Performance and Modern CSS Features */
+        @supports (backdrop-filter: blur(10px)) {
+            .hero-stats, .hero-badge {
+                backdrop-filter: blur(15px);
+            }
+        }
+
+        @supports not (backdrop-filter: blur(10px)) {
+            .hero-stats {
+                background: rgba(255, 255, 255, 0.25);
+            }
+            .hero-badge {
+                background: rgba(40, 167, 69, 0.4);
+            }
+        }
+
+        /* Prefers reduced motion - Accessibility */
         @media (prefers-reduced-motion: reduce) {
+            .hero-section::after,
+            .hero-content,
+            .hero-stats {
+                animation: none !important;
+            }
+            
             * {
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .hero-section {
+                background: linear-gradient(135deg, 
+                    rgba(0, 0, 0, 0.9) 0%, 
+                    rgba(0, 0, 0, 0.8) 100%), 
+                    url("{% static 'img/hero-townhouse.jpg' %}");
+            }
+
+            .hero-badge {
+                background: var(--edgard-green);
+                color: white;
+            }
+
+            .btn-outline-light-enhanced {
+                background: white;
+                color: black;
+                border-color: white;
+            }
+        }
+
+        /* Dark mode detection */
+        @media (prefers-color-scheme: dark) {
+            .hero-section::before {
+                background: 
+                    radial-gradient(ellipse at center left, rgba(44, 90, 160, 0.4) 0%, transparent 70%),
+                    linear-gradient(45deg, rgba(0, 0, 0, 0.2) 0%, rgba(255, 255, 255, 0.02) 100%);
             }
         }
 
@@ -405,15 +751,25 @@
                         inklusive Anmeldung beim Netzbetreiber und im Marktstammdatenregister.
                         Sie verbinden nur noch die Module.
                     </p>
-                    <div class="d-flex flex-column flex-md-row gap-3">
-                        <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-edgard btn-lg">
-                            <i class="fas fa-rocket me-2"></i>
+                    <div class="d-flex flex-column flex-md-row gap-3 align-items-center justify-content-start">
+                        <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-edgard btn-lg" role="button" aria-label="Zur kostenlosen Vorprüfung">
+                            <i class="fas fa-rocket me-2" aria-hidden="true"></i>
                             Jetzt Vorprüfung starten
                         </a>
-                        <a href="#kontakt" class="btn btn-outline-light btn-lg">
-                            <i class="fas fa-phone me-2"></i>
+                        <a href="#kontakt" class="btn btn-outline-light-enhanced btn-lg" role="button" aria-label="Zur kostenlosen Beratung">
+                            <i class="fas fa-phone me-2" aria-hidden="true"></i>
                             Kostenlose Beratung
                         </a>
+                    </div>
+                    <div class="mt-4">
+                        <small class="text-white-50 d-block">
+                            <i class="fas fa-check-circle me-2 text-success" aria-hidden="true"></i>
+                            Kostenlose Erstberatung & transparente Preise
+                        </small>
+                        <small class="text-white-50 d-block mt-1">
+                            <i class="fas fa-shield-alt me-2 text-info" aria-hidden="true"></i>
+                            Zertifizierter Elektrofachbetrieb mit Versicherungsschutz
+                        </small>
                     </div>
                 </div>
                 <div class="col-lg-4 text-center">
