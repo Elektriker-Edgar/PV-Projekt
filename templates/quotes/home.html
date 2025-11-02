@@ -146,41 +146,58 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
-        /* Hero Statistics Styling */
-        .hero-stats {
-            padding: 2rem 0;
+        /* Hero Statistics - Mini Cards */
+        .hero-stats-mini {
+            padding: 1rem 0;
         }
 
-        .stat-item {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
+        .stat-mini-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
             transition: var(--transition-smooth);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
         }
 
-        .stat-item:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        .stat-mini-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
 
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            margin-bottom: 0.5rem;
+        .stat-mini-card i {
+            font-size: 1.2rem;
+            min-width: 20px;
         }
 
-        .stat-label {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.9);
+        .stat-mini-card span {
+            font-size: 0.95rem;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-            font-weight: 500;
+        }
+
+        /* Mobile optimization for mini stats */
+        @media (max-width: 991px) {
+            .hero-stats-mini {
+                flex-direction: row !important;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 1rem !important;
+            }
+            
+            .stat-mini-card {
+                flex: 1;
+                min-width: 200px;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stat-mini-card {
+                min-width: 100%;
+                justify-content: flex-start;
+            }
         }
 
         /* Legacy stat-card for other sections */
@@ -771,19 +788,19 @@
                         </small>
                     </div>
                 </div>
-                <div class="col-lg-4 text-center">
-                    <div class="hero-stats">
-                        <div class="stat-item mb-3">
-                            <div class="stat-number">5+</div>
-                            <div class="stat-label">Jahre Erfahrung</div>
+                <div class="col-lg-4 d-flex align-items-center justify-content-center">
+                    <div class="hero-stats-mini d-flex flex-column gap-3 mt-4">
+                        <div class="stat-mini-card d-flex align-items-center">
+                            <i class="fas fa-award text-warning me-3"></i>
+                            <span class="fw-bold text-white">5+ Jahre Erfahrung</span>
                         </div>
-                        <div class="stat-item mb-3">
-                            <div class="stat-number">100+</div>
-                            <div class="stat-label">Zufriedene Kunden</div>
+                        <div class="stat-mini-card d-flex align-items-center">
+                            <i class="fas fa-users text-success me-3"></i>
+                            <span class="fw-bold text-white">Zufriedene Kunden</span>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-number">24/7</div>
-                            <div class="stat-label">Service-Hotline</div>
+                        <div class="stat-mini-card d-flex align-items-center">
+                            <i class="fas fa-headset text-info me-3"></i>
+                            <span class="fw-bold text-white">Service-Hotline</span>
                         </div>
                     </div>
                 </div>
@@ -873,8 +890,8 @@
                         <div class="certification-icon">
                             <i class="fas fa-clock"></i>
                         </div>
-                        <h6 class="fw-bold">24/7 Support</h6>
-                        <small class="text-muted">Rund um die Uhr erreichbar</small>
+                        <h6 class="fw-bold">Persönlicher Support</h6>
+                        <small class="text-muted">Direkter Kontakt zum Fachmann</small>
                     </div>
                 </div>
             </div>
@@ -970,9 +987,9 @@
                         <div class="contact-icon">
                             <i class="fas fa-phone"></i>
                         </div>
-                        <h5>24/7 Hotline</h5>
+                        <h5>Service-Hotline</h5>
                         <p class="mb-2"><strong>040 - 123 456 789</strong></p>
-                        <small class="text-muted">Rund um die Uhr für Sie da</small>
+                        <small class="text-muted">Persönliche Beratung vom Fachmann</small>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
