@@ -15,7 +15,13 @@
       "mcp__playwright__browser_take_screenshot",
       "mcp__playwright__browser_click",
       "Bash(find:*)",
-      "mcp__playwright__browser_type"
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_evaluate",
+      "Bash(venvScripts:*)",
+      "Bash(\"venv\\Scripts\\activate.bat\")",
+      "Bash(.venvScriptspython.exe manage.py runserver 8000)",
+      "mcp__playwright__browser_select_option"
     ]
   },
   "enableAllProjectMcpServers": true,

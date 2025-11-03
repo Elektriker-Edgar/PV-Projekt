@@ -124,27 +124,6 @@
             color: var(--edgard-blue);
         }
 
-        /* Live Price Card */
-        .live-price-card {
-            background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(44, 90, 160, 0.05));
-            border: 2px solid rgba(40, 167, 69, 0.3);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            animation: priceCardPulse 3s ease-in-out infinite;
-        }
-
-        @keyframes priceCardPulse {
-            0%, 100% { 
-                border-color: rgba(40, 167, 69, 0.3);
-                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.1);
-            }
-            50% { 
-                border-color: rgba(40, 167, 69, 0.5);
-                box-shadow: 0 6px 25px rgba(40, 167, 69, 0.2);
-            }
-        }
-
         /* Form Container */
         .wizard-container {
             max-width: 800px;
@@ -496,7 +475,7 @@
                         <i class="fas fa-clipboard-check me-2"></i>
                         PV-Anlage Vorprüfung
                     </h1>
-                    <p class="text-muted">Kostenlose Erstprüfung mit Live-Preisberechnung</p>
+                    <p class="text-muted">Kostenlose Erstprüfung für Ihre steckerfertige PV-Anlage</p>
                 </div>
                 
                 <div class="progress-bar-wrapper">
@@ -530,41 +509,96 @@
             <form id="precheckWizard" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 
-                <!-- Step 1: Standortdaten -->
+                <!-- Step 1: Kundendaten -->
                 <div class="form-card step-content active" data-step="1">
+                    <h3 class="step-title">
+                        <i class="fas fa-user me-2"></i>
+                        Ihre Kontaktdaten
+                    </h3>
+                    <p class="step-subtitle">Damit wir Sie erreichen und ein passendes Angebot erstellen können</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="customer_name" name="customer_name" 
+                                       placeholder="Ihr vollständiger Name" required>
+                                <label for="customer_name">Vollständiger Name *</label>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="customer_type" name="customer_type" required>
+                                    <option value="">Wählen Sie...</option>
+                                    <option value="private">Privatkunde</option>
+                                    <option value="business">Gewerbekunde</option>
+                                </select>
+                                <label for="customer_type">Kundentyp *</label>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="customer_email" name="customer_email" 
+                                       placeholder="ihre@email.de" required>
+                                <label for="customer_email">E-Mail Adresse *</label>
+                                <div class="invalid-feedback"></div>
+                                <div class="form-text">Für Angebot und wichtige Informationen</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="tel" class="form-control" id="customer_phone" name="customer_phone" 
+                                       placeholder="+49 40 12345678" required>
+                                <label for="customer_phone">Telefonnummer *</label>
+                                <div class="invalid-feedback"></div>
+                                <div class="form-text">Für Rückfragen und Terminvereinbarung</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating">
+                        <textarea class="form-control" id="customer_address" name="customer_address" 
+                                  placeholder="Straße, Hausnummer, PLZ, Ort" style="height: 120px" required></textarea>
+                        <label for="customer_address">Ihre Adresse *</label>
+                        <div class="invalid-feedback"></div>
+                        <div class="form-text">Straße, Hausnummer, PLZ und Ort</div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h6><i class="fas fa-info-circle me-2"></i>Warum diese Daten?</h6>
+                        <ul class="info-list">
+                            <li><i class="fas fa-check"></i>Für ein maßgeschneidertes Angebot</li>
+                            <li><i class="fas fa-check"></i>Zur Überprüfung der Netzbetreiber-Zuständigkeit</li>
+                            <li><i class="fas fa-check"></i>Für die spätere Anmeldung beim Netzbetreiber</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="btn-navigation">
+                        <div></div>
+                        <button type="button" class="btn btn-primary-wizard btn-wizard" onclick="nextStep()">
+                            Weiter
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Standortdaten -->
+                <div class="form-card step-content" data-step="2">
                     <h3 class="step-title">
                         <i class="fas fa-home me-2"></i>
                         Standort & Elektroinstallation
                     </h3>
-                    <p class="step-subtitle">Technische Daten für die Machbarkeitsprüfung und Preisberechnung</p>
-                    
-                    <!-- Live Price Display -->
-                    <div class="live-price-card" id="livePriceCard" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1 text-success">
-                                    <i class="fas fa-calculator me-2"></i>
-                                    Geschätzter Preis
-                                </h6>
-                                <small class="text-muted">Basierend auf Ihren Eingaben</small>
-                            </div>
-                            <div class="text-end">
-                                <div class="h4 text-success mb-0" id="livePrice">0€</div>
-                                <small class="text-muted">inkl. MwSt.</small>
-                            </div>
-                        </div>
-                        <div class="progress mt-2" style="height: 4px;">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: 0%" id="priceProgress"></div>
-                        </div>
-                        <small class="text-muted d-block mt-1" id="packageInfo">Paket wird automatisch bestimmt</small>
-                    </div>
+                    <p class="step-subtitle">Technische Daten für die Machbarkeitsprüfung</p>
                     
                     <div class="form-floating">
                         <textarea class="form-control" id="site_address" name="site_address" 
-                                  placeholder="Straße, Hausnummer, PLZ, Ort" style="height: 120px" required></textarea>
-                        <label for="site_address">Installationsadresse *</label>
-                        <div class="invalid-feedback"></div>
-                        <div class="form-text">Straße, Hausnummer, PLZ und Ort wo die PV-Anlage installiert werden soll</div>
+                                  placeholder="Falls abweichend von Ihrer Adresse" style="height: 120px"></textarea>
+                        <label for="site_address">Installationsadresse (falls abweichend)</label>
+                        <div class="form-text">Nur ausfüllen, wenn die Installation an einer anderen Adresse erfolgen soll</div>
                     </div>
                     
                     <div class="row">
@@ -632,7 +666,10 @@
                     </div>
                     
                     <div class="btn-navigation">
-                        <div></div>
+                        <button type="button" class="btn btn-secondary-wizard btn-wizard" onclick="prevStep()">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Zurück
+                        </button>
                         <button type="button" class="btn btn-primary-wizard btn-wizard" onclick="nextStep()">
                             Weiter
                             <i class="fas fa-arrow-right ms-2"></i>
@@ -640,34 +677,13 @@
                     </div>
                 </div>
 
-                <!-- Step 2: PV-Wünsche -->
-                <div class="form-card step-content" data-step="2">
+                <!-- Step 3: PV-Wünsche -->
+                <div class="form-card step-content" data-step="3">
                     <h3 class="step-title">
                         <i class="fas fa-solar-panel me-2"></i>
                         Ihre PV-Wünsche
                     </h3>
                     <p class="step-subtitle">Welche Leistung und Ausstattung wünschen Sie sich?</p>
-                    
-                    <!-- Live Price Display -->
-                    <div class="live-price-card" id="livePriceCard2">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1 text-success">
-                                    <i class="fas fa-calculator me-2"></i>
-                                    Aktueller Preis
-                                </h6>
-                                <small class="text-muted">Updates automatisch</small>
-                            </div>
-                            <div class="text-end">
-                                <div class="h4 text-success mb-0" id="livePrice2">0€</div>
-                                <small class="text-muted">inkl. MwSt.</small>
-                            </div>
-                        </div>
-                        <div class="progress mt-2" style="height: 4px;">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: 0%" id="priceProgress2"></div>
-                        </div>
-                        <small class="text-muted d-block mt-1" id="packageInfo2">Paket wird automatisch bestimmt</small>
-                    </div>
                     
                     <div class="row">
                         <div class="col-md-6">
@@ -737,8 +753,8 @@
                     </div>
                 </div>
 
-                <!-- Step 3: Fotos -->
-                <div class="form-card step-content" data-step="3">
+                <!-- Step 4: Fotos -->
+                <div class="form-card step-content" data-step="4">
                     <h3 class="step-title">
                         <i class="fas fa-camera me-2"></i>
                         Fotos hochladen
@@ -805,85 +821,6 @@
                     </div>
                 </div>
 
-                <!-- Step 4: Kundendaten -->
-                <div class="form-card step-content" data-step="4">
-                    <h3 class="step-title">
-                        <i class="fas fa-user me-2"></i>
-                        Ihre Kontaktdaten
-                    </h3>
-                    <p class="step-subtitle">Damit wir Sie erreichen und ein passendes Angebot erstellen können</p>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="customer_name" name="customer_name" 
-                                       placeholder="Ihr vollständiger Name" required>
-                                <label for="customer_name">Vollständiger Name *</label>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <select class="form-select" id="customer_type" name="customer_type" required>
-                                    <option value="">Wählen Sie...</option>
-                                    <option value="private">Privatkunde</option>
-                                    <option value="business">Gewerbekunde</option>
-                                </select>
-                                <label for="customer_type">Kundentyp *</label>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <input type="email" class="form-control" id="customer_email" name="customer_email" 
-                                       placeholder="ihre@email.de" required>
-                                <label for="customer_email">E-Mail Adresse *</label>
-                                <div class="invalid-feedback"></div>
-                                <div class="form-text">Für Angebot und wichtige Informationen</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <input type="tel" class="form-control" id="customer_phone" name="customer_phone" 
-                                       placeholder="+49 40 12345678" required>
-                                <label for="customer_phone">Telefonnummer *</label>
-                                <div class="invalid-feedback"></div>
-                                <div class="form-text">Für Rückfragen und Terminvereinbarung</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-floating">
-                        <textarea class="form-control" id="customer_address" name="customer_address" 
-                                  placeholder="Straße, Hausnummer, PLZ, Ort" style="height: 120px"></textarea>
-                        <label for="customer_address">Ihre Rechnungsadresse (falls abweichend)</label>
-                        <div class="form-text">Nur ausfüllen, wenn die Rechnungsadresse von der Installationsadresse abweicht</div>
-                    </div>
-                    
-                    <div class="info-card">
-                        <h6><i class="fas fa-info-circle me-2"></i>Warum diese Daten?</h6>
-                        <ul class="info-list">
-                            <li><i class="fas fa-check"></i>Für ein maßgeschneidertes Angebot</li>
-                            <li><i class="fas fa-check"></i>Zur Überprüfung der Netzbetreiber-Zuständigkeit</li>
-                            <li><i class="fas fa-check"></i>Für die spätere Anmeldung beim Netzbetreiber</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="btn-navigation">
-                        <button type="button" class="btn btn-secondary-wizard btn-wizard" onclick="prevStep()">
-                            <i class="fas fa-arrow-left me-2"></i>
-                            Zurück
-                        </button>
-                        <button type="button" class="btn btn-primary-wizard btn-wizard" onclick="nextStep()">
-                            Weiter
-                            <i class="fas fa-arrow-right ms-2"></i>
-                        </button>
-                    </div>
-                </div>
-
                 <!-- Step 5: Abschluss & DSGVO -->
                 <div class="form-card step-content" data-step="5">
                     <h3 class="step-title">
@@ -891,27 +828,6 @@
                         Datenschutz & Abschluss
                     </h3>
                     <p class="step-subtitle">Bitte bestätigen Sie die Datenschutzhinweise</p>
-                    
-                    <!-- Final Price Display -->
-                    <div class="live-price-card">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1 text-success">
-                                    <i class="fas fa-file-invoice-dollar me-2"></i>
-                                    Ihr finaler Preis
-                                </h6>
-                                <small class="text-muted">Unverbindliches Angebot</small>
-                            </div>
-                            <div class="text-end">
-                                <div class="h3 text-success mb-0" id="finalPrice">0€</div>
-                                <small class="text-muted">inkl. MwSt.</small>
-                            </div>
-                        </div>
-                        <div class="mt-2">
-                            <strong class="text-success" id="finalPackage">Paket wird bestimmt</strong>
-                            <div class="small text-muted mt-1" id="finalPackageDescription"></div>
-                        </div>
-                    </div>
                     
                     <div class="dsgvo-section">
                         <h6 class="text-success mb-3">
@@ -936,7 +852,7 @@
                             <ul class="list-unstyled mb-0">
                                 <li><i class="fas fa-check text-success me-2"></i>SSL-verschlüsselte Übertragung</li>
                                 <li><i class="fas fa-check text-success me-2"></i>DSGVO-konforme Speicherung</li>
-                                <li><i class="fas fa-check text-success me-2"></i>Keine Weitergabe an Dritte</li>
+                                <li><i class="fas fa-check text-success me-2"></li>Keine Weitergabe an Dritte</li>
                                 <li><i class="fas fa-check text-success me-2"></i>Jederzeit widerrufbar</li>
                             </ul>
                         </div>
@@ -989,38 +905,9 @@
         window.stepValidation = {
             1: false,
             2: false,
-            3: true, // Photos are optional
-            4: false,
+            3: false,
+            4: true, // Photos are optional
             5: false
-        };
-
-        // Price calculation state
-        window.priceData = {
-            basePrice: 890,
-            travelCost: 0,
-            surcharges: 0,
-            materialCost: 0,
-            discount: 0,
-            package: 'basis'
-        };
-
-        // Package definitions (matching calculation.py)
-        window.packages = {
-            'basis': {
-                name: 'Basis',
-                basePrice: 890,
-                description: 'WR bis 3 kVA, AC-Anschluss, MaStR/Netzmeldung'
-            },
-            'plus': {
-                name: 'Plus',
-                basePrice: 1490,
-                description: 'Basis + Zählerplatz-Ertüchtigung + SPD'
-            },
-            'pro': {
-                name: 'Pro',
-                basePrice: 2290,
-                description: 'Plus + Speicherintegration + Energiemanagement'
-            }
         };
 
         // Initialize wizard
@@ -1028,172 +915,11 @@
             updateProgress();
             setupFileUploads();
             setupValidation();
-            setupPriceCalculation();
             
             // Auto-save form data
             setInterval(saveFormData, 30000); // Every 30 seconds
             loadFormData();
         });
-
-        // Price calculation functions
-        function setupPriceCalculation() {
-            // Fields that trigger price updates
-            const priceFields = [
-                'main_fuse_ampere', 'grid_type', 'distance_meter_to_hak',
-                'desired_power_kw', 'inverter_class', 'storage_kwh', 'own_components'
-            ];
-
-            priceFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (field) {
-                    field.addEventListener('input', calculateLivePrice);
-                    field.addEventListener('change', calculateLivePrice);
-                }
-            });
-
-            // Initial calculation
-            calculateLivePrice();
-        }
-
-        function calculateLivePrice() {
-            // Get form values
-            const siteAddress = document.getElementById('site_address')?.value || '';
-            const mainFuse = parseInt(document.getElementById('main_fuse_ampere')?.value) || 0;
-            const gridType = document.getElementById('grid_type')?.value || '';
-            const distance = parseFloat(document.getElementById('distance_meter_to_hak')?.value) || 0;
-            const desiredPower = parseFloat(document.getElementById('desired_power_kw')?.value) || 0;
-            const inverterClass = document.getElementById('inverter_class')?.value || '';
-            const storageKwh = parseFloat(document.getElementById('storage_kwh')?.value) || 0;
-            const ownComponents = document.getElementById('own_components')?.checked || false;
-
-            // Determine package
-            let packageType = 'basis';
-            if (storageKwh > 0) {
-                packageType = 'pro';
-            } else if (desiredPower > 3 || inverterClass === '5kva' || inverterClass === '10kva' || gridType === 'TT') {
-                packageType = 'plus';
-            }
-
-            // Calculate base price
-            let totalPrice = window.packages[packageType].basePrice;
-
-            // Travel costs (simplified)
-            let travelCost = 0;
-            if (siteAddress) {
-                const city = siteAddress.toLowerCase();
-                if (city.includes('hamburg')) {
-                    travelCost = 0;
-                } else if (city.includes('norderstedt') || city.includes('ahrensburg') || city.includes('pinneberg')) {
-                    travelCost = 50;
-                } else {
-                    travelCost = 95;
-                }
-            }
-
-            // Surcharges
-            let surcharges = 0;
-            if (gridType === 'TT') {
-                surcharges += 150; // TT-Netz
-            }
-            if (mainFuse > 35) {
-                surcharges += 220; // Selektive Vorsicherung
-            }
-            if (desiredPower > 5) {
-                surcharges += 10 * 25; // 10m extra Kabel
-            }
-
-            // Material costs (if EDGARD supplies)
-            let materialCost = 0;
-            if (!ownComponents) {
-                // Simplified material calculation
-                const inverterPrices = {
-                    '1kva': 800,
-                    '3kva': 1200,
-                    '5kva': 1800,
-                    '10kva': 2800
-                };
-                materialCost += inverterPrices[inverterClass] || 0;
-                materialCost += 180; // AC-Verkabelung
-
-                if (packageType === 'plus' || packageType === 'pro') {
-                    materialCost += 320; // SPD
-                    materialCost += 450; // Zählerplatz
-                }
-
-                if (packageType === 'pro' && storageKwh > 0) {
-                    materialCost += storageKwh * 800; // Storage
-                }
-            }
-
-            // Discount for complete kit
-            let discount = 0;
-            if (!ownComponents) {
-                discount = window.packages[packageType].basePrice * 0.15; // 15% discount
-            }
-
-            // Calculate total
-            totalPrice = totalPrice + travelCost + surcharges + materialCost - discount;
-
-            // Update price data
-            window.priceData = {
-                basePrice: window.packages[packageType].basePrice,
-                travelCost: travelCost,
-                surcharges: surcharges,
-                materialCost: materialCost,
-                discount: discount,
-                package: packageType,
-                total: totalPrice
-            };
-
-            // Update display
-            updatePriceDisplay();
-        }
-
-        function updatePriceDisplay() {
-            const price = Math.round(window.priceData.total);
-            const packageInfo = window.packages[window.priceData.package];
-            
-            // Update all price displays
-            ['livePrice', 'livePrice2', 'finalPrice'].forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.textContent = `${price.toLocaleString('de-DE')}€`;
-                }
-            });
-
-            // Update package info
-            ['packageInfo', 'packageInfo2'].forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.textContent = `Paket ${packageInfo.name}: ${packageInfo.description}`;
-                }
-            });
-
-            // Update final package display
-            const finalPackage = document.getElementById('finalPackage');
-            const finalPackageDesc = document.getElementById('finalPackageDescription');
-            if (finalPackage && finalPackageDesc) {
-                finalPackage.textContent = `Paket ${packageInfo.name}`;
-                finalPackageDesc.textContent = packageInfo.description;
-            }
-
-            // Update progress bars (visual indicator of completeness)
-            const progress = Math.min((price / 3000) * 100, 100);
-            ['priceProgress', 'priceProgress2'].forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.style.width = `${progress}%`;
-                }
-            });
-
-            // Show price card after first input
-            if (price > 0) {
-                const priceCard = document.getElementById('livePriceCard');
-                if (priceCard) {
-                    priceCard.style.display = 'block';
-                }
-            }
-        }
 
         // Progress and step management
         function updateProgress() {
@@ -1238,7 +964,6 @@
                     updateProgress();
                     scrollToTop();
                     saveFormData();
-                    calculateLivePrice(); // Recalculate for next step
                 }
             }
         }
@@ -1417,9 +1142,6 @@
                 data[key] = value;
             }
             
-            // Save price data as well
-            data._priceData = window.priceData;
-            
             localStorage.setItem('precheckWizardData', JSON.stringify(data));
         }
 
@@ -1429,12 +1151,6 @@
                 const data = JSON.parse(savedData);
                 
                 Object.keys(data).forEach(key => {
-                    if (key === '_priceData') {
-                        window.priceData = data[key];
-                        updatePriceDisplay();
-                        return;
-                    }
-                    
                     const field = document.getElementById(key);
                     if (field && field.type !== 'file') {
                         field.value = data[key];
@@ -1460,22 +1176,12 @@
             submitBtn.innerHTML = '<span class="spinner"></span>Wird übertragen...';
             submitBtn.disabled = true;
             
-            // Add price data to form
-            const priceInput = document.createElement('input');
-            priceInput.type = 'hidden';
-            priceInput.name = 'price_data';
-            priceInput.value = JSON.stringify(window.priceData);
-            this.appendChild(priceInput);
-            
             // Simulate form submission
             setTimeout(() => {
                 // Clear saved data
                 localStorage.removeItem('precheckWizardData');
                 
-                // Actually submit the form (remove this setTimeout for real submission)
-                // this.submit();
-                
-                // For demo: redirect to success page
+                // Redirect to success page
                 window.location.href = '{% url "quotes:precheck_success" %}';
             }, 2000);
         });
@@ -1489,7 +1195,7 @@
         });
 
         // Auto-fill based on customer type
-        document.getElementById('customer_type')?.addEventListener('change', function() {
+        document.getElementById('customer_type').addEventListener('change', function() {
             const customerType = this.value;
             const phoneField = document.getElementById('customer_phone');
             
@@ -1501,20 +1207,12 @@
         });
 
         // Smart form completion
-        document.getElementById('customer_address')?.addEventListener('focus', function() {
+        document.getElementById('site_address').addEventListener('focus', function() {
             if (!this.value) {
-                const siteAddress = document.getElementById('site_address').value;
-                if (siteAddress) {
-                    this.placeholder = siteAddress;
+                const customerAddress = document.getElementById('customer_address').value;
+                if (customerAddress) {
+                    this.placeholder = customerAddress;
                 }
-            }
-        });
-
-        // Auto-sync addresses
-        document.getElementById('site_address')?.addEventListener('blur', function() {
-            const customerAddressField = document.getElementById('customer_address');
-            if (customerAddressField && !customerAddressField.value) {
-                customerAddressField.placeholder = this.value || 'Rechnungsadresse (falls abweichend)';
             }
         });
     </script>
