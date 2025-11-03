@@ -1,0 +1,281 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angebote zur Freigabe | EDGARD Elektro Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --edgard-blue: #2c5aa0;
+            --edgard-green: #28a745;
+            --edgard-gray: #6c757d;
+            --edgard-light: #f8f9fa;
+            --edgard-dark: #343a40;
+        }
+
+        body {
+            background: var(--edgard-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .admin-header {
+            background: var(--edgard-blue);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .quote-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .quote-header {
+            background: var(--edgard-light);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .quote-body {
+            padding: 1.5rem;
+        }
+
+        .quote-actions {
+            padding: 1rem 1.5rem;
+            background: var(--edgard-light);
+            border-top: 1px solid #dee2e6;
+        }
+
+        .btn-approve {
+            background: var(--edgard-green);
+            color: white;
+            border: none;
+        }
+
+        .btn-approve:hover {
+            background: #1e7e34;
+            color: white;
+        }
+
+        .price-summary {
+            background: rgba(44, 90, 160, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .items-table {
+            font-size: 0.9rem;
+        }
+
+        .badge-review {
+            background: #ffc107;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Header -->
+    <div class="admin-header">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h1><i class="fas fa-clipboard-check me-2"></i>Angebote zur Freigabe</h1>
+                    <p class="mb-0">Automatisch erstellte Angebote zur manuellen Prüfung und Freigabe</p>
+                </div>
+                <div class="col-auto">
+                    <span class="badge bg-warning fs-6">{{ quotes|length }} zur Prüfung</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if quotes %}
+            {% for quote in quotes %}
+            <div class="quote-card">
+                <!-- Quote Header -->
+                <div class="quote-header">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="mb-1">{{ quote.quote_number }}</h5>
+                            <small class="text-muted">
+                                Erstellt {{ quote.created_at|date:"d.m.Y H:i" }} | 
+                                Kunde: {{ quote.precheck.site.customer.name }}
+                            </small>
+                        </div>
+                        <div class="col-auto">
+                            <span class="badge badge-review">Zur Prüfung</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quote Body -->
+                <div class="quote-body">
+                    <div class="row">
+                        <!-- Kundendaten -->
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-user me-2"></i>Kundendaten</h6>
+                            <p class="mb-1"><strong>{{ quote.precheck.site.customer.name }}</strong></p>
+                            <p class="mb-1">{{ quote.precheck.site.customer.email }}</p>
+                            <p class="mb-1">{{ quote.precheck.site.customer.phone }}</p>
+                            <p class="mb-3">{{ quote.precheck.site.address }}</p>
+
+                            <h6><i class="fas fa-cog me-2"></i>Technische Daten</h6>
+                            <p class="mb-1">Gewünschte Leistung: <strong>{{ quote.precheck.desired_power_kw }} kW</strong></p>
+                            <p class="mb-1">WR-Klasse: <strong>{{ quote.precheck.get_inverter_class_display }}</strong></p>
+                            {% if quote.precheck.storage_kwh %}
+                            <p class="mb-1">Speicher: <strong>{{ quote.precheck.storage_kwh }} kWh</strong></p>
+                            {% endif %}
+                            <p class="mb-1">Hauptsicherung: <strong>{{ quote.precheck.site.main_fuse_ampere }}A</strong></p>
+                            <p class="mb-1">Netzform: <strong>{{ quote.precheck.site.get_grid_type_display }}</strong></p>
+                            {% if quote.precheck.own_components %}
+                            <p class="mb-1"><span class="badge bg-info">Eigene Komponenten</span></p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Angebotspositionen -->
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-list me-2"></i>Angebotspositionen</h6>
+                            <table class="table table-sm items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Position</th>
+                                        <th class="text-end">Menge</th>
+                                        <th class="text-end">Preis</th>
+                                        <th class="text-end">Summe</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in quote.items.all %}
+                                    <tr>
+                                        <td>{{ item.text }}</td>
+                                        <td class="text-end">{{ item.quantity }}</td>
+                                        <td class="text-end">{{ item.unit_price }}€</td>
+                                        <td class="text-end">{{ item.line_total }}€</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+
+                            <!-- Preiszusammenfassung -->
+                            <div class="price-summary">
+                                <div class="d-flex justify-content-between">
+                                    <span>Zwischensumme:</span>
+                                    <strong>{{ quote.subtotal }}€</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>MwSt ({{ quote.vat_rate }}%):</span>
+                                    <strong>{{ quote.vat_amount }}€</strong>
+                                </div>
+                                <hr class="my-2">
+                                <div class="d-flex justify-content-between">
+                                    <span><strong>Gesamtsumme:</strong></span>
+                                    <strong class="text-primary">{{ quote.total }}€</strong>
+                                </div>
+                                <small class="text-muted">
+                                    Gültig bis: {{ quote.valid_until|date:"d.m.Y" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if quote.precheck.notes %}
+                    <div class="mt-3">
+                        <h6><i class="fas fa-sticky-note me-2"></i>Notizen</h6>
+                        <p class="mb-0">{{ quote.precheck.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Quote Actions -->
+                <div class="quote-actions">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{% url 'quotes:quote_detail' quote.quote_number %}" 
+                               class="btn btn-outline-primary btn-sm" target="_blank">
+                                <i class="fas fa-eye me-1"></i>Vorschau
+                            </a>
+                            <a href="{% url 'quotes:quote_pdf' quote.quote_number %}" 
+                               class="btn btn-outline-secondary btn-sm" target="_blank">
+                                <i class="fas fa-file-pdf me-1"></i>PDF
+                            </a>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-danger btn-sm me-2" 
+                                    onclick="rejectQuote({{ quote.id }})">
+                                <i class="fas fa-times me-1"></i>Ablehnen
+                            </button>
+                            <button class="btn btn-approve btn-sm" 
+                                    onclick="approveQuote({{ quote.id }})">
+                                <i class="fas fa-check me-1"></i>Freigeben
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-clipboard-check text-muted" style="font-size: 4rem;"></i>
+                <h3 class="mt-3 text-muted">Keine Angebote zur Prüfung</h3>
+                <p class="text-muted">Alle Angebote wurden bereits bearbeitet.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // CSRF Token holen
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function approveQuote(quoteId) {
+            if (!confirm('Angebot wirklich freigeben?')) return;
+            
+            fetch(`/admin/quotes/${quoteId}/approve/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Angebot wurde freigegeben!');
+                    location.reload();
+                } else {
+                    alert('Fehler: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Fehler beim Freigeben: ' + error);
+            });
+        }
+
+        function rejectQuote(quoteId) {
+            alert('Ablehnungs-Funktion noch nicht implementiert');
+        }
+    </script>
+</body>
+</html>
