@@ -596,6 +596,24 @@
             color: #6c757d !important;
             opacity: 1;
         }
+        
+        /* Fix number input spinners positioning */
+        input[type="number"] {
+            padding-right: 1rem !important;
+        }
+        
+        /* Ensure native spinners are visible and properly positioned */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: inner-spin-button !important;
+            opacity: 1 !important;
+            height: auto !important;
+        }
+        
+        /* For Firefox */
+        input[type="number"] {
+            -moz-appearance: number-input !important;
+        }
     </style>
 </head>
 <body>
@@ -772,51 +790,15 @@
                         </div>
                     </div>
                     
-                    <div class="form-floating">
-                        <input type="number" class="form-control" id="distance_meter_to_hak" name="distance_meter_to_hak" 
-                               placeholder="5.0" min="0" max="100" step="0.1" required>
-                        <label for="distance_meter_to_hak">Entfernung Zählerschrank ↔ Hausanschlusskasten (Meter) *</label>
-                        <div class="invalid-feedback"></div>
-                        <div class="form-text">Ungefähre Entfernung für die Kostenberechnung</div>
-                    </div>
                     
                     <div class="form-floating">
                         <input type="number" class="form-control" id="distance_meter_to_inverter" name="distance_meter_to_inverter" 
-                               placeholder="10.0" min="0" max="200" step="0.1" required>
-                        <label for="distance_meter_to_inverter">Entfernung Zählerschrank ↔ Montageort Wechselrichter/Speicher (Meter) *</label>
+                               placeholder="15" min="0" max="200" step="1" required>
+                        <label for="distance_meter_to_inverter">Entfernung Zählerplatz ↔ Montageort Wechselrichter (Meter) *</label>
                         <div class="invalid-feedback"></div>
-                        <div class="form-text">Wo sollen Wechselrichter und Speicher installiert werden? (z.B. Keller, Garage, Dachboden)</div>
+                        <div class="form-text">Kabelweg für Wechselrichter/Speicher-Anschluss</div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <select class="form-select" id="roof_type" name="roof_type" required>
-                                    <option value="">Wählen Sie...</option>
-                                    <option value="pitched">Schrägdach</option>
-                                    <option value="flat">Flachdach</option>
-                                    <option value="mixed">Gemischt</option>
-                                </select>
-                                <label for="roof_type">Dachtyp *</label>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                <select class="form-select" id="roof_orientation" name="roof_orientation" required>
-                                    <option value="">Wählen Sie...</option>
-                                    <option value="south">Süden</option>
-                                    <option value="southwest">Südwesten</option>
-                                    <option value="southeast">Südosten</option>
-                                    <option value="east">Osten</option>
-                                    <option value="west">Westen</option>
-                                    <option value="multiple">Mehrere Richtungen</option>
-                                </select>
-                                <label for="roof_orientation">Hauptausrichtung Dach *</label>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                    </div>
                     
                     <div class="row">
                         <div class="col-md-6">
@@ -1287,7 +1269,7 @@
             const siteAddress = document.getElementById('site_address')?.value || '';
             const mainFuse = parseInt(document.getElementById('main_fuse_ampere')?.value) || 0;
             const gridType = document.getElementById('grid_type')?.value || '';
-            const distance = parseFloat(document.getElementById('distance_meter_to_hak')?.value) || 0;
+            const inverterDistance = parseFloat(document.getElementById('distance_meter_to_inverter')?.value) || 0;
             const desiredPower = parseFloat(document.getElementById('desired_power_kw')?.value) || 0;
             const inverterClass = document.getElementById('inverter_class')?.value || '';
             const storageKwh = parseFloat(document.getElementById('storage_kwh')?.value) || 0;
@@ -1325,8 +1307,10 @@
             if (mainFuse > 35) {
                 surcharges += 220; // Selektive Vorsicherung
             }
-            if (desiredPower > 5) {
-                surcharges += 10 * 25; // 10m extra Kabel
+            // Cable cost based on distance to inverter
+            if (inverterDistance > 15) {
+                const extraMeters = Math.ceil(inverterDistance - 15);
+                surcharges += extraMeters * 25; // 25€ pro Meter über 15m
             }
 
             // Material costs (if EDGARD supplies)

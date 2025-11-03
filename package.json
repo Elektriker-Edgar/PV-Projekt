@@ -16,8 +16,8 @@
     "url": "https://github.com/Elektriker-Edgar/PV-Projekt/issues"
   },
   "homepage": "https://github.com/Elektriker-Edgar/PV-Projekt#readme",
-  "description": "",
   "devDependencies": {
     "@openai/codex": "^0.53.0"
-  }
+  },
+  "description": ""
 }
