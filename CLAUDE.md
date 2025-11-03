@@ -9,7 +9,7 @@ Vollständige Django-Website für EDGARD Elektro, ein PV-Anlagen Elektroinstalla
 - ✅ Django 4.2 Projektstruktur vollständig implementiert
 - ✅ Alle Apps erstellt und konfiguriert (core, customers, inventory, quotes, orders, grid, scheduler, integrations)
 - ✅ Komplette Datenbank-Modelle implementiert
-- ✅ Django Admin vollständig konfiguriert
+- ✅ Django Addas min vollständig konfiguriert
 - ✅ Responsive Frontend mit Bootstrap 5 und Glassmorphism-Design
 - ✅ Automatisierte Angebotskalkulation (calculation.py)
 

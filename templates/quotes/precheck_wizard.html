@@ -508,6 +508,94 @@
             background: rgba(255, 193, 7, 0.15);
             color: #ffc107;
         }
+        
+        /* Fix for form field visibility issues */
+        .form-floating > .form-control:focus,
+        .form-floating > .form-control:not(:placeholder-shown),
+        .form-floating > .form-select:focus,
+        .form-floating > .form-select:not([value=""]) {
+            padding-top: 1.625rem;
+            padding-bottom: 0.625rem;
+            background-color: #fff !important;
+            color: #212529 !important;
+        }
+        
+        .form-floating > label {
+            color: #6c757d;
+            background-color: transparent;
+        }
+        
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label,
+        .form-floating > .form-select:focus ~ label,
+        .form-floating > .form-select:not([value=""]) ~ label {
+            opacity: 0.65;
+            transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+            color: var(--edgard-blue);
+        }
+        
+        /* Ensure text is visible in all states */
+        .form-control, .form-select {
+            color: #212529 !important;
+            background-color: #fff !important;
+            background-image: none !important;
+            background-repeat: no-repeat !important;
+            background-position: right center !important;
+            font-weight: 400 !important;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            color: #212529 !important;
+            background-color: #fff !important;
+            background-image: none !important;
+            border-color: var(--edgard-green);
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+        
+        /* Fix Bootstrap select dropdown arrow only */
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 0.75rem center !important;
+            background-size: 16px 12px !important;
+        }
+        
+        .form-select:focus {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2328a745' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
+        }
+        
+        /* Remove any pattern backgrounds */
+        .form-floating > .form-control,
+        .form-floating > .form-select {
+            background-color: #fff !important;
+            background-image: none !important;
+        }
+        
+        .form-floating > .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 0.75rem center !important;
+            background-size: 16px 12px !important;
+        }
+        
+        /* Additional fixes for text selection and states */
+        .form-control::selection, .form-select::selection {
+            background-color: rgba(40, 167, 69, 0.3);
+            color: #212529;
+        }
+        
+        .form-control:hover, .form-select:hover {
+            border-color: #ced4da;
+            background-color: #fff !important;
+        }
+        
+        /* Override any conflicting Bootstrap styles */
+        .form-control:disabled, .form-control[readonly],
+        .form-select:disabled {
+            background-color: #e9ecef !important;
+            color: #6c757d !important;
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -610,7 +698,10 @@
                                 </button>
                             </div>
                         </div>
-                        <small class="text-muted mt-2 d-block">Ohne Auswahl wird das Paket automatisch basierend auf Ihren Angaben bestimmt</small>
+                        <small class="text-muted mt-2 d-block">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Klicken Sie auf ein Paket zur Auswahl. Erneutes Klicken wählt ab. Ohne Auswahl wird das Paket automatisch bestimmt.
+                        </small>
                     </div>
                     
                     <!-- Live Price Display -->
@@ -632,14 +723,6 @@
                             <div class="progress-bar bg-success" role="progressbar" style="width: 0%" id="priceProgress"></div>
                         </div>
                         <small class="text-muted d-block mt-1" id="packageInfo">Paket wird automatisch bestimmt</small>
-                    </div>
-                    
-                    <div class="form-floating">
-                        <textarea class="form-control" id="site_address" name="site_address" 
-                                  placeholder="Straße, Hausnummer, PLZ, Ort" style="height: 100px" required></textarea>
-                        <label for="site_address">Installationsadresse *</label>
-                        <div class="invalid-feedback"></div>
-                        <div class="form-text">Straße, Hausnummer, PLZ und Ort wo die PV-Anlage installiert werden soll</div>
                     </div>
                     
                     <div class="row">
@@ -1659,6 +1742,27 @@
         
         document.querySelectorAll('.package-btn').forEach(btn => {
             btn.addEventListener('click', function() {
+                // Check if this button is already active (toggle functionality)
+                if (this.classList.contains('active')) {
+                    // Deselect the currently active package
+                    this.classList.remove('active');
+                    selectedPackage = null;
+                    
+                    // Hide live price card
+                    const livePriceCard = document.getElementById('livePriceCard');
+                    const livePriceCard2 = document.getElementById('livePriceCard2');
+                    if (livePriceCard) livePriceCard.style.display = 'none';
+                    if (livePriceCard2) livePriceCard2.style.display = 'none';
+                    
+                    // Remove from local storage
+                    const wizardData = JSON.parse(localStorage.getItem('precheckWizardData') || '{}');
+                    delete wizardData.selectedPackage;
+                    localStorage.setItem('precheckWizardData', JSON.stringify(wizardData));
+                    
+                    console.log('Package deselected');
+                    return;
+                }
+                
                 // Remove active class from all buttons
                 document.querySelectorAll('.package-btn').forEach(b => b.classList.remove('active'));
                 
