@@ -462,6 +462,52 @@
             font-size: 0.875rem;
             margin-top: 0.25rem;
         }
+        
+        /* Package Selection Buttons */
+        .package-selection {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        .package-btn {
+            padding: 1rem;
+            border-radius: 8px;
+            transition: var(--transition-smooth);
+            border: 2px solid transparent;
+            margin-bottom: 0.5rem;
+        }
+        
+        .package-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-light);
+        }
+        
+        .package-btn.active {
+            border-color: var(--edgard-green);
+            background: rgba(40, 167, 69, 0.1);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .package-btn.btn-outline-success.active {
+            border-color: var(--edgard-green);
+            background: rgba(40, 167, 69, 0.15);
+            color: var(--edgard-green);
+        }
+        
+        .package-btn.btn-outline-primary.active {
+            border-color: var(--edgard-blue);
+            background: rgba(44, 90, 160, 0.15);
+            color: var(--edgard-blue);
+        }
+        
+        .package-btn.btn-outline-warning.active {
+            border-color: #ffc107;
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+        }
     </style>
 </head>
 <body>
@@ -538,6 +584,35 @@
                     </h3>
                     <p class="step-subtitle">Technische Daten für die Machbarkeitsprüfung und Preisberechnung</p>
                     
+                    <!-- Package Selection -->
+                    <div class="package-selection mb-4" id="packageSelection">
+                        <h6 class="mb-3">
+                            <i class="fas fa-tag me-2"></i>
+                            Paket auswählen (optional)
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-outline-success package-btn w-100" data-package="basis" data-price="890">
+                                    <div class="fw-bold">Basis</div>
+                                    <div class="text-muted">ab 890€</div>
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-outline-primary package-btn w-100" data-package="plus" data-price="1490">
+                                    <div class="fw-bold">Plus</div>
+                                    <div class="text-muted">ab 1.490€</div>
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-outline-warning package-btn w-100" data-package="pro" data-price="2290">
+                                    <div class="fw-bold">Pro</div>
+                                    <div class="text-muted">ab 2.290€</div>
+                                </button>
+                            </div>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Ohne Auswahl wird das Paket automatisch basierend auf Ihren Angaben bestimmt</small>
+                    </div>
+                    
                     <!-- Live Price Display -->
                     <div class="live-price-card" id="livePriceCard" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center">
@@ -561,7 +636,7 @@
                     
                     <div class="form-floating">
                         <textarea class="form-control" id="site_address" name="site_address" 
-                                  placeholder="Straße, Hausnummer, PLZ, Ort" style="height: 120px" required></textarea>
+                                  placeholder="Straße, Hausnummer, PLZ, Ort" style="height: 100px" required></textarea>
                         <label for="site_address">Installationsadresse *</label>
                         <div class="invalid-feedback"></div>
                         <div class="form-text">Straße, Hausnummer, PLZ und Ort wo die PV-Anlage installiert werden soll</div>
@@ -620,6 +695,75 @@
                         <label for="distance_meter_to_hak">Entfernung Zählerschrank ↔ Hausanschlusskasten (Meter) *</label>
                         <div class="invalid-feedback"></div>
                         <div class="form-text">Ungefähre Entfernung für die Kostenberechnung</div>
+                    </div>
+                    
+                    <div class="form-floating">
+                        <input type="number" class="form-control" id="distance_meter_to_inverter" name="distance_meter_to_inverter" 
+                               placeholder="10.0" min="0" max="200" step="0.1" required>
+                        <label for="distance_meter_to_inverter">Entfernung Zählerschrank ↔ Montageort Wechselrichter/Speicher (Meter) *</label>
+                        <div class="invalid-feedback"></div>
+                        <div class="form-text">Wo sollen Wechselrichter und Speicher installiert werden? (z.B. Keller, Garage, Dachboden)</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="roof_type" name="roof_type" required>
+                                    <option value="">Wählen Sie...</option>
+                                    <option value="pitched">Schrägdach</option>
+                                    <option value="flat">Flachdach</option>
+                                    <option value="mixed">Gemischt</option>
+                                </select>
+                                <label for="roof_type">Dachtyp *</label>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="roof_orientation" name="roof_orientation" required>
+                                    <option value="">Wählen Sie...</option>
+                                    <option value="south">Süden</option>
+                                    <option value="southwest">Südwesten</option>
+                                    <option value="southeast">Südosten</option>
+                                    <option value="east">Osten</option>
+                                    <option value="west">Westen</option>
+                                    <option value="multiple">Mehrere Richtungen</option>
+                                </select>
+                                <label for="roof_orientation">Hauptausrichtung Dach *</label>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="grid_operator" name="grid_operator">
+                                    <option value="">Unbekannt/Wird ermittelt</option>
+                                    <option value="hamburgnetze">Hamburg Netz GmbH</option>
+                                    <option value="eon">E.ON Hanse AG</option>
+                                    <option value="vattenfall">Vattenfall</option>
+                                    <option value="other">Anderer Netzbetreiber</option>
+                                </select>
+                                <label for="grid_operator">Netzbetreiber (optional)</label>
+                                <div class="form-text">Wird automatisch anhand der Adresse ermittelt</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="installation_location" name="installation_location" required>
+                                    <option value="">Wählen Sie...</option>
+                                    <option value="basement">Keller</option>
+                                    <option value="garage">Garage</option>
+                                    <option value="attic">Dachboden</option>
+                                    <option value="utility_room">Hauswirtschaftsraum</option>
+                                    <option value="outdoor">Außenbereich (wettergeschützt)</option>
+                                    <option value="other">Anderer Ort</option>
+                                </select>
+                                <label for="installation_location">Montageort Wechselrichter/Speicher *</label>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="info-card">
@@ -1510,6 +1654,168 @@
             }
         });
 
+        // Package Selection Functionality
+        let selectedPackage = null;
+        
+        document.querySelectorAll('.package-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.package-btn').forEach(b => b.classList.remove('active'));
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Store selected package
+                selectedPackage = {
+                    type: this.dataset.package,
+                    basePrice: parseInt(this.dataset.price)
+                };
+                
+                // Show live price card if package is selected
+                const livePriceCard = document.getElementById('livePriceCard');
+                if (livePriceCard) {
+                    livePriceCard.style.display = 'block';
+                    // Update price display immediately
+                    updateLivePrice();
+                }
+                
+                // Save to local storage
+                const wizardData = JSON.parse(localStorage.getItem('precheckWizardData') || '{}');
+                wizardData.selectedPackage = selectedPackage;
+                localStorage.setItem('precheckWizardData', JSON.stringify(wizardData));
+                
+                console.log('Package selected:', selectedPackage);
+            });
+        });
+        
+        // Modified updateLivePrice function to handle conditional display
+        function updateLivePrice() {
+            // Only show live price if package is manually selected
+            const livePriceCard = document.getElementById('livePriceCard');
+            const livePriceCard2 = document.getElementById('livePriceCard2');
+            
+            if (!selectedPackage) {
+                if (livePriceCard) livePriceCard.style.display = 'none';
+                return;
+            }
+            
+            // Show price cards
+            if (livePriceCard) livePriceCard.style.display = 'block';
+            if (livePriceCard2) livePriceCard2.style.display = 'block';
+            
+            // Get form data for calculation
+            const formData = new FormData(document.getElementById('precheckWizard'));
+            const data = Object.fromEntries(formData.entries());
+            
+            // Calculate price based on selected package and form data
+            let basePrice = selectedPackage.basePrice;
+            let additionalCosts = 0;
+            
+            // Add distance costs
+            const distanceToHak = parseFloat(data.distance_meter_to_hak) || 0;
+            const distanceToInverter = parseFloat(data.distance_meter_to_inverter) || 0;
+            additionalCosts += (distanceToHak + distanceToInverter) * 15; // 15€ per meter
+            
+            // Add grid type surcharge
+            if (data.grid_type === '1p') {
+                additionalCosts += 150; // Single phase surcharge
+            }
+            
+            // Add storage costs
+            const storageKwh = parseFloat(data.storage_kwh) || 0;
+            if (storageKwh > 0) {
+                additionalCosts += storageKwh * 800; // 800€ per kWh
+            }
+            
+            // Add inverter costs based on power
+            const desiredPower = parseFloat(data.desired_power_kw) || 0;
+            if (desiredPower > 3) {
+                additionalCosts += (desiredPower - 3) * 200; // 200€ per additional kW
+            }
+            
+            const totalPrice = basePrice + additionalCosts;
+            
+            // Update price displays
+            const priceElements = ['livePrice', 'livePrice2'];
+            priceElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = totalPrice.toLocaleString('de-DE') + '€';
+                }
+            });
+            
+            // Update progress bars
+            const progressElements = ['priceProgress', 'priceProgress2'];
+            const maxPrice = 15000;
+            const progressPercentage = Math.min((totalPrice / maxPrice) * 100, 100);
+            progressElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.style.width = progressPercentage + '%';
+                }
+            });
+            
+            // Update package info
+            const packageInfoElements = ['packageInfo', 'packageInfo2'];
+            packageInfoElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = `${selectedPackage.type.charAt(0).toUpperCase() + selectedPackage.type.slice(1)}-Paket ausgewählt`;
+                }
+            });
+            
+            // Store price data
+            window.priceData = {
+                basePrice: basePrice,
+                additionalCosts: additionalCosts,
+                totalPrice: totalPrice,
+                package: selectedPackage.type,
+                timestamp: new Date().toISOString()
+            };
+        }
+        
+        // Add event listeners for live price calculation
+        const priceCalculationFields = [
+            'distance_meter_to_hak',
+            'distance_meter_to_inverter', 
+            'grid_type',
+            'desired_power_kw',
+            'storage_kwh',
+            'inverter_class'
+        ];
+        
+        priceCalculationFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('input', () => {
+                    if (selectedPackage) {
+                        updateLivePrice();
+                    }
+                });
+                field.addEventListener('change', () => {
+                    if (selectedPackage) {
+                        updateLivePrice();
+                    }
+                });
+            }
+        });
+        
+        // Load saved package selection on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const wizardData = JSON.parse(localStorage.getItem('precheckWizardData') || '{}');
+            if (wizardData.selectedPackage) {
+                selectedPackage = wizardData.selectedPackage;
+                
+                // Activate the correct package button
+                const packageBtn = document.querySelector(`[data-package="${selectedPackage.type}"]`);
+                if (packageBtn) {
+                    packageBtn.classList.add('active');
+                    document.getElementById('livePriceCard').style.display = 'block';
+                    updateLivePrice();
+                }
+            }
+        });
+        
         // Auto-sync addresses
         document.getElementById('site_address')?.addEventListener('blur', function() {
             const customerAddressField = document.getElementById('customer_address');
