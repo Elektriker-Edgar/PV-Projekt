@@ -1,0 +1,413 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Häufige Fragen zu PV-Anlagen, Anmeldung, MaStR, Netzbetreiber und Steckfertigkeit - EDGARD Elektro Hamburg">
+    <meta name="keywords" content="PV-Anlage FAQ, Photovoltaik Fragen, MaStR, Netzbetreiber, Steckerfertig, Hamburg">
+    <meta name="author" content="EDGARD Elektro">
+    <title>FAQ - Häufige Fragen | EDGARD Elektro PV-Service</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --edgard-blue: #2c5aa0;
+            --edgard-green: #28a745;
+            --edgard-gray: #6c757d;
+            --edgard-light: #f8f9fa;
+            --edgard-dark: #343a40;
+            --shadow-light: 0 2px 10px rgba(0,0,0,0.1);
+            --shadow-medium: 0 4px 20px rgba(0,0,0,0.15);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding-top: 76px;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1050;
+            transition: var(--transition-smooth);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95) !important;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--edgard-blue) 0%, #1e3a6f 100%);
+            color: white;
+            padding: 4rem 0 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .faq-section {
+            margin-bottom: 3rem;
+        }
+
+        .faq-category h3 {
+            color: var(--edgard-blue);
+            border-bottom: 2px solid var(--edgard-green);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .faq-item {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-light);
+            transition: var(--transition-smooth);
+        }
+
+        .faq-item:hover {
+            box-shadow: var(--shadow-medium);
+            transform: translateY(-2px);
+        }
+
+        .faq-question {
+            background: var(--edgard-light);
+            padding: 1.25rem;
+            border-radius: 12px 12px 0 0;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-question:hover {
+            background: #e9ecef;
+        }
+
+        .faq-question h5 {
+            margin: 0;
+            color: var(--edgard-dark);
+            font-weight: 600;
+        }
+
+        .faq-icon {
+            color: var(--edgard-blue);
+            transition: var(--transition-smooth);
+        }
+
+        .faq-answer {
+            padding: 1.25rem;
+            border-top: 1px solid #dee2e6;
+            display: none;
+        }
+
+        .faq-answer.show {
+            display: block;
+        }
+
+        .faq-answer p {
+            margin-bottom: 0.75rem;
+        }
+
+        .faq-answer p:last-child {
+            margin-bottom: 0;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%);
+            border-left: 4px solid var(--edgard-green);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .contact-cta {
+            background: linear-gradient(135deg, var(--edgard-green) 0%, #1e7e34 100%);
+            color: white;
+            padding: 3rem 0;
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        .contact-cta .btn {
+            background: white;
+            color: var(--edgard-green);
+            border: none;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: var(--transition-smooth);
+        }
+
+        .contact-cta .btn:hover {
+            background: var(--edgard-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'quotes:home' %}">
+                <span style="color: var(--edgard-blue);">EDGARD</span>
+                <span style="color: var(--edgard-gray);">-- Elektro</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'quotes:home' %}">Startseite</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'quotes:packages' %}">Pakete & Preise</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'quotes:compatible_systems' %}">Kompatible Systeme</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'quotes:faq' %}">FAQ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'quotes:precheck_wizard' %}">Vorprüfung</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center">
+                    <h1 class="display-4 mb-3">Häufige Fragen</h1>
+                    <p class="lead">Alles Wichtige zu PV-Anlagen, Anmeldung und Steckfertigkeit</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                
+                <!-- Steckfertigkeit -->
+                <div class="faq-section">
+                    <div class="faq-category">
+                        <h3><i class="fas fa-plug me-2"></i>Steckfertigkeit & Anschluss</h3>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>Was bedeutet „steckerfertig"?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Der elektrische Teil wird vollständig vorbereitet und geprüft. Nach Lieferung und Anschluss können die PV-Module mit den vorbereiteten Steckverbindern verbunden werden.</p>
+                                <p>Das bedeutet: Zählerplatz ist ertüchtigt, Schutzgeräte installiert, Wechselrichter parametriert und alle Prüfungen durchgeführt. Sie müssen nur noch die Module anstecken.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>Kann ich eigene Komponenten nutzen?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Ja, wir prüfen Kompatibilität und übernehmen Haftung für den Elektro-Anschluss im geprüften Umfang.</p>
+                                <p>Voraussetzung ist, dass die Komponenten unseren technischen Standards entsprechen und alle erforderlichen Zertifikate vorliegen.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>Welche Arbeiten führen Sie NICHT aus?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Wir führen keine mechanische Montage auf dem Dach durch und erstellen keine statischen Berechnungen.</p>
+                                <p>Ebenfalls nicht enthalten: Fördermittelberatung, Dacharbeiten, Gerüststellung.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Anmeldung & Behörden -->
+                <div class="faq-section">
+                    <div class="faq-category">
+                        <h3><i class="fas fa-file-alt me-2"></i>Anmeldung & Behörden</h3>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>Wer meldet die Anlage an?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Wir übernehmen die komplette Anmeldung: MaStR (Marktstammdatenregister) und Netzbetreiber-Meldung.</p>
+                                <p>Sie erhalten alle Bestätigungen und Unterlagen von uns und müssen sich um nichts kümmern.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>Was ist das Marktstammdatenregister (MaStR)?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Das MaStR ist ein behördliches Register der Bundesnetzagentur, in dem alle Stromerzeugungsanlagen erfasst werden müssen.</p>
+                                <p>Die Anmeldung ist gesetzlich vorgeschrieben und muss binnen eines Monats nach Inbetriebnahme erfolgen.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>Wie lange dauert die Netzfreigabe?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Nach Einreichung der Unterlagen beim Netzbetreiber dauert die Freigabe in der Regel 2-4 Wochen.</p>
+                                <p>Wir überwachen den Prozess und informieren Sie über den Status.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technik & Installation -->
+                <div class="faq-section">
+                    <div class="faq-category">
+                        <h3><i class="fas fa-wrench me-2"></i>Technik & Installation</h3>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>Was passiert bei der Zählerplatz-Ertüchtigung?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Wir erneuern/ergänzen den Zählerplatz gemäß aktueller TAB (Technische Anschlussbedingungen), passen die Verdrahtung an und erstellen eine vollständige Dokumentation.</p>
+                                <p>Dazu gehören: Selektivitätsprüfung, Platzreserven für zukünftige Erweiterungen, ordnungsgemäße Kennzeichnung.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>Ist ein Überspannungsschutz erforderlich?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Ja, wir installieren AC-seitigen Überspannungsschutz und koordinieren ihn mit bereits vorhandenen Schutzgeräten.</p>
+                                <p>Dies ist sowohl aus Sicherheitsgründen als auch für Versicherungsschutz wichtig.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>Können Sie Speicher integrieren?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Ja, wir übernehmen die komplette Speicherintegration inklusive Parametrierung und Energiemanagement.</p>
+                                <p>Voraussetzung ist die Kompatibilität mit dem gewählten Wechselrichter-System.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kosten & Ablauf -->
+                <div class="faq-section">
+                    <div class="faq-category">
+                        <h3><i class="fas fa-euro-sign me-2"></i>Kosten & Ablauf</h3>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>Wie läuft die Beauftragung ab?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p><strong>1. Digitale Vorprüfung:</strong> Daten hochladen, Fotos vom Zählerschrank und Hausanschluss beifügen</p>
+                                <p><strong>2. Angebot & Vorbereitung:</strong> Wir erstellen ein Angebot und rüsten Zählerplatz, Schutzgeräte und Leitungen vor</p>
+                                <p><strong>3. Inbetriebnahme & Anmeldung:</strong> Wir schließen an, messen, prüfen und melden an</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>In welchem Gebiet sind Sie tätig?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Unser Einsatzgebiet umfasst Hamburg und Umkreis ca. 60 km.</p>
+                                <p>Für Projekte außerhalb dieses Bereichs können individuelle Lösungen besprochen werden.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <h5>Wie verbindlich ist das Online-Angebot?</h5>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Das Online-Angebot ist eine vorläufige Kalkulation. Der finale Preis wird nach der technischen Prüfung vor Ort bestätigt.</p>
+                                <p>In der Regel weichen die Preise nur minimal ab, es sei denn, es werden vor Ort unvorhergesehene Umstände festgestellt.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wichtiger Hinweis -->
+                <div class="highlight-box">
+                    <h5><i class="fas fa-lightbulb me-2" style="color: var(--edgard-green);"></i>Noch Fragen?</h5>
+                    <p>Falls Ihre Frage hier nicht beantwortet wurde, kontaktieren Sie uns gerne direkt. Wir beraten Sie kostenlos und unverbindlich zu Ihrem PV-Projekt.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact CTA -->
+    <section class="contact-cta">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <h3 class="mb-3">Bereit für Ihre steckerfertige PV-Anlage?</h3>
+                    <p class="mb-4">Starten Sie jetzt mit der kostenlosen Vorprüfung</p>
+                    <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-lg">
+                        <i class="fas fa-play me-2"></i>Vorprüfung starten
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleFaq(element) {
+            const answer = element.nextElementSibling;
+            const icon = element.querySelector('.faq-icon');
+            
+            // Close all other open answers
+            document.querySelectorAll('.faq-answer.show').forEach(openAnswer => {
+                if (openAnswer !== answer) {
+                    openAnswer.classList.remove('show');
+                    const openIcon = openAnswer.previousElementSibling.querySelector('.faq-icon');
+                    openIcon.style.transform = 'rotate(0deg)';
+                }
+            });
+            
+            // Toggle current answer
+            answer.classList.toggle('show');
+            
+            // Rotate icon
+            if (answer.classList.contains('show')) {
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -43,3 +43,18 @@ def quote_pdf(request, quote_number):
         return response
     except Exception as e:
         raise Http404("PDF konnte nicht generiert werden.")
+
+
+def faq(request):
+    """FAQ-Seite mit häufigen Fragen zu PV-Anlagen"""
+    return render(request, 'quotes/faq.html')
+
+
+def packages(request):
+    """Pakete & Preise Seite mit Leistungspaketen"""
+    return render(request, 'quotes/packages.html')
+
+
+def compatible_systems(request):
+    """Kompatible Systeme - White-List getesteter WR/Speicher"""
+    return render(request, 'quotes/compatible_systems.html')

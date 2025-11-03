@@ -1,0 +1,516 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Pakete & Preise für steckerfertige PV-Anlagen - EDGARD Elektro Hamburg. Basis, Plus und Pro Pakete für jede Anforderung.">
+    <meta name="keywords" content="PV-Anlage Preise, Photovoltaik Pakete, Steckerfertig, Hamburg, Basis Plus Pro">
+    <meta name="author" content="EDGARD Elektro">
+    <title>Pakete & Preise | EDGARD Elektro PV-Service</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --edgard-blue: #2c5aa0;
+            --edgard-green: #28a745;
+            --edgard-gray: #6c757d;
+            --edgard-light: #f8f9fa;
+            --edgard-dark: #343a40;
+            --shadow-light: 0 2px 10px rgba(0,0,0,0.1);
+            --shadow-medium: 0 4px 20px rgba(0,0,0,0.15);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding-top: 76px;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1050;
+            transition: var(--transition-smooth);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95) !important;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--edgard-blue) 0%, #1e3a6f 100%);
+            color: white;
+            padding: 4rem 0 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .package-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-light);
+            overflow: hidden;
+            transition: var(--transition-smooth);
+            height: 100%;
+        }
+
+        .package-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .package-card.featured {
+            transform: scale(1.05);
+            box-shadow: 0 8px 30px rgba(44, 90, 160, 0.2);
+            border: 2px solid var(--edgard-green);
+        }
+
+        .package-card.featured:hover {
+            transform: scale(1.05) translateY(-8px);
+        }
+
+        .package-header {
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .package-header.basis {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+        }
+
+        .package-header.plus {
+            background: linear-gradient(135deg, var(--edgard-blue) 0%, #1e3a6f 100%);
+            color: white;
+        }
+
+        .package-header.pro {
+            background: linear-gradient(135deg, var(--edgard-green) 0%, #1e7e34 100%);
+            color: white;
+        }
+
+        .package-badge {
+            position: absolute;
+            top: -8px;
+            right: 1rem;
+            background: var(--edgard-green);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .package-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .package-subtitle {
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        .package-price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .package-price-note {
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
+
+        .package-content {
+            padding: 2rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .feature-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f3f4;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            color: var(--edgard-green);
+            margin-right: 0.75rem;
+            margin-top: 0.125rem;
+            font-size: 1rem;
+        }
+
+        .package-cta {
+            padding: 2rem;
+            text-align: center;
+            background: var(--edgard-light);
+        }
+
+        .btn-package {
+            background: var(--edgard-blue);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: var(--transition-smooth);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-package:hover {
+            background: #1e3a6f;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-package.featured {
+            background: var(--edgard-green);
+        }
+
+        .btn-package.featured:hover {
+            background: #1e7e34;
+        }
+
+        .info-section {
+            background: var(--edgard-light);
+            padding: 4rem 0;
+            margin: 4rem 0;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-light);
+            text-align: center;
+            height: 100%;
+        }
+
+        .info-icon {
+            color: var(--edgard-blue);
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .contact-cta {
+            background: linear-gradient(135deg, var(--edgard-green) 0%, #1e7e34 100%);
+            color: white;
+            padding: 4rem 0;
+            text-align: center;
+        }
+
+        .contact-cta .btn {
+            background: white;
+            color: var(--edgard-green);
+            border: none;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: var(--transition-smooth);
+        }
+
+        .contact-cta .btn:hover {
+            background: var(--edgard-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .price-note {
+            background: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'quotes:home' %}">
+                <span style="color: var(--edgard-blue);">EDGARD</span>
+                <span style="color: var(--edgard-gray);">-- Elektro</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'quotes:home' %}">Startseite</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'quotes:packages' %}">Pakete & Preise</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'quotes:compatible_systems' %}">Kompatible Systeme</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'quotes:faq' %}">FAQ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'quotes:precheck_wizard' %}">Vorprüfung</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center">
+                    <h1 class="display-4 mb-3">Pakete & Preise</h1>
+                    <p class="lead">Transparent kalkulierte Leistungspakete für Ihre steckerfertige PV-Anlage</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Package Cards -->
+    <div class="container">
+        <div class="row g-4 mb-5">
+            <!-- Basis Package -->
+            <div class="col-lg-4">
+                <div class="package-card">
+                    <div class="package-header basis">
+                        <div class="package-title">Basis</div>
+                        <div class="package-subtitle">Grundausstattung für Einsteiger</div>
+                        <div class="package-price">ab 890€</div>
+                        <div class="package-price-note">zzgl. MwSt. und Material</div>
+                    </div>
+                    <div class="package-content">
+                        <ul class="feature-list">
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>WR bis 3 kVA Anschluss</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>AC-Verkabelung und Absicherung</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Inbetriebnahme und Funktionstest</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>MaStR-Anmeldung</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Netzbetreiber-Meldung</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Messprotokoll und Übergabe</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="package-cta">
+                        <a href="{% url 'quotes:precheck_wizard' %}" class="btn-package">
+                            Basis wählen
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plus Package -->
+            <div class="col-lg-4">
+                <div class="package-card featured">
+                    <div class="package-header plus">
+                        <div class="package-badge">Beliebt</div>
+                        <div class="package-title">Plus</div>
+                        <div class="package-subtitle">Vollständige Zählerplatz-Ertüchtigung</div>
+                        <div class="package-price">ab 1.490€</div>
+                        <div class="package-price-note">zzgl. MwSt. und Material</div>
+                    </div>
+                    <div class="package-content">
+                        <ul class="feature-list">
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span><strong>Alle Basis-Leistungen</strong></span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Zählerplatz-Ertüchtigung nach TAB</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Überspannungsschutz AC-seitig</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Selektivitätsprüfung</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Potentialausgleich nach VDE</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Erweiterte Dokumentation</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="package-cta">
+                        <a href="{% url 'quotes:precheck_wizard' %}" class="btn-package featured">
+                            Plus wählen
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pro Package -->
+            <div class="col-lg-4">
+                <div class="package-card">
+                    <div class="package-header pro">
+                        <div class="package-title">Pro</div>
+                        <div class="package-subtitle">Komplettsystem mit Speicher</div>
+                        <div class="package-price">ab 2.290€</div>
+                        <div class="package-price-note">zzgl. MwSt. und Material</div>
+                    </div>
+                    <div class="package-content">
+                        <ul class="feature-list">
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span><strong>Alle Plus-Leistungen</strong></span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Speicherintegration (bis 10 kWh)</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Energiemanagement-System</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Erweiterte Netzwerkanbindung</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>Monitoring und App-Integration</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check feature-icon"></i>
+                                <span>12 Monate Wartung inklusive</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="package-cta">
+                        <a href="{% url 'quotes:precheck_wizard' %}" class="btn-package">
+                            Pro wählen
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Information -->
+        <div class="price-note">
+            <h5><i class="fas fa-info-circle me-2"></i>Preishinweise</h5>
+            <p class="mb-2"><strong>Alle Preise sind Richtpreise und werden nach der technischen Vorprüfung individuell kalkuliert.</strong></p>
+            <p class="mb-2">• Anfahrtskosten: Hamburg 0€ | Umkreis bis 30km: 50€ | Umkreis bis 60km: 95€</p>
+            <p class="mb-2">• Materialkosten werden separat nach Aufwand berechnet</p>
+            <p class="mb-0">• Komplette Materialkits von EDGARD erhalten 15% Rabatt auf die Arbeitskosten</p>
+        </div>
+    </div>
+
+    <!-- Additional Information -->
+    <section class="info-section">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="info-card">
+                        <i class="fas fa-shield-alt info-icon"></i>
+                        <h4>Garantie & Haftung</h4>
+                        <p>2 Jahre Gewährleistung auf alle Elektroarbeiten. Vollständige Haftungsübernahme für den installierten Elektroteil.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-card">
+                        <i class="fas fa-tools info-icon"></i>
+                        <h4>Fachgerechte Ausführung</h4>
+                        <p>Alle Arbeiten werden von zertifizierten Elektrofachkräften nach aktuellen VDE-Normen und TAB ausgeführt.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-card">
+                        <i class="fas fa-file-alt info-icon"></i>
+                        <h4>Komplette Dokumentation</h4>
+                        <p>Mess- und Prüfprotokolle, Anmeldungsbestätigungen und alle relevanten Unterlagen für Ihre Unterlagen.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What's NOT included -->
+    <div class="container mb-5">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="info-card">
+                    <h4 class="text-center mb-4" style="color: var(--edgard-blue);">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Nicht enthalten
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Mechanische Dachmontage</li>
+                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Statische Berechnungen</li>
+                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Gerüststellung</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Fördermittelberatung</li>
+                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Dacharbeiten jeder Art</li>
+                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Bauliche Veränderungen</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact CTA -->
+    <section class="contact-cta">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <h3 class="mb-3">Kostenlose Vorprüfung starten</h3>
+                    <p class="mb-4">Lassen Sie uns Ihre Anlage planen und erhalten Sie ein individuelles Angebot</p>
+                    <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-lg me-3">
+                        <i class="fas fa-calculator me-2"></i>Jetzt Vorprüfung starten
+                    </a>
+                    <a href="{% url 'quotes:faq' %}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-question-circle me-2"></i>Häufige Fragen
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
