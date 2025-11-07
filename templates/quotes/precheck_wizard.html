@@ -1911,6 +1911,49 @@
                 customerAddressField.placeholder = this.value || 'Rechnungsadresse (falls abweichend)';
             }
         });
-    </script>
+</script>
+<script>
+// Lightweight DB-backed live pricing without touching existing text content.
+(function() {
+  function qs(id) { return document.getElementById(id); }
+  function pricePayload() {
+    return {
+      site_address: (qs('site_address') && qs('site_address').value) || '',
+      main_fuse_ampere: (qs('main_fuse_ampere') && qs('main_fuse_ampere').value) || '',
+      grid_type: (qs('grid_type') && qs('grid_type').value) || '',
+      distance_meter_to_inverter: (qs('distance_meter_to_inverter') && qs('distance_meter_to_inverter').value) || '',
+      desired_power_kw: (qs('desired_power_kw') && qs('desired_power_kw').value) || '',
+      inverter_class: (qs('inverter_class') && qs('inverter_class').value) || '',
+      storage_kwh: (qs('storage_kwh') && qs('storage_kwh').value) || '',
+      own_components: (qs('own_components') && qs('own_components').checked) ? 'on' : ''
+    };
+  }
+  function setPrices(total, pkgName, pkgDesc) {
+    ['livePrice','livePrice2','finalPrice'].forEach(function(id){
+      var el = qs(id); if (el) { el.textContent = total.toLocaleString('de-DE') + ' \u20AC'; }
+    });
+    var pi1 = qs('packageInfo'); if (pi1 && pkgName) { pi1.textContent = 'Paket ' + pkgName + (pkgDesc?': '+pkgDesc:''); }
+    var pi2 = qs('packageInfo2'); if (pi2 && pkgName) { pi2.textContent = 'Paket ' + pkgName + (pkgDesc?': '+pkgDesc:''); }
+    var fp = qs('finalPackage'); if (fp && pkgName) { fp.textContent = 'Paket ' + pkgName; }
+    var fpd = qs('finalPackageDescription'); if (fpd && pkgDesc) { fpd.textContent = pkgDesc; }
+  }
+  function callApiAndUpdate() {
+    var form = document.getElementById('precheckWizard');
+    if (!form) return;
+    var csrf = form.querySelector('input[name="csrfmiddlewaretoken"]');
+    var headers = csrf ? { 'X-CSRFToken': csrf.value } : {};
+    var body = new URLSearchParams(pricePayload());
+    fetch('/api/pricing/preview/', { method: 'POST', headers: headers, body: body })
+      .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+      .then(function(json){
+        setPrices(Math.max(0, Math.round(Number(json.total)||0)), json.package && json.package.toUpperCase(), '');
+      })
+      .catch(function(){ /* ignore errors to not interfere with existing UI */ });
+  }
+  var fields = ['site_address','main_fuse_ampere','grid_type','distance_meter_to_inverter','desired_power_kw','inverter_class','storage_kwh','own_components'];
+  fields.forEach(function(id){ var el = qs(id); if (el){ el.addEventListener('input', callApiAndUpdate); el.addEventListener('change', callApiAndUpdate); }});
+  document.addEventListener('DOMContentLoaded', callApiAndUpdate);
+})();
+</script>
 </body>
 </html>

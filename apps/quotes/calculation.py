@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Dict, List, Tuple
 from datetime import timedelta
 from django.utils import timezone
-from .models import Quote, QuoteItem, Component, Precheck
+from .models import Quote, QuoteItem, Component, Precheck, PriceConfig
 
 
 class QuoteCalculator:
@@ -311,7 +311,7 @@ def create_quote_from_precheck(precheck_id: int) -> Quote:
     """Erstellt Angebot aus Vorprüfung"""
     try:
         precheck = Precheck.objects.get(id=precheck_id)
-        calculator = QuoteCalculator(precheck)
+        calculator = DBQuoteCalculator(precheck)
         return calculator.calculate_quote()
     except Precheck.DoesNotExist:
         raise ValueError(f"Vorprüfung mit ID {precheck_id} nicht gefunden")
@@ -325,7 +325,91 @@ def recalculate_quote(quote_id: int) -> Quote:
         quote.items.all().delete()
         
         # Neu berechnen
-        calculator = QuoteCalculator(quote.precheck)
+        calculator = DBQuoteCalculator(quote.precheck)
         return calculator.calculate_quote()
     except Quote.DoesNotExist:
         raise ValueError(f"Angebot mit ID {quote_id} nicht gefunden")
+
+
+# DB-backed overrides without touching existing strings/templates
+class DBQuoteCalculator(QuoteCalculator):
+    def _pc(self, key: str, default: Decimal) -> Decimal:
+        try:
+            obj = PriceConfig.objects.get(price_type=key)
+            return obj.value
+        except PriceConfig.DoesNotExist:
+            return default
+
+    def calculate_travel_cost(self) -> Decimal:
+        city = self.site.city.lower() if hasattr(self.site, 'city') else ''
+        if 'hamburg' in city:
+            return self._pc('travel_zone_0', self.TRAVEL_COSTS['zone_0'])
+        elif any(s in city for s in ['norderstedt', 'ahrensburg', 'pinneberg']):
+            return self._pc('travel_zone_30', self.TRAVEL_COSTS['zone_30'])
+        else:
+            return self._pc('travel_zone_60', self.TRAVEL_COSTS['zone_60'])
+
+    def calculate_surcharges(self, package_type: str) -> List[Tuple[str, Decimal]]:
+        surcharges: List[Tuple[str, Decimal]] = []
+        if self.site.grid_type == 'TT':
+            surcharges.append(('TT-Netz Zuschlag', self._pc('surcharge_tt_grid', self.SURCHARGES['netzform_tt'])))
+        if self.site.main_fuse_ampere > 35:
+            surcharges.append(('Selektive Vorsicherung', self._pc('surcharge_selective_fuse', self.SURCHARGES['selective_fuse'])))
+        if self.precheck.desired_power_kw > 5:
+            extra_meters = 10
+            surcharges.append((f'Kabelweg {extra_meters}m extra', extra_meters * self._pc('surcharge_cable_meter', self.SURCHARGES['cable_length_extra'])))
+        return surcharges
+
+    def calculate_discounts(self, package_type: str) -> List[Tuple[str, Decimal]]:
+        discounts: List[Tuple[str, Decimal]] = []
+        if not self.precheck.own_components:
+            try:
+                cfg = PriceConfig.objects.get(price_type='discount_complete_kit')
+                percent = (cfg.value / Decimal('100')) if cfg.is_percentage else Decimal('0')
+                if percent == 0:
+                    percent = cfg.value / self.PACKAGES[package_type]['base_price']
+            except PriceConfig.DoesNotExist:
+                percent = self.DISCOUNTS['complete_kit']
+            discounts.append(('Komplett-Kit Rabatt (15%)', self.PACKAGES[package_type]['base_price'] * percent))
+        return discounts
+
+    def get_material_components(self, package_type: str) -> List[Dict]:
+        components = []
+        components.extend([
+            {
+                'name': f'Wechselrichter {self.precheck.inverter_class}',
+                'type': 'inverter',
+                'quantity': 1,
+                'unit_price': self._get_component_price('inverter', self.precheck.inverter_class)
+            },
+            {
+                'name': 'AC-Verkabelung und Anschluss',
+                'type': 'cable',
+                'quantity': 1,
+                'unit_price': self._pc('material_ac_wiring', Decimal('180.00'))
+            }
+        ])
+        if package_type in ['plus', 'pro']:
+            components.extend([
+                {
+                    'name': '�oberspannungsschutz AC',
+                    'type': 'spd',
+                    'quantity': 1,
+                    'unit_price': self._pc('material_spd', Decimal('320.00'))
+                },
+                {
+                    'name': 'Z��hlerplatz-ErtǬchtigung',
+                    'type': 'meter',
+                    'quantity': 1,
+                    'unit_price': self._pc('material_meter_upgrade', Decimal('450.00'))
+                }
+            ])
+        if package_type == 'pro' and self.precheck.storage_kwh:
+            per_kwh = self._pc('material_storage_kwh', Decimal('800.00'))
+            components.append({
+                'name': f'Speichersystem {self.precheck.storage_kwh} kWh',
+                'type': 'battery',
+                'quantity': 1,
+                'unit_price': per_kwh
+            })
+        return components

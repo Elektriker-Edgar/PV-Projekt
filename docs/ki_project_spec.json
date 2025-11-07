@@ -1,0 +1,218 @@
+{
+  "project": {
+    "name": "EDGARD PV-Service",
+    "purpose": "PV-Vorprüfung, Angebotskalkulation und -verwaltung",
+    "stack": {
+      "framework": "Django 4.2",
+      "api": "Django REST Framework",
+      "db": "PostgreSQL (per .env)",
+      "frontend": "Django Templates + Bootstrap 5",
+      "utilities": ["corsheaders", "debug_toolbar", "django_extensions"]
+    },
+    "apps": ["core", "customers", "quotes", "grid", "integrations", "inventory", "orders", "scheduler"]
+  },
+  "paths": {
+    "root_urls": "edgard_site/urls.py",
+    "settings": "edgard_site/settings.py",
+    "templates_root": "templates/",
+    "static_root": "static/",
+    "media_root": "media/"
+  },
+  "apps": {
+    "core": {
+      "models": {
+        "core.User": {
+          "base": "AbstractUser",
+          "fields": ["role", "phone", "created_at", "updated_at"],
+          "file": "apps/core/models.py"
+        },
+        "core.AuditLog": {
+          "fields": ["user", "action", "model_name", "object_id", "changes", "timestamp", "ip_address"],
+          "file": "apps/core/models.py"
+        }
+      }
+    },
+    "customers": {
+      "models": {
+        "customers.Customer": {
+          "fields": ["name", "email", "phone", "customer_type", "address", "consent_timestamp", "consent_ip", "created_at", "updated_at"],
+          "file": "apps/customers/models.py"
+        },
+        "customers.Site": {
+          "fields": ["customer", "address", "building_type", "construction_year", "main_fuse_ampere", "grid_type", "distance_meter_to_hak", "meter_cabinet_photo", "hak_photo", "created_at", "updated_at"],
+          "file": "apps/customers/models.py"
+        }
+      }
+    },
+    "quotes": {
+      "models": {
+        "quotes.Component": {
+          "fields": ["name", "type", "vendor", "sku", "datasheet_url", "unit_price", "compatible_with", "created_at", "updated_at"],
+          "file": "apps/quotes/models.py"
+        },
+        "quotes.Precheck": {
+          "fields": ["site", "desired_power_kw", "inverter_class", "storage_kwh", "own_components", "component_files", "preferred_timeframes", "notes", "created_at", "updated_at"],
+          "file": "apps/quotes/models.py"
+        },
+        "quotes.Quote": {
+          "fields": ["precheck", "quote_number", "subtotal", "vat_rate", "vat_amount", "total", "status", "pdf_url", "created_by", "approved_by", "approved_at", "valid_until", "created_at", "updated_at"],
+          "file": "apps/quotes/models.py"
+        },
+        "quotes.QuoteItem": {
+          "fields": ["quote", "component", "text", "quantity", "unit_price", "line_total", "created_at"],
+          "file": "apps/quotes/models.py"
+        },
+        "quotes.PriceConfig": {
+          "fields": ["price_type", "value", "is_percentage", "description", "created_at", "updated_at"],
+          "file": "apps/quotes/models.py"
+        }
+      },
+      "forms": {
+        "quotes.PrecheckForm": {
+          "file": "apps/quotes/forms.py",
+          "creates": ["customers.Customer", "customers.Site", "quotes.Precheck"],
+          "key_fields": [
+            "customer_name", "customer_email", "customer_phone", "customer_type",
+            "customer_address", "site_address", "building_type", "construction_year",
+            "main_fuse_ampere", "grid_type", "distance_meter_to_hak",
+            "desired_power_kw", "inverter_class", "storage_kwh", "own_components", "notes", "consent"
+          ]
+        }
+      },
+      "calculation": {
+        "file": "apps/quotes/calculation.py",
+        "classes": {
+          "QuoteCalculator": {
+            "responsibility": "Fallback-Regeln und Angebotsaufbau (Quote/QuoteItem)",
+            "methods": [
+              "determine_package()",
+              "calculate_travel_cost()",
+              "calculate_surcharges(package_type)",
+              "calculate_discounts(package_type)",
+              "get_material_components(package_type)",
+              "calculate_quote()"
+            ]
+          },
+          "DBQuoteCalculator": {
+            "extends": "QuoteCalculator",
+            "responsibility": "Werte aus PriceConfig/Component lesen",
+            "overrides": [
+              "calculate_travel_cost()",
+              "calculate_surcharges()",
+              "calculate_discounts()",
+              "get_material_components()"
+            ]
+          }
+        },
+        "entry_points": [
+          "create_quote_from_precheck(precheck_id)",
+          "recalculate_quote(quote_id)"
+        ],
+        "config_sources": ["quotes.PriceConfig", "quotes.Component"],
+        "fallbacks": true
+      },
+      "views": {
+        "home": {"path": "apps/quotes/views.py", "template": "quotes/home.html"},
+        "precheck_wizard": {"path": "apps/quotes/views.py", "template": "quotes/precheck_wizard.html", "on_post": ["PrecheckForm.save()", "create_quote_from_precheck"]},
+        "precheck_success": {"path": "apps/quotes/views.py", "template": "quotes/precheck_success.html"},
+        "quote_detail": {"path": "apps/quotes/views.py", "template": "quotes/quote_detail.html"},
+        "quote_pdf": {"path": "apps/quotes/views.py", "util": "apps/quotes/utils.py:generate_quote_pdf"},
+        "faq": {"path": "apps/quotes/views.py", "template": "quotes/faq.html"},
+        "packages": {"path": "apps/quotes/views.py", "template": "quotes/packages.html"},
+        "compatible_systems": {"path": "apps/quotes/views.py", "template": "quotes/compatible_systems.html"},
+        "quote_review_list": {"path": "apps/quotes/views.py", "template": "quotes/quote_review_list.html"},
+        "approve_quote": {"path": "apps/quotes/views.py", "method": "POST", "effect": "status=approved"}
+      },
+      "urls": {
+        "web": {
+          "file": "apps/quotes/web_urls.py",
+          "routes": [
+            {"path": "/", "view": "home"},
+            {"path": "/precheck/", "view": "precheck_wizard"},
+            {"path": "/precheck/success/", "view": "precheck_success"},
+            {"path": "/faq/", "view": "faq"},
+            {"path": "/packages/", "view": "packages"},
+            {"path": "/compatible-systems/", "view": "compatible_systems"},
+            {"path": "/quote/<quote_number>/", "view": "quote_detail"},
+            {"path": "/quote/<quote_number>/pdf/", "view": "quote_pdf"},
+            {"path": "/admin/quotes/review/", "view": "quote_review_list"},
+            {"path": "/admin/quotes/<quote_id>/approve/", "view": "approve_quote"}
+          ]
+        },
+        "api": {
+          "project_urls": "edgard_site/urls.py",
+          "file": "apps/quotes/api_urls.py",
+          "routes": [
+            {"path": "/api/pricing/preview/", "view": "pricing_preview", "method": "POST"},
+            {"path": "/api/precheck/", "view": "create_precheck", "method": "POST", "note": "Stub"},
+            {"path": "/api/quote/<pk>/approve/", "view": "approve_quote", "method": "POST", "note": "Stub"},
+            {"path": "/api/integrations/n8n/webhook/", "view": "n8n_webhook", "method": "POST"}
+          ]
+        }
+      },
+      "api": {
+        "pricing_preview": {
+          "file": "apps/quotes/api_views.py",
+          "method": "POST",
+          "input": [
+            "site_address", "main_fuse_ampere", "grid_type", "distance_meter_to_inverter",
+            "desired_power_kw", "inverter_class", "storage_kwh", "own_components"
+          ],
+          "output": ["package", "basePrice", "travelCost", "surcharges", "materialCost", "discount", "total"],
+          "uses": ["PriceConfig", "Component"],
+          "fallbacks": true
+        }
+      },
+      "templates_contract": {
+        "wizard_field_ids": [
+          "site_address", "main_fuse_ampere", "grid_type", "distance_meter_to_inverter",
+          "desired_power_kw", "inverter_class", "storage_kwh", "own_components"
+        ],
+        "price_dom_ids": ["livePrice", "livePrice2", "finalPrice", "packageInfo", "packageInfo2", "finalPackage", "finalPackageDescription"],
+        "wizard_template": "templates/quotes/precheck_wizard.html",
+        "success_template": "templates/quotes/precheck_success.html"
+      },
+      "admin": {
+        "file": "apps/quotes/admin.py",
+        "entities": ["Component", "Precheck", "Quote (+QuoteItem inline)", "QuoteItem", "PriceConfig"],
+        "actions": ["QuoteAdmin.approve_quotes"]
+      },
+      "seed": {
+        "migration": "apps/quotes/migrations/0003_seed_price_config_and_components.py",
+        "content": ["PriceConfig defaults", "Demo Components"]
+      }
+    }
+  },
+  "dependencies_python": [
+    "Django", "djangorestframework", "django-cors-headers", "django-debug-toolbar", "django-extensions", "python-decouple"
+  ],
+  "environment": {
+    "env_file": ".env",
+    "db": "PostgreSQL via env (DB_* settings)",
+    "static": "static/",
+    "media": "media/"
+  },
+  "extension_points": [
+    {
+      "name": "Preisparameter",
+      "how": "PriceConfig im Admin pflegen; Kalkulation/Live-Preis lesen Werte automatisch"
+    },
+    {
+      "name": "Materialliste",
+      "how": "DBQuoteCalculator.get_material_components() erweitern; Component optional referenzieren"
+    },
+    {
+      "name": "Paketlogik",
+      "how": "QuoteCalculator.determine_package() anpassen (Server ist Quelle der Wahrheit)"
+    },
+    {
+      "name": "Re-Kalkulation",
+      "how": "recalculate_quote(quote_id) verwenden (löscht Items, baut neu)"
+    },
+    {
+      "name": "PDF-Ausgabe",
+      "how": "utils.generate_quote_pdf(quote) erweitern/WeasyPrint einbinden"
+    }
+  ]
+}
+

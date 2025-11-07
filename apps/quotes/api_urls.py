@@ -10,6 +10,7 @@ router.register(r'quotes', api_views.QuoteViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('precheck/', api_views.create_precheck, name='api_create_precheck'),
+    path('pricing/preview/', api_views.pricing_preview, name='api_pricing_preview'),
     path('quote/<int:pk>/approve/', api_views.approve_quote, name='api_approve_quote'),
     path('integrations/n8n/webhook/', api_views.n8n_webhook, name='n8n_webhook'),
 ]
