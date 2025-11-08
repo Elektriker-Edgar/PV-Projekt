@@ -579,11 +579,11 @@ else if(visibleStepNum===activeVisibleStep)label.classList.add('active');
 
 function nextStep(){
 if(validateCurrentStep()){
-if(currentStep===5)updateSummary();
 if(currentStep<totalSteps){
 document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.remove('active');
 currentStep++;
 document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.add('active');
+if(currentStep===5)updateSummary();
 updateProgress();
 window.scrollTo({top:0,behavior:'smooth'});
 saveFormData();
@@ -596,6 +596,7 @@ if(currentStep>1){
 document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.remove('active');
 currentStep--;
 document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.add('active');
+if(currentStep===5)updateSummary();
 updateProgress();
 window.scrollTo({top:0,behavior:'smooth'});
 }
