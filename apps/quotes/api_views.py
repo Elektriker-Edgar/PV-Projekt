@@ -2,7 +2,9 @@ from decimal import Decimal
 from typing import Dict
 
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework import viewsets
 
 from .models import Component, Precheck, Quote, PriceConfig
@@ -61,7 +63,9 @@ def _infer_travel_cost(address: str) -> Decimal:
     return _pc('travel_zone_60', Decimal('95.00'))
 
 
+@csrf_exempt
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def pricing_preview(request):
     data: Dict = request.data if hasattr(request, 'data') else request.POST
 
