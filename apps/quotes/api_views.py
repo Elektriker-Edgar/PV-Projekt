@@ -78,6 +78,14 @@ def pricing_preview(request):
     storage_kwh = Decimal(str(data.get('storage_kwh') or 0))
     own_components = str(data.get('own_components')).lower() in ['1', 'true', 'on']
 
+    # Wallbox parameters
+    has_wallbox = str(data.get('has_wallbox')).lower() in ['1', 'true', 'on']
+    wallbox_power = data.get('wallbox_power', '')  # '4kw', '11kw', '22kw'
+    wallbox_mount = data.get('wallbox_mount', '')  # 'wall', 'stand'
+    wallbox_cable_installed = str(data.get('wallbox_cable_installed')).lower() in ['1', 'true', 'on']
+    wallbox_cable_length = Decimal(str(data.get('wallbox_cable_length') or 0))
+    wallbox_pv_surplus = str(data.get('wallbox_pv_surplus')).lower() in ['1', 'true', 'on']
+
     # Determine package
     if storage_kwh and storage_kwh > 0:
         package = 'pro'
@@ -96,11 +104,22 @@ def pricing_preview(request):
         surcharges += _pc('surcharge_tt_grid', Decimal('150.00'))
     if main_fuse and main_fuse > 35:
         surcharges += _pc('surcharge_selective_fuse', Decimal('220.00'))
+
+    # WR Cable cost - variable based on power (added to surcharges)
     if distance and distance > 15:
-        per_m = _pc('surcharge_cable_meter', Decimal('25.00'))
-        surcharges += (distance - Decimal('15')) * per_m
+        extra_distance = distance - Decimal('15')
+        if desired_power <= 5:
+            cable_price = _pc('cable_wr_up_to_5kw', Decimal('15.00'))
+        elif desired_power <= 10:
+            cable_price = _pc('cable_wr_5_to_10kw', Decimal('25.00'))
+        else:
+            cable_price = _pc('cable_wr_above_10kw', Decimal('35.00'))
+        surcharges += extra_distance * cable_price
 
     material = Decimal('0.00')
+    inverter_cost = Decimal('0.00')
+    storage_cost = Decimal('0.00')
+
     if not own_components:
         inv_price_map = {'1kva': Decimal('800.00'), '3kva': Decimal('1200.00'), '5kva': Decimal('1800.00'), '10kva': Decimal('2800.00')}
         inv_price = inv_price_map.get(inverter_class, Decimal('0.00'))
@@ -110,13 +129,46 @@ def pricing_preview(request):
                 inv_price = db_inv.unit_price
         except Exception:
             pass
-        material += inv_price
-        material += _pc('material_ac_wiring', Decimal('180.00'))
+        inverter_cost += inv_price
+        inverter_cost += _pc('material_ac_wiring', Decimal('180.00'))
         if package in ['plus', 'pro']:
-            material += _pc('material_spd', Decimal('320.00'))
-            material += _pc('material_meter_upgrade', Decimal('450.00'))
+            inverter_cost += _pc('material_spd', Decimal('320.00'))
+            inverter_cost += _pc('material_meter_upgrade', Decimal('450.00'))
         if package == 'pro' and storage_kwh and storage_kwh > 0:
-            material += storage_kwh * _pc('material_storage_kwh', Decimal('800.00'))
+            storage_cost = storage_kwh * _pc('material_storage_kwh', Decimal('800.00'))
+
+    # Wallbox cost calculation
+    wallbox_cost = Decimal('0.00')
+    if has_wallbox:
+        # Base installation cost
+        if wallbox_power == '4kw':
+            wallbox_cost += _pc('wallbox_base_4kw', Decimal('890.00'))
+        elif wallbox_power == '11kw':
+            wallbox_cost += _pc('wallbox_base_11kw', Decimal('1290.00'))
+        elif wallbox_power == '22kw':
+            wallbox_cost += _pc('wallbox_base_22kw', Decimal('1690.00'))
+
+        # Stand mount surcharge
+        if wallbox_mount == 'stand':
+            wallbox_cost += _pc('wallbox_stand_mount', Decimal('350.00'))
+
+        # PV surplus charging (currently free)
+        if wallbox_pv_surplus:
+            wallbox_cost += _pc('wallbox_pv_surplus', Decimal('0.00'))
+
+        # Cable cost
+        if not wallbox_cable_installed and wallbox_cable_length > 0:
+            if wallbox_power == '4kw':
+                cable_price = _pc('cable_wb_4kw', Decimal('12.00'))
+            elif wallbox_power == '11kw':
+                cable_price = _pc('cable_wb_11kw', Decimal('20.00'))
+            elif wallbox_power == '22kw':
+                cable_price = _pc('cable_wb_22kw', Decimal('30.00'))
+            else:
+                cable_price = Decimal('0.00')
+            wallbox_cost += wallbox_cable_length * cable_price
+
+    material = inverter_cost + storage_cost + wallbox_cost
 
     discount = Decimal('0.00')
     if not own_components:
@@ -133,6 +185,9 @@ def pricing_preview(request):
         'basePrice': float(base_price),
         'travelCost': float(travel_cost),
         'surcharges': float(surcharges),
+        'inverterCost': float(inverter_cost),
+        'storageCost': float(storage_cost),
+        'wallboxCost': float(wallbox_cost),
         'materialCost': float(material),
         'discount': float(discount),
         'total': float(total),

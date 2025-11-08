@@ -1,33 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(django-admin startproject:*)",
-      "Bash(.venvScriptsactivate)",
-      "Bash(pip install:*)",
-      "Bash(python:*)",
-      "Bash(mkdir:*)",
-      "Bash(for app in customers inventory quotes orders grid scheduler integrations)",
-      "Bash(do sed -i \"s/name = ''$app''/name = ''apps.$app''/\" $app/apps.py)",
-      "Bash(done)",
-      "Bash(rm:*)",
-      "Bash(taskkill:*)",
-      "mcp__playwright__browser_navigate",
-      "mcp__playwright__browser_take_screenshot",
-      "mcp__playwright__browser_click",
-      "Bash(find:*)",
-      "mcp__playwright__browser_type",
-      "mcp__playwright__browser_console_messages",
-      "mcp__playwright__browser_evaluate",
-      "Bash(venvScripts:*)",
-      "Bash(\"venv\\Scripts\\activate.bat\")",
-      "Bash(.venvScriptspython.exe manage.py runserver 8000)",
-      "mcp__playwright__browser_select_option",
-      "mcp__playwright__browser_close",
-      "Bash(dir \"E:\\ANPR\\PV-Service\\docs\")",
-      "mcp__playwright__browser_fill_form",
-      "mcp__playwright__browser_handle_dialog",
-      "Bash(curl:*)"
-    ]
+      "Bash(findstr:*)",
+      "Bash(del \"E:\\ANPR\\PV-Service\\apps\\quotes\\migrations\\0004_add_wallbox_pricing.py\")",
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" \"E:\\ANPR\\PV-Service\\manage.py\" migrate:*)"
+    ],
+    "deny": [],
+    "ask": []
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
