@@ -751,6 +751,20 @@ e.target.classList.add('is-valid');
 }
 }
 });
+form.addEventListener('keydown',function(e){
+if(e.key==='Enter'&&e.target.tagName!=='TEXTAREA'&&e.target.type!=='submit'&&e.target.tagName!=='BUTTON'){
+e.preventDefault();
+const inputs=Array.from(form.querySelectorAll('input:not([type=hidden]):not([type=file]),select,textarea'));
+const visibleInputs=inputs.filter(input=>{
+const step=input.closest('.step-content');
+return step&&step.classList.contains('active')&&!input.disabled&&input.offsetParent!==null;
+});
+const currentIndex=visibleInputs.indexOf(e.target);
+if(currentIndex>-1&&currentIndex<visibleInputs.length-1){
+visibleInputs[currentIndex+1].focus();
+}
+}
+});
 
 const savedData=localStorage.getItem('precheckWizardData');
 if(savedData){
