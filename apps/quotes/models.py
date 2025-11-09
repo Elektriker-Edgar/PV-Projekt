@@ -44,12 +44,47 @@ class Precheck(models.Model):
         ('5kva', 'bis 5 kVA'),
         ('10kva', 'bis 10 kVA'),
     ]
+    WALLBOX_CLASSES = [
+        ('4kw', 'Wallbox bis 4 kW'),
+        ('11kw', 'Wallbox 11 kW'),
+        ('22kw', 'Wallbox 22 kW'),
+    ]
+    WALLBOX_MOUNT_TYPES = [
+        ('wall', 'Wandmontage'),
+        ('stand', 'Ständermontage'),
+    ]
     
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     desired_power_kw = models.DecimalField(max_digits=5, decimal_places=2)
     inverter_class = models.CharField(max_length=10, choices=INVERTER_CLASSES)
     storage_kwh = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     own_components = models.BooleanField(default=False, help_text="Kunde bringt eigene Komponenten mit")
+    wallbox = models.BooleanField(default=False, help_text="Kunde wünscht eine Wallbox")
+    wallbox_class = models.CharField(
+        max_length=4,
+        choices=WALLBOX_CLASSES,
+        blank=True,
+        default='',
+        help_text="Gewünschte Wallbox-Leistungsklasse"
+    )
+    wallbox_mount = models.CharField(
+        max_length=10,
+        choices=WALLBOX_MOUNT_TYPES,
+        blank=True,
+        default='',
+        help_text="Montageart der Wallbox"
+    )
+    wallbox_cable_prepared = models.BooleanField(
+        default=False,
+        help_text="Ist die Zuleitung bereits vorbereitet?"
+    )
+    wallbox_cable_length_m = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Länge der Wallbox-Zuleitung in Metern"
+    )
 
     # FILE UPLOADS - Fotos für technische Bewertung
     meter_cabinet_photo = models.ImageField(

@@ -19,22 +19,20 @@ class PrecheckForm(forms.Form):
     )
     customer_phone = forms.CharField(
         max_length=20,
-        label="Telefon", 
+        required=False,
+        label="Telefon",
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+49 40 12345678'})
     )
     customer_type = forms.ChoiceField(
         choices=Customer.CUSTOMER_TYPES,
         label="Kundentyp",
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=False,
+        initial='private'
     )
     customer_address = forms.CharField(
+        required=False,
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Straße, PLZ Ort'})
-    )
-    
-    # Site-Daten
-    site_address = forms.CharField(
-        label="Installationsadresse",
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Installationsort (falls abweichend)'})
     )
     building_type = forms.ChoiceField(
         choices=Site._meta.get_field('building_type').choices,
@@ -103,6 +101,36 @@ class PrecheckForm(forms.Form):
         label="Gewünschte Speicherkapazität (kWh)",
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': '10.0'})
     )
+    has_wallbox = forms.BooleanField(
+        required=False,
+        label="Wallbox gewünscht",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    wallbox_power = forms.ChoiceField(
+        required=False,
+        choices=Precheck.WALLBOX_CLASSES,
+        label="Wallbox Leistungsklasse",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    wallbox_mount = forms.ChoiceField(
+        required=False,
+        choices=Precheck.WALLBOX_MOUNT_TYPES,
+        label="Montage-Art",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    wallbox_cable_installed = forms.BooleanField(
+        required=False,
+        label="Kabel bereits verlegt",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    wallbox_cable_length = forms.DecimalField(
+        required=False,
+        max_digits=6,
+        decimal_places=2,
+        min_value=0,
+        label="Kabellänge Zählerplatz zu Wallbox (m)",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': '10'})
+    )
     own_components = forms.BooleanField(
         required=False,
         label="Ich bringe eigene Komponenten mit",
@@ -120,18 +148,30 @@ class PrecheckForm(forms.Form):
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
     
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('has_wallbox'):
+            if not cleaned.get('wallbox_power'):
+                self.add_error('wallbox_power', "Bitte wählen Sie eine Wallbox-Leistungsklasse.")
+            if not cleaned.get('wallbox_mount'):
+                self.add_error('wallbox_mount', "Bitte wählen Sie die Wallbox-Montageart.")
+            if not cleaned.get('wallbox_cable_installed') and not cleaned.get('wallbox_cable_length'):
+                self.add_error('wallbox_cable_length', "Bitte geben Sie die Kabellänge an oder markieren Sie, dass sie bereits verlegt ist.")
+        return cleaned
+
     def save(self):
         """Erstelle Customer, Site und Precheck aus Formulardaten"""
         # IP-Adresse würde normalerweise aus request.META['REMOTE_ADDR'] kommen
         consent_ip = '127.0.0.1'  # Placeholder
         
         # Customer erstellen
+        customer_type = self.cleaned_data.get('customer_type') or Customer.CUSTOMER_TYPES[0][0]
         customer = Customer.objects.create(
             name=self.cleaned_data['customer_name'],
             email=self.cleaned_data['customer_email'],
-            phone=self.cleaned_data['customer_phone'],
-            customer_type=self.cleaned_data['customer_type'],
-            address=self.cleaned_data['customer_address'],
+            phone=self.cleaned_data.get('customer_phone', ''),
+            customer_type=customer_type,
+            address=self.cleaned_data.get('customer_address', ''),
             consent_timestamp=timezone.now(),
             consent_ip=consent_ip
         )
@@ -139,7 +179,7 @@ class PrecheckForm(forms.Form):
         # Site erstellen
         site = Site.objects.create(
             customer=customer,
-            address=self.cleaned_data['site_address'] or self.cleaned_data['customer_address'],
+            address=self.cleaned_data.get('customer_address', ''),
             building_type=self.cleaned_data['building_type'],
             construction_year=self.cleaned_data['construction_year'],
             main_fuse_ampere=self.cleaned_data['main_fuse_ampere'],
@@ -149,6 +189,20 @@ class PrecheckForm(forms.Form):
             hak_photo=self.cleaned_data['hak_photo']
         )
         
+        has_wallbox = self.cleaned_data.get('has_wallbox', False)
+        wallbox_cable_length = self.cleaned_data.get('wallbox_cable_length')
+        if not has_wallbox:
+            wallbox_power = ''
+            wallbox_mount = ''
+            wallbox_cable_prepared = False
+            wallbox_cable_length = None
+        else:
+            wallbox_power = self.cleaned_data.get('wallbox_power') or ''
+            wallbox_mount = self.cleaned_data.get('wallbox_mount') or ''
+            wallbox_cable_prepared = self.cleaned_data.get('wallbox_cable_installed', False)
+            if wallbox_cable_prepared:
+                wallbox_cable_length = None
+
         # Precheck erstellen mit File-Uploads
         precheck = Precheck.objects.create(
             site=site,
@@ -156,6 +210,11 @@ class PrecheckForm(forms.Form):
             inverter_class=self.cleaned_data['inverter_class'],
             storage_kwh=self.cleaned_data['storage_kwh'],
             own_components=self.cleaned_data['own_components'],
+            wallbox=has_wallbox,
+            wallbox_class=wallbox_power,
+            wallbox_mount=wallbox_mount,
+            wallbox_cable_prepared=wallbox_cable_prepared,
+            wallbox_cable_length_m=wallbox_cable_length,
             notes=self.cleaned_data['notes'],
             # File Uploads
             meter_cabinet_photo=self.cleaned_data.get('meter_cabinet_photo'),
@@ -165,3 +224,8 @@ class PrecheckForm(forms.Form):
         )
 
         return precheck
+
+
+
+
+

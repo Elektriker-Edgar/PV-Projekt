@@ -445,37 +445,32 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <div class="row">
 <div class="col-md-6">
 <div class="form-floating">
-<input type="tel" class="form-control" id="customer_phone" name="customer_phone" required>
-<label>Telefonnummer *</label>
+<input type="tel" class="form-control" id="customer_phone" name="customer_phone">
+<label>Telefonnummer (optional)</label>
 <div class="invalid-feedback"></div>
 </div>
 </div>
 <div class="col-md-6">
 <div class="form-floating">
-<select class="form-select" id="customer_type" name="customer_type" required>
-<option value="">Wählen Sie...</option>
-<option value="private">Privatkunde</option>
+<select class="form-select" id="customer_type" name="customer_type">
+<option value="">Bitte wählen...</option>
+<option value="private" selected>Privatkunde</option>
 <option value="business">Gewerbekunde</option>
 </select>
-<label>Kundentyp *</label>
+<label>Kundentyp (optional)</label>
 <div class="invalid-feedback"></div>
 </div>
 </div>
 </div>
 
 <div class="form-floating">
-<textarea class="form-control" id="customer_address" name="customer_address" style="height:100px" required></textarea>
-<label>Rechnungsadresse *</label>
+<textarea class="form-control" id="customer_address" name="customer_address" style="height:100px"></textarea>
+<label>Adresse (optional)</label>
 <div class="invalid-feedback"></div>
 <div class="form-text">Straße, Hausnummer, PLZ, Ort</div>
 </div>
 
-<div class="form-floating">
-<input type="text" class="form-control" id="site_address" name="site_address">
-<label>Installationsadresse (falls abweichend)</label>
-<div class="invalid-feedback"></div>
-<div class="form-text">Nur ausfüllen wenn abweichend von Rechnungsadresse</div>
-</div>
+<input type="hidden" id="site_address" name="site_address">
 
 <div class="form-floating">
 <textarea class="form-control" id="notes" name="notes" style="height:120px"></textarea>
@@ -652,6 +647,12 @@ function toggleRenovationYear(){
 document.getElementById('renovationYearField').style.display=document.getElementById('has_renovation').checked?'block':'none';
 }
 
+function syncSiteAddress(){
+const addressField=document.getElementById('customer_address');
+const target=document.getElementById('site_address');
+if(target)target.value=addressField?addressField.value:'';
+}
+
 function toggleWallboxVisibility(){
 saveFormData();
 }
@@ -679,7 +680,10 @@ alert('Fehler bei der Preisberechnung. Bitte versuchen Sie es erneut.');
 
 function fetchPriceFromAPI(){
 const form=document.getElementById('precheckWizard');
+syncSiteAddress();
 const formData=new FormData(form);
+const addressField=document.getElementById('customer_address');
+formData.set('site_address',(addressField?addressField.value:'')||'');
 const csrf=form.querySelector('input[name="csrfmiddlewaretoken"]').value;
 return fetch('/api/pricing/preview/',{
 method:'POST',
@@ -866,6 +870,12 @@ document.getElementById('wallboxFields').style.display='block';
 document.getElementById('has_wallbox').addEventListener('change',function(){
 document.getElementById('wallboxFields').style.display=this.checked?'block':'none';
 });
+
+const addressField=document.getElementById('customer_address');
+if(addressField){
+addressField.addEventListener('input',syncSiteAddress);
+}
+syncSiteAddress();
 }
 
 function setupFileUploads(){
@@ -982,6 +992,7 @@ field.value=data[key];
 }
 });
 }
+syncSiteAddress();
 }
 
 document.getElementById('precheckWizard').addEventListener('submit',function(e){
@@ -1005,3 +1016,5 @@ this.submit();
 </script>
 </body>
 </html>
+
+

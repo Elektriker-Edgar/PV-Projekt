@@ -11,9 +11,15 @@ class Customer(models.Model):
     
     name = models.CharField(max_length=200)
     email = models.EmailField()
-    phone = models.CharField(max_length=20)
+    phone = models.CharField(max_length=20, blank=True)
     customer_type = models.CharField(max_length=20, choices=CUSTOMER_TYPES, default='private')
-    address = models.TextField()
+    address = models.TextField(blank=True)
+    last_quote_number = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        help_text="Zuletzt erzeugte Angebotsnummer"
+    )
     
     # DSGVO
     consent_timestamp = models.DateTimeField()

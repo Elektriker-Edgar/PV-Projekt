@@ -24,6 +24,9 @@ def precheck_wizard(request):
             # Automatische Angebotserstellung
             try:
                 quote = create_quote_from_precheck(precheck.id)
+                customer = precheck.site.customer
+                customer.last_quote_number = quote.quote_number
+                customer.save(update_fields=['last_quote_number'])
                 messages.success(request, 
                     f'Ihre Vorprüfung wurde erfolgreich eingereicht. '
                     f'Angebot {quote.quote_number} wurde erstellt und wird geprüft. '
