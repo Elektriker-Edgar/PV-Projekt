@@ -4,7 +4,18 @@
       "Bash(findstr:*)",
       "Bash(del \"E:\\ANPR\\PV-Service\\apps\\quotes\\migrations\\0004_add_wallbox_pricing.py\")",
       "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" \"E:\\ANPR\\PV-Service\\manage.py\" migrate:*)",
-      "Bash(move:*)"
+      "Bash(move:*)",
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py makemigrations quotes)",
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py migrate quotes)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_handle_dialog",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_select_option",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_close"
     ],
     "deny": [],
     "ask": []

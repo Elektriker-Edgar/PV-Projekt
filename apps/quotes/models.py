@@ -3,6 +3,7 @@ from django.utils import timezone
 from decimal import Decimal
 from apps.customers.models import Site
 from apps.core.models import User
+from .validators import validate_image_file, validate_pdf_file
 
 
 class Component(models.Model):
@@ -49,11 +50,43 @@ class Precheck(models.Model):
     inverter_class = models.CharField(max_length=10, choices=INVERTER_CLASSES)
     storage_kwh = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     own_components = models.BooleanField(default=False, help_text="Kunde bringt eigene Komponenten mit")
+
+    # FILE UPLOADS - Fotos für technische Bewertung
+    meter_cabinet_photo = models.ImageField(
+        upload_to='precheck/meter_cabinet/%Y/%m/',
+        validators=[validate_image_file],
+        null=True,
+        blank=True,
+        help_text="Foto Zählerschrank (JPG/PNG, max 5MB)"
+    )
+    hak_photo = models.ImageField(
+        upload_to='precheck/hak/%Y/%m/',
+        validators=[validate_image_file],
+        null=True,
+        blank=True,
+        help_text="Foto Hausanschlusskasten (JPG/PNG, max 5MB)"
+    )
+    location_photo = models.ImageField(
+        upload_to='precheck/locations/%Y/%m/',
+        validators=[validate_image_file],
+        null=True,
+        blank=True,
+        help_text="Foto Montageorte (JPG/PNG, max 5MB)"
+    )
+    cable_route_photo = models.ImageField(
+        upload_to='precheck/cables/%Y/%m/',
+        validators=[validate_image_file],
+        null=True,
+        blank=True,
+        help_text="Foto Kabelwege (JPG/PNG, max 5MB)"
+    )
+
+    # Legacy-Feld (behalten für Rückwärtskompatibilität)
     component_files = models.TextField(default='[]', help_text="JSON Liste der hochgeladenen Komponentendatenblätter")
-    
+
     # Terminwunsch
     preferred_timeframes = models.TextField(default='[]', help_text="JSON Gewünschte Zeitfenster")
-    
+
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -63,6 +96,19 @@ class Precheck(models.Model):
 
     def __str__(self):
         return f"Vorprüfung {self.site.customer.name} - {self.desired_power_kw} kW"
+
+    def get_all_uploads(self):
+        """Helper-Methode: Gibt alle hochgeladenen Dateien zurück"""
+        files = []
+        if self.meter_cabinet_photo:
+            files.append(('Zählerschrank', self.meter_cabinet_photo))
+        if self.hak_photo:
+            files.append(('Hausanschlusskasten', self.hak_photo))
+        if self.location_photo:
+            files.append(('Montageorte', self.location_photo))
+        if self.cable_route_photo:
+            files.append(('Kabelwege', self.cable_route_photo))
+        return files
 
 
 class Quote(models.Model):

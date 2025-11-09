@@ -66,12 +66,22 @@ class PrecheckForm(forms.Form):
     meter_cabinet_photo = forms.ImageField(
         required=False,
         label="Foto Zählerschrank",
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'})
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
     )
     hak_photo = forms.ImageField(
         required=False,
         label="Foto Hausanschlusskasten",
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'})
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+    )
+    location_photo = forms.ImageField(
+        required=False,
+        label="Foto Montageorte",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+    )
+    cable_route_photo = forms.ImageField(
+        required=False,
+        label="Foto Kabelwege",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
     )
     
     # Precheck-Daten
@@ -139,14 +149,19 @@ class PrecheckForm(forms.Form):
             hak_photo=self.cleaned_data['hak_photo']
         )
         
-        # Precheck erstellen
+        # Precheck erstellen mit File-Uploads
         precheck = Precheck.objects.create(
             site=site,
             desired_power_kw=self.cleaned_data['desired_power_kw'],
             inverter_class=self.cleaned_data['inverter_class'],
             storage_kwh=self.cleaned_data['storage_kwh'],
             own_components=self.cleaned_data['own_components'],
-            notes=self.cleaned_data['notes']
+            notes=self.cleaned_data['notes'],
+            # File Uploads
+            meter_cabinet_photo=self.cleaned_data.get('meter_cabinet_photo'),
+            hak_photo=self.cleaned_data.get('hak_photo'),
+            location_photo=self.cleaned_data.get('location_photo'),
+            cable_route_photo=self.cleaned_data.get('cable_route_photo')
         )
-        
+
         return precheck
