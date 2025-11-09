@@ -169,7 +169,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 </div>
 
 <div class="form-floating">
-<input type="number" class="form-control" id="distance_meter_to_inverter" name="distance_meter_to_inverter" min="0" max="200" required>
+<input type="number" class="form-control" id="distance_meter_to_hak" name="distance_meter_to_hak" min="0" max="200" required>
 <label>Entfernung Zählerplatz → Montageort Wechselrichter (Meter) *</label>
 <div class="invalid-feedback"></div>
 <div class="form-text">Kabelweg für Wechselrichter-Anschluss</div>
@@ -240,6 +240,19 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <label>Wechselrichter-Leistung (kW) *</label>
 <div class="invalid-feedback"></div>
 <div class="form-text">Typisch: 3-10 kW für Einfamilienhäuser</div>
+</div>
+
+<div class="form-floating">
+<select class="form-select" id="inverter_class" name="inverter_class" required>
+<option value="">Bitte wählen...</option>
+<option value="1kva">bis 1 kVA</option>
+<option value="3kva" selected>bis 3 kVA</option>
+<option value="5kva">bis 5 kVA</option>
+<option value="10kva">bis 10 kVA</option>
+</select>
+<label>Wechselrichter-Klasse *</label>
+<div class="invalid-feedback"></div>
+<div class="form-text">Größe des Wechselrichters</div>
 </div>
 
 <div class="form-floating">
@@ -452,10 +465,17 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 </div>
 
 <div class="form-floating">
-<input type="text" class="form-control" id="site_address" name="site_address" required>
-<label>Installationsadresse *</label>
+<textarea class="form-control" id="customer_address" name="customer_address" style="height:100px" required></textarea>
+<label>Rechnungsadresse *</label>
 <div class="invalid-feedback"></div>
 <div class="form-text">Straße, Hausnummer, PLZ, Ort</div>
+</div>
+
+<div class="form-floating">
+<input type="text" class="form-control" id="site_address" name="site_address">
+<label>Installationsadresse (falls abweichend)</label>
+<div class="invalid-feedback"></div>
+<div class="form-text">Nur ausfüllen wenn abweichend von Rechnungsadresse</div>
 </div>
 
 <div class="form-floating">
@@ -714,7 +734,7 @@ document.getElementById('sum_renovation_year').textContent=document.getElementBy
 
 document.getElementById('sum_main_fuse').textContent=document.getElementById('main_fuse_ampere').value+' A';
 document.getElementById('sum_grid_type').textContent=gridTypes[document.getElementById('grid_type').value]||'-';
-document.getElementById('sum_distance').textContent=document.getElementById('distance_meter_to_inverter').value+' m';
+document.getElementById('sum_distance').textContent=document.getElementById('distance_meter_to_hak').value+' m';
 document.getElementById('sum_inverter_loc').textContent=locations[document.getElementById('inverter_location').value]||'-';
 
 const storageLoc=document.getElementById('storage_location').value;
