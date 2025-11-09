@@ -65,7 +65,7 @@ E:\ANPR\PV-Service\
 - **Variable Kabelpreise** abhängig von WR/Wallbox-Leistung
 - **Database-Driven Pricing** (25 PriceConfig-Einträge)
 - **Enter-Taste Navigation** (springt zum nächsten Feld)
-- **3-Punkte Progress-Bar** (Standort → PV-System → Preis)
+- **3-Punkte Progress-Bar** (Standort → PV-System → Preis) mit zentrierten Labels dank gemeinsamer Flex-Spalten
 - **LocalStorage Persistierung** (Daten überleben Page-Reload)
 - **Responsive Design** mit Bootstrap 5 + Glassmorphism
 
@@ -89,6 +89,7 @@ E:\ANPR\PV-Service\
 | Datei | Zweck |
 |-------|-------|
 | `apps/quotes/api_views.py` | Backend-Logik für Preisberechnung |
+| `apps/quotes/pricing.py` | Zentrale Pricing-Engine (Wizard/API/Quotes) |
 | `apps/quotes/models.py` | PriceConfig Model mit 25 PRICE_TYPES |
 | `templates/quotes/precheck_wizard.html` | Frontend + JavaScript |
 | `apps/quotes/migrations/0006_seed_wallbox_pricing.py` | Wallbox-Preise seeden |
@@ -165,6 +166,9 @@ curl -X POST "http://192.168.178.30:8025/api/pricing/preview/" \
 ---
 
 ## 📊 Preisberechnung (Kurzübersicht)
+- Wizard, API und Angebotserstellung nutzen alle die zentrale Pricing-Engine (`apps/quotes/pricing.py`). Sie liefert Netto-/Brutto-Werte auf Basis der `PriceConfig`.
+- Das Formularfeld „Wechselrichter-Klasse" wurde entfernt; die Klasse wird intern über `desired_power_kw` abgeleitet.
+- Die Success-Seite zeigt denselben Brutto-Gesamtpreis wie der Live-Preis (inkl. MwSt. und zwei Nachkommastellen).
 
 ### Paket-Bestimmung
 ```python

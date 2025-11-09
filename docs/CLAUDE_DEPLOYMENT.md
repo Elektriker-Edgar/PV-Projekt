@@ -505,23 +505,7 @@ function nextStep() {
 
 **Problem:**
 ```
-Progress-Bar Labels waren nicht perfekt unter den Punkten zentriert.
-```
-
-**Lösung:**
-```css
-.step-label {
-    position: absolute;
-    transform: translateX(-50%);  /* Zentriert horizontal */
-    white-space: nowrap;
-}
-
-.step-label:nth-child(1) { left: 0%; }
-.step-label:nth-child(2) { left: 50%; }
-.step-label:nth-child(3) { left: 100%; }
-```
-
-**Status:** ✅ GELÖST seit v1.1.0
+Progress-Bar Labels saßen nicht exakt unter den Punkten, weil die Texte absolut positioniert waren. Seit v1.1.1 teilen Punkte **und** Labels denselben flexbasierten Container (`.progress-steps` / `.progress-labels`) – ganz ohne fixe `left`-Werte.
 
 ---
 

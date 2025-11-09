@@ -21,21 +21,19 @@
     <!-- Progress-Bar (3 sichtbare Schritte) -->
     <div class="progress-container">
         <div class="progress-bar-wrapper">
-            <div class="progress-background">
-                <div id="mainProgress" class="progress-fill"></div>
+            <div class="progress">
+                <div id="mainProgress" class="progress-bar"></div>
             </div>
             <div class="progress-steps">
-                <div class="progress-step active"></div>
-                <div class="progress-step"></div>
-                <div class="progress-step"></div>
+                <div class="progress-step active" data-visible-step="1">1</div>
+                <div class="progress-step" data-visible-step="2">2</div>
+                <div class="progress-step" data-visible-step="3">€</div>
             </div>
-        </div>
-
-        <!-- Labels (zentriert unter Steps) -->
-        <div class="step-labels">
-            <div class="step-label active">Standort & Elektro</div>
-            <div class="step-label">PV-System</div>
-            <div class="step-label">Preis</div>
+            <div class="progress-labels">
+                <div class="progress-label active" data-visible-step="1">Standort & Elektro</div>
+                <div class="progress-label" data-visible-step="2">PV-System</div>
+                <div class="progress-label" data-visible-step="3">Preis</div>
+            </div>
         </div>
     </div>
 
