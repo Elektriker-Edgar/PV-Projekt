@@ -40,9 +40,9 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 .form-check-input:checked{background-color:var(--edgard-green);border-color:var(--edgard-green)}
 .file-upload-zone{border:2px dashed #dee2e6;border-radius:12px;padding:2rem;text-align:center;background:#f8f9fa;cursor:pointer;margin-bottom:1.5rem;transition:all 0.3s}
 .file-upload-zone:hover{border-color:var(--edgard-green);background:rgba(40,167,69,0.05)}
-.uploaded-file{background:rgba(40,167,69,0.1);border:1px solid var(--edgard-green);border-radius:8px;padding:1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
-.uploaded-file img{max-width:100px;max-height:100px;border-radius:6px;object-fit:cover}
-.uploaded-file .file-info{flex:1;text-align:left}
+.uploaded-file{background:rgba(40,167,69,0.1);border:1px solid var(--edgard-green);border-radius:8px;padding:1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:1rem}
+.uploaded-file img{width:100px;height:100px;border-radius:6px;object-fit:cover;border:2px solid var(--edgard-green);box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.uploaded-file .file-info{flex:1;text-align:left;padding:0 1rem}
 .uploaded-file .file-name{font-weight:600;color:var(--edgard-blue);margin-bottom:0.25rem}
 .uploaded-file .file-size{font-size:0.85rem;color:var(--edgard-gray)}
 .price-display-card{background:linear-gradient(135deg,rgba(40,167,69,0.1),rgba(44,90,160,0.05));border:3px solid var(--edgard-green);border-radius:20px;padding:3rem 2rem;margin:2rem 0;text-align:center}
@@ -391,16 +391,16 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 </div>
 </div>
 
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="own_components" name="own_components">
+<label class="form-check-label"><strong>Ich bringe eigene Komponenten mit</strong></label>
+<div class="form-text">Wechselrichter, Speicher oder Module bereits vorhanden</div>
+</div>
+
 <div class="form-floating">
 <textarea class="form-control" id="own_material_description" name="own_material_description" style="height:150px"></textarea>
 <label>Eigenes Material beschreiben (optional)</label>
 <div class="form-text">Welche Komponenten bringen Sie mit? (z.B. Wechselrichter, Module, Speicher)</div>
-</div>
-
-<div class="form-check">
-<input class="form-check-input" type="checkbox" id="own_components" name="own_components">
-<label class="form-check-label"><strong>Ich bringe eigene Komponenten mit</strong></label>
-<div class="form-text">Wechselrichter, Speicher oder Module bereits vorhanden</div>
 </div>
 
 <div class="btn-navigation">
