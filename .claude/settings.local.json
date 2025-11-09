@@ -3,7 +3,8 @@
     "allow": [
       "Bash(findstr:*)",
       "Bash(del \"E:\\ANPR\\PV-Service\\apps\\quotes\\migrations\\0004_add_wallbox_pricing.py\")",
-      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" \"E:\\ANPR\\PV-Service\\manage.py\" migrate:*)"
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" \"E:\\ANPR\\PV-Service\\manage.py\" migrate:*)",
+      "Bash(move:*)"
     ],
     "deny": [],
     "ask": []
