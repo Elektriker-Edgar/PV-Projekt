@@ -4,6 +4,7 @@ from decimal import Decimal
 from apps.customers.models import Site
 from apps.core.models import User
 from .validators import validate_image_file, validate_pdf_file
+from .helpers import inverter_label_from_power
 
 
 class Component(models.Model):
@@ -38,12 +39,6 @@ class Component(models.Model):
 
 class Precheck(models.Model):
     """Vorprüfung"""
-    INVERTER_CLASSES = [
-        ('1kva', 'bis 1 kVA'),
-        ('3kva', 'bis 3 kVA'),
-        ('5kva', 'bis 5 kVA'),
-        ('10kva', 'bis 10 kVA'),
-    ]
     WALLBOX_CLASSES = [
         ('4kw', 'Wallbox bis 4 kW'),
         ('11kw', 'Wallbox 11 kW'),
@@ -56,7 +51,6 @@ class Precheck(models.Model):
     
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     desired_power_kw = models.DecimalField(max_digits=5, decimal_places=2)
-    inverter_class = models.CharField(max_length=10, choices=INVERTER_CLASSES)
     storage_kwh = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     own_components = models.BooleanField(default=False, help_text="Kunde bringt eigene Komponenten mit")
     wallbox = models.BooleanField(default=False, help_text="Kunde wünscht eine Wallbox")
@@ -131,6 +125,10 @@ class Precheck(models.Model):
 
     def __str__(self):
         return f"Vorprüfung {self.site.customer.name} - {self.desired_power_kw} kW"
+
+    @property
+    def inverter_label(self) -> str:
+        return inverter_label_from_power(self.desired_power_kw or Decimal('0'))
 
     def get_all_uploads(self):
         """Helper-Methode: Gibt alle hochgeladenen Dateien zurück"""

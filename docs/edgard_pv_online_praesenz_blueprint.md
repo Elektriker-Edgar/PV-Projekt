@@ -203,7 +203,7 @@ für Uploads, Traefik/Nginx, Docker.
 Customer(id, name, email, phone, address, consent_ts)
 Site(id, customer, address, grid_type, main_fuse_a, photos[])
 Component(id, name, type, vendor, sku, datasheet_url, compatible_with[])
-Precheck(id, site, desired_kw, inverter_class, storage_kwh, own_components[], notes)
+Precheck(id, site, desired_kw, storage_kwh, own_components[], notes)
 Quote(id, precheck, subtotal, vat, total, status[draft|approved|sent], pdf_url)
 QuoteItem(id, quote, component, qty, unit_price, text)
 Order(id, quote, status, scheduled_at, documents[])

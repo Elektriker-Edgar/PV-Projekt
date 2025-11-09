@@ -1,5 +1,6 @@
 from django.template.loader import render_to_string
 from django.http import HttpResponse
+from .helpers import infer_inverter_class_key
 
 
 def generate_quote_pdf(quote):
@@ -31,7 +32,8 @@ def calculate_quote_pricing(precheck):
         '10kva': 2800,
     }
     
-    price = base_price + inverter_prices.get(precheck.inverter_class, 1200)
+    inverter_key = infer_inverter_class_key(precheck.desired_power_kw or 0)
+    price = base_price + inverter_prices.get(inverter_key, 1200)
     
     # Speicher-Aufschlag
     if precheck.storage_kwh:

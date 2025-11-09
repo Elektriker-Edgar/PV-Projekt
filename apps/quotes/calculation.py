@@ -7,6 +7,7 @@ from datetime import timedelta
 from django.utils import timezone
 from .models import Quote, QuoteItem, Component, Precheck, PriceConfig
 from .pricing import pricing_input_from_precheck, calculate_pricing
+from .helpers import infer_inverter_class_key, inverter_label_from_power
 
 
 class QuoteCalculator:
@@ -102,8 +103,9 @@ class QuoteCalculator:
             return 'pro'
             
         # Leistung > 3kVA oder spezielle Anforderungen â Plus  
+        inverter_key = infer_inverter_class_key(self.precheck.desired_power_kw or Decimal('0'))
         if (self.precheck.desired_power_kw > 3 or 
-            self.precheck.inverter_class in ['5kva', '10kva'] or
+            inverter_key in ['5kva', '10kva'] or
             self.site.grid_type == 'TT'):
             return 'plus'
             
@@ -161,10 +163,10 @@ class QuoteCalculator:
         # Basis-Komponenten
         components.extend([
             {
-                'name': f'Wechselrichter {self.precheck.inverter_class}',
+                'name': f'Wechselrichter ({inverter_label_from_power(self.precheck.desired_power_kw)})',
                 'type': 'inverter',
                 'quantity': 1,
-                'unit_price': self._get_component_price('inverter', self.precheck.inverter_class)
+                'unit_price': self._get_component_price('inverter', infer_inverter_class_key(self.precheck.desired_power_kw or Decimal('0')))
             },
             {
                 'name': 'AC-Verkabelung und Anschluss',

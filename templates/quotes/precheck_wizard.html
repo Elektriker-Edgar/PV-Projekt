@@ -156,7 +156,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <div class="col-md-6">
 <div class="form-floating">
 <select class="form-select" id="grid_type" name="grid_type">
-<option value="">1- oder 3-Polig?</option>
+<option value="" selected hidden></option>
 <option value="1p">1-Polig</option>
 <option value="3p">3-Polig</option>
 <option value="unknown">Unbekannt</option>
@@ -238,19 +238,6 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <label>Wechselrichter-Leistung (kW) *</label>
 <div class="invalid-feedback"></div>
 <div class="form-text">Typisch: 3-10 kW für Einfamilienhäuser</div>
-</div>
-
-<div class="form-floating">
-<select class="form-select" id="inverter_class" name="inverter_class" required>
-<option value="">Bitte wählen...</option>
-<option value="1kva">bis 1 kVA</option>
-<option value="3kva" selected>bis 3 kVA</option>
-<option value="5kva">bis 5 kVA</option>
-<option value="10kva">bis 10 kVA</option>
-</select>
-<label>Wechselrichter-Klasse *</label>
-<div class="invalid-feedback"></div>
-<div class="form-text">Größe des Wechselrichters</div>
 </div>
 
 <div class="form-floating">

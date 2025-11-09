@@ -273,7 +273,7 @@
             <div class="info-box">
                 <h3>PV-Projekt</h3>
                 <p>Gewünschte Leistung: {{ quote.precheck.desired_power_kw }} kW</p>
-                <p>WR-Klasse: {{ quote.precheck.get_inverter_class_display }}</p>
+                <p>WR-Leistung: {{ quote.precheck.desired_power_kw }} kW ({{ quote.precheck.inverter_label }})</p>
                 {% if quote.precheck.storage_kwh %}
                 <p>Speicher: {{ quote.precheck.storage_kwh }} kWh</p>
                 {% endif %}

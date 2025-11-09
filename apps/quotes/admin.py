@@ -13,8 +13,8 @@ class ComponentAdmin(admin.ModelAdmin):
 
 @admin.register(Precheck)
 class PrecheckAdmin(admin.ModelAdmin):
-    list_display = ('site', 'desired_power_kw', 'inverter_class', 'storage_kwh', 'own_components', 'created_at')
-    list_filter = ('inverter_class', 'own_components', 'created_at')
+    list_display = ('site', 'desired_power_kw', 'storage_kwh', 'own_components', 'created_at')
+    list_filter = ('own_components', 'created_at')
     search_fields = ('site__customer__name', 'site__address')
     readonly_fields = ('created_at', 'updated_at')
     raw_id_fields = ('site',)

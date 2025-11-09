@@ -90,11 +90,6 @@ class PrecheckForm(forms.Form):
         label="Gewünschte WR-Leistung (kW)",
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': '3.0'})
     )
-    inverter_class = forms.ChoiceField(
-        choices=Precheck.INVERTER_CLASSES,
-        label="Wechselrichter-Klasse",
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
     storage_kwh = forms.DecimalField(
         max_digits=5, 
         decimal_places=2,
@@ -208,7 +203,6 @@ class PrecheckForm(forms.Form):
         precheck = Precheck.objects.create(
             site=site,
             desired_power_kw=self.cleaned_data['desired_power_kw'],
-            inverter_class=self.cleaned_data['inverter_class'],
             storage_kwh=self.cleaned_data['storage_kwh'],
             own_components=self.cleaned_data['own_components'],
             wallbox=has_wallbox,

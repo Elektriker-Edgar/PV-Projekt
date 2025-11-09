@@ -129,7 +129,7 @@
 
                             <h6><i class="fas fa-cog me-2"></i>Technische Daten</h6>
                             <p class="mb-1">Gewünschte Leistung: <strong>{{ quote.precheck.desired_power_kw }} kW</strong></p>
-                            <p class="mb-1">WR-Klasse: <strong>{{ quote.precheck.get_inverter_class_display }}</strong></p>
+                            <p class="mb-1">WR-Leistung: <strong>{{ quote.precheck.desired_power_kw }} kW ({{ quote.precheck.inverter_label }})</strong></p>
                             {% if quote.precheck.storage_kwh %}
                             <p class="mb-1">Speicher: <strong>{{ quote.precheck.storage_kwh }} kWh</strong></p>
                             {% endif %}

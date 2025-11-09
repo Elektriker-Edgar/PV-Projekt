@@ -3,6 +3,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from typing import Dict, Any
 
 from .models import PriceConfig, Precheck
+from .helpers import infer_inverter_class_key
 
 
 VAT_RATE = Decimal("0.19")
@@ -15,7 +16,6 @@ class PricingInput:
     grid_type: str = ""
     distance_meter: Decimal = Decimal("0")
     desired_power_kw: Decimal = Decimal("0")
-    inverter_class: str = ""
     storage_kwh: Decimal = Decimal("0")
     own_components: bool = False
     has_wallbox: bool = False
@@ -60,9 +60,11 @@ def calculate_pricing(data: PricingInput) -> Dict[str, Decimal]:
     main_fuse = int(data.main_fuse_ampere or 0)
     grid_type = (data.grid_type or "").lower()
 
+    inverter_class_key = infer_inverter_class_key(desired_power)
+
     if storage_kwh > 0:
         package = "pro"
-    elif desired_power > 3 or data.inverter_class in ["5kva", "10kva"] or grid_type == "1p":
+    elif desired_power > 3 or inverter_class_key in {"5kva", "10kva"} or grid_type == "1p":
         package = "plus"
     else:
         package = "basis"
@@ -101,7 +103,7 @@ def calculate_pricing(data: PricingInput) -> Dict[str, Decimal]:
             "5kva": Decimal("1800.00"),
             "10kva": Decimal("2800.00"),
         }
-        inverter_cost = inv_price_map.get(data.inverter_class, Decimal("0.00"))
+        inverter_cost = inv_price_map.get(inverter_class_key, Decimal("0.00"))
         inverter_cost += _pc("material_ac_wiring", Decimal("180.00"))
         if package in {"plus", "pro"}:
             inverter_cost += _pc("material_spd", Decimal("320.00"))
@@ -185,7 +187,6 @@ def pricing_input_from_request(data: Dict[str, Any]) -> PricingInput:
         grid_type=(data.get("grid_type") or "").lower(),
         distance_meter=dec("distance_meter_to_inverter", fallback="distance_meter_to_hak"),
         desired_power_kw=dec("desired_power_kw"),
-        inverter_class=(data.get("inverter_class") or "").strip(),
         storage_kwh=dec("storage_kwh"),
         own_components=_as_bool(data.get("own_components")),
         has_wallbox=_as_bool(data.get("has_wallbox")),
@@ -205,7 +206,6 @@ def pricing_input_from_precheck(precheck: Precheck) -> PricingInput:
         grid_type=(site.grid_type or "").lower(),
         distance_meter=site.distance_meter_to_hak,
         desired_power_kw=precheck.desired_power_kw,
-        inverter_class=precheck.inverter_class,
         storage_kwh=precheck.storage_kwh or Decimal("0"),
         own_components=precheck.own_components,
         has_wallbox=getattr(precheck, "wallbox", False),

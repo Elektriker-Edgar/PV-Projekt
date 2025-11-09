@@ -124,7 +124,6 @@ travel_cost = _pc('travel_zone_0', Decimal('0.00'))
 
     # PV-System
     "desired_power_kw": Decimal,            # WR-Leistung (für Kabelpreis)
-    "inverter_class": str,                  # '1kva', '3kva', '5kva', '10kva'
     "storage_kwh": Decimal,                 # Speichergröße (0 = kein Speicher)
     "own_components": bool,                 # Kunde bringt eigene Komponenten
 
@@ -165,7 +164,7 @@ travel_cost = _pc('travel_zone_0', Decimal('0.00'))
 # Automatische Paket-Auswahl basierend auf Kundenanforderungen
 if storage_kwh and storage_kwh > 0:
     package = 'pro'        # Speicher vorhanden → Pro-Paket (2.290€)
-elif (desired_power and desired_power > 3) or inverter_class in ['5kva', '10kva'] or grid_type == 'TT':
+elif (desired_power and desired_power > 3) or grid_type == 'TT':
     package = 'plus'       # >3kW oder TT-Netz → Plus-Paket (1.490€)
 else:
     package = 'basis'      # Standard → Basis-Paket (890€)
@@ -306,7 +305,8 @@ if not own_components:
         '5kva': Decimal('1800.00'),
         '10kva': Decimal('2800.00')
     }
-    inv_price = inv_price_map.get(inverter_class, Decimal('0.00'))
+    # Ableitung anhand der gewünschten Leistung
+    inv_price = inv_price_map.get(_infer_inverter_class(desired_power_kw), Decimal('0.00'))
 
     # Optional: Preis aus Component-DB überschreiben
     try:
@@ -332,6 +332,16 @@ if not own_components:
 
 # Gesamtmaterial
 material = inverter_cost + storage_cost + wallbox_cost
+```
+```python
+def _infer_inverter_class(power_kw: Decimal) -> str:
+    if power_kw <= Decimal('1.5'):
+        return '1kva'
+    if power_kw <= Decimal('3.5'):
+        return '3kva'
+    if power_kw <= Decimal('6.5'):
+        return '5kva'
+    return '10kva'
 ```
 
 ### 7. Rabatt (Komplett-Kit)
@@ -371,7 +381,6 @@ curl -X POST "http://192.168.178.30:8025/api/pricing/preview/" \
   -d "grid_type=3p" \
   -d "distance_meter_to_inverter=10" \
   -d "desired_power_kw=2.5" \
-  -d "inverter_class=3kva" \
   -d "storage_kwh=0" \
   -d "has_wallbox=false" \
   -d "own_components=false"
@@ -403,7 +412,6 @@ curl -X POST "http://192.168.178.30:8025/api/pricing/preview/" \
   -d "grid_type=3p" \
   -d "distance_meter_to_inverter=20" \
   -d "desired_power_kw=6" \
-  -d "inverter_class=5kva" \
   -d "storage_kwh=10" \
   -d "has_wallbox=true" \
   -d "wallbox_power=11kw" \

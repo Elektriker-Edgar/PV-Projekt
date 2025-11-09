@@ -187,7 +187,6 @@ def create_sample_precheck(site):
     precheck_data = {
         'site': site,
         'desired_power_kw': Decimal('5.0'),
-        'inverter_class': '5kva',
         'storage_kwh': Decimal('10.0'),
         'own_components': False,
         'component_files': '[]',
