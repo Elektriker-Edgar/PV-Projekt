@@ -502,35 +502,35 @@
                     Ihre Vorprüfung wurde erfolgreich übermittelt und wird umgehend bearbeitet.
                 </p>
                 
-                {% if quote %}
-                <div class="reference-number">
-                    <div class="reference-label">Angebotsnummer</div>
-                    <div class="reference-value">{{ quote.quote_number }}</div>
-                </div>
-                
-                <div class="price-summary mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span>Geschätzter Gesamtpreis:</span>
-                        <strong style="color: var(--edgard-green);">{{ quote.total }}€</strong>
+                {% if pricing %}
+                    {% if quote %}
+                    <div class="reference-number">
+                        <div class="reference-label">Angebotsnummer</div>
+                        <div class="reference-value">{{ quote.quote_number }}</div>
                     </div>
-                    <small class="text-muted">inkl. MwSt. | Gültig bis {{ quote.valid_until|date:"d.m.Y" }}</small>
-                </div>
-                
-                <p class="text-info mb-3">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Ihr Angebot wird gerade geprüft und in Kürze freigegeben.
-                </p>
-                {% else %}
-                <div class="reference-number">
-                    <div class="reference-label">Ihre Referenznummer</div>
-                    <div class="reference-value">{{ precheck.id|stringformat:"04d" }}</div>
-                </div>
+                    {% else %}
+                    <div class="reference-number">
+                        <div class="reference-label">Ihre Referenznummer</div>
+                        <div class="reference-value">{{ precheck.id|stringformat:"04d" }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="price-summary mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Geschätzter Gesamtpreis:</span>
+                            <strong style="color: var(--edgard-green);">
+                                {{ pricing.gross_total|floatformat:2 }} €
+                            </strong>
+                        </div>
+                        <small class="text-muted">inkl. MwSt.</small>
+                    </div>
+                    
+                    <p class="text-info mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Ihr Angebot wird gerade geprüft und in Kürze freigegeben.
+                    </p>
                 {% endif %}
                 
-                <p class="text-muted">
-                    <i class="fas fa-envelope me-2"></i>
-                    Eine Bestätigung wurde an <strong>{{ form.customer_email.value|default:"ihre@email.de" }}</strong> gesendet.
-                </p>
             </div>
 
             <!-- Timeline -->
@@ -548,7 +548,7 @@
                         <div class="timeline-time">Sofort</div>
                         <div class="timeline-title-item">Vorprüfung eingegangen</div>
                         <div class="timeline-description">
-                            Ihre Daten wurden sicher übertragen und eine Bestätigung per E-Mail versendet.
+                            Ihre Daten wurden sicher übertragen und werden nun geprüft.
                         </div>
                     </div>
                     

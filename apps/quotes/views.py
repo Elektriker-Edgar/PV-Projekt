@@ -7,6 +7,7 @@ from .models import Quote, Precheck
 from .forms import PrecheckForm
 from .utils import generate_quote_pdf
 from .calculation import create_quote_from_precheck
+from .pricing import pricing_input_from_precheck, calculate_pricing
 
 
 def home(request):
@@ -23,7 +24,7 @@ def precheck_wizard(request):
             
             # Automatische Angebotserstellung
             try:
-                quote = create_quote_from_precheck(precheck.id)
+                quote, pricing = create_quote_from_precheck(precheck.id)
                 customer = precheck.site.customer
                 customer.last_quote_number = quote.quote_number
                 customer.save(update_fields=['last_quote_number'])
@@ -33,12 +34,13 @@ def precheck_wizard(request):
                     f'Wir melden uns binnen 24 Stunden bei Ihnen.')
                 return render(request, 'quotes/precheck_success.html', {
                     'precheck': precheck,
-                    'quote': quote
+                    'quote': quote,
+                    'pricing': pricing
                 })
             except Exception as e:
-                # Fallback falls Kalkulation fehlschlägt
+                pricing = calculate_pricing(pricing_input_from_precheck(precheck))
                 messages.success(request, 'Ihre Vorprüfung wurde erfolgreich eingereicht. Wir melden uns binnen 24 Stunden bei Ihnen.')
-                return render(request, 'quotes/precheck_success.html', {'precheck': precheck})
+                return render(request, 'quotes/precheck_success.html', {'precheck': precheck, 'pricing': pricing, 'quote': None})
     else:
         form = PrecheckForm()
     

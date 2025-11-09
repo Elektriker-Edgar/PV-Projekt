@@ -569,6 +569,11 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <script>
 let currentStep=1,totalSteps=6,priceData=null;
 
+function formatCurrency(value){
+const number=Number(value||0);
+return number.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+}
+
 document.addEventListener('DOMContentLoaded',function(){
 updateProgress();setupFileUploads();setupValidation();loadFormData();setupOwnComponentsToggle();
 });
@@ -701,24 +706,30 @@ saveFormData();
 }
 
 function updatePriceDisplay(data){
-const total=Math.round(data.total||0);
-document.getElementById('finalPriceDisplay').textContent=total.toLocaleString('de-DE')+'€';
-document.getElementById('breakdownInverter').textContent=Math.round(data.inverterCost||0).toLocaleString('de-DE')+'€';
+const total=data.total||0;
+document.getElementById('finalPriceDisplay').textContent=formatCurrency(total);
+document.getElementById('breakdownInverter').textContent=formatCurrency(data.inverterCost||0);
 if(data.storageCost&&data.storageCost>0){
 document.getElementById('breakdownStorageRow').style.display='flex';
-document.getElementById('breakdownStorage').textContent=Math.round(data.storageCost).toLocaleString('de-DE')+'€';
+document.getElementById('breakdownStorage').textContent=formatCurrency(data.storageCost);
+}else{
+document.getElementById('breakdownStorageRow').style.display='none';
 }
 if(data.wallboxCost&&data.wallboxCost>0){
 document.getElementById('breakdownWallboxRow').style.display='flex';
-document.getElementById('breakdownWallbox').textContent=Math.round(data.wallboxCost).toLocaleString('de-DE')+'€';
+document.getElementById('breakdownWallbox').textContent=formatCurrency(data.wallboxCost);
+}else{
+document.getElementById('breakdownWallboxRow').style.display='none';
 }
-document.getElementById('breakdownSurcharges').textContent=Math.round(data.surcharges||0).toLocaleString('de-DE')+'€';
-document.getElementById('breakdownMaterial').textContent=Math.round(data.materialCost||0).toLocaleString('de-DE')+'€';
+document.getElementById('breakdownSurcharges').textContent=formatCurrency(data.surcharges||0);
+document.getElementById('breakdownMaterial').textContent=formatCurrency(data.materialCost||0);
 if(data.discount&&data.discount>0){
 document.getElementById('breakdownDiscountRow').style.display='flex';
-document.getElementById('breakdownDiscount').textContent='-'+Math.round(data.discount).toLocaleString('de-DE')+'€';
+document.getElementById('breakdownDiscount').textContent='-'+formatCurrency(data.discount);
+}else{
+document.getElementById('breakdownDiscountRow').style.display='none';
 }
-document.getElementById('breakdownTotal').textContent=total.toLocaleString('de-DE')+'€';
+document.getElementById('breakdownTotal').textContent=formatCurrency(total);
 }
 
 function updateSummary(){
@@ -785,7 +796,7 @@ document.getElementById('sum_wb_cable').textContent=cableLen?cableLen+' m verleg
 }
 
 if(priceData){
-document.getElementById('sum_total_price').textContent=Math.round(priceData.total).toLocaleString('de-DE')+'€';
+document.getElementById('sum_total_price').textContent=formatCurrency(priceData.total);
 }
 
 const photoLabels={
