@@ -116,10 +116,9 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <div class="form-floating">
 <select class="form-select" id="building_type" name="building_type" required>
 <option value="">Wählen Sie...</option>
-<option value="single_family">Einfamilienhaus</option>
-<option value="multi_family">Mehrfamilienhaus</option>
+<option value="efh">Einfamilienhaus</option>
+<option value="mfh">Mehrfamilienhaus</option>
 <option value="commercial">Gewerbe</option>
-<option value="apartment">Eigentumswohnung</option>
 </select>
 <label>Gebäudetyp *</label>
 <div class="invalid-feedback"></div>
@@ -158,8 +157,8 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <div class="form-floating">
 <select class="form-select" id="grid_type" name="grid_type" required>
 <option value="">Wählen Sie...</option>
-<option value="3p">3-Phasen (Drehstrom)</option>
-<option value="1p">1-Phase (Wechselstrom)</option>
+<option value="TN-C">TN-C (klassische Nullung)</option>
+<option value="TN-S">TN-S (Standard)</option>
 <option value="TT">TT-Netz</option>
 </select>
 <label>Netzanschluss *</label>
@@ -720,8 +719,8 @@ document.getElementById('breakdownTotal').textContent=total.toLocaleString('de-D
 }
 
 function updateSummary(){
-const buildingTypes={'single_family':'Einfamilienhaus','multi_family':'Mehrfamilienhaus','commercial':'Gewerbe','apartment':'Eigentumswohnung'};
-const gridTypes={'3p':'3-Phasen','1p':'1-Phase','TT':'TT-Netz'};
+const buildingTypes={'efh':'Einfamilienhaus','mfh':'Mehrfamilienhaus','commercial':'Gewerbe'};
+const gridTypes={'TN-C':'TN-C','TN-S':'TN-S','TT':'TT-Netz'};
 const locations={'basement':'Keller','garage':'Garage','attic':'Dachboden','utility_room':'Hauswirtschaftsraum','outdoor':'Außenbereich','other':'Anderer Ort'};
 
 document.getElementById('sum_building_type').textContent=buildingTypes[document.getElementById('building_type').value]||'-';
