@@ -155,14 +155,13 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 </div>
 <div class="col-md-6">
 <div class="form-floating">
-<select class="form-select" id="grid_type" name="grid_type" required>
-<option value="">Wählen Sie...</option>
-<option value="TN-C">TN-C (klassische Nullung)</option>
-<option value="TN-S">TN-S (Standard)</option>
-<option value="TT">TT-Netz</option>
+<select class="form-select" id="grid_type" name="grid_type">
+<option value="">1- oder 3-Polig?</option>
+<option value="1p">1-Polig</option>
+<option value="3p">3-Polig</option>
+<option value="unknown">Unbekannt</option>
 </select>
-<label>Netzanschluss *</label>
-<div class="invalid-feedback"></div>
+<label>Hausanschluss (optional)</label>
 </div>
 </div>
 </div>
@@ -489,7 +488,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <div class="summary-item"><span>Baujahr</span><strong id="sum_construction_year">-</strong></div>
 <div class="summary-item" id="sum_renovation_row" style="display:none"><span>Sanierung</span><strong id="sum_renovation_year">-</strong></div>
 <div class="summary-item"><span>Hauptsicherung</span><strong id="sum_main_fuse">-</strong></div>
-<div class="summary-item"><span>Netzanschluss</span><strong id="sum_grid_type">-</strong></div>
+<div class="summary-item"><span>Hausanschluss</span><strong id="sum_grid_type">-</strong></div>
 <div class="summary-item"><span>Kabelweg WR</span><strong id="sum_distance">-</strong></div>
 <div class="summary-item"><span>Montageort WR</span><strong id="sum_inverter_loc">-</strong></div>
 <div class="summary-item" id="sum_storage_loc_row" style="display:none"><span>Montageort Speicher</span><strong id="sum_storage_loc">-</strong></div>
@@ -724,7 +723,7 @@ document.getElementById('breakdownTotal').textContent=total.toLocaleString('de-D
 
 function updateSummary(){
 const buildingTypes={'efh':'Einfamilienhaus','mfh':'Mehrfamilienhaus','commercial':'Gewerbe'};
-const gridTypes={'TN-C':'TN-C','TN-S':'TN-S','TT':'TT-Netz'};
+const gridTypes={'1p':'1-Polig','3p':'3-Polig','unknown':'Unbekannt'};
 const locations={'basement':'Keller','garage':'Garage','attic':'Dachboden','utility_room':'Hauswirtschaftsraum','outdoor':'Außenbereich','other':'Anderer Ort'};
 
 document.getElementById('sum_building_type').textContent=buildingTypes[document.getElementById('building_type').value]||'-';

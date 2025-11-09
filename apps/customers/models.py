@@ -38,9 +38,9 @@ class Customer(models.Model):
 class Site(models.Model):
     """Installationsort"""
     GRID_TYPES = [
-        ('TN-C', 'TN-C'),
-        ('TN-S', 'TN-S'),
-        ('TT', 'TT'),
+        ('1p', '1-Polig'),
+        ('3p', '3-Polig'),
+        ('unknown', 'Unbekannt'),
     ]
     
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='sites')
@@ -52,7 +52,7 @@ class Site(models.Model):
     ])
     construction_year = models.PositiveIntegerField(null=True, blank=True)
     main_fuse_ampere = models.PositiveIntegerField(help_text="Hauptsicherung in Ampere")
-    grid_type = models.CharField(max_length=10, choices=GRID_TYPES)
+    grid_type = models.CharField(max_length=10, choices=GRID_TYPES, blank=True)
     distance_meter_to_hak = models.DecimalField(max_digits=5, decimal_places=2, 
                                                help_text="Entfernung Zählerschrank zu HAK in Metern")
     

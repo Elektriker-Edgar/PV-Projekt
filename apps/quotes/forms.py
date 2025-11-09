@@ -50,8 +50,9 @@ class PrecheckForm(forms.Form):
     )
     grid_type = forms.ChoiceField(
         choices=Site.GRID_TYPES,
-        label="Netzform",
-        widget=forms.Select(attrs={'class': 'form-control'})
+        label="Hausanschluss (optional)",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=False
     )
     distance_meter_to_hak = forms.DecimalField(
         max_digits=5, 
@@ -183,7 +184,7 @@ class PrecheckForm(forms.Form):
             building_type=self.cleaned_data['building_type'],
             construction_year=self.cleaned_data['construction_year'],
             main_fuse_ampere=self.cleaned_data['main_fuse_ampere'],
-            grid_type=self.cleaned_data['grid_type'],
+            grid_type=self.cleaned_data.get('grid_type') or '',
             distance_meter_to_hak=self.cleaned_data['distance_meter_to_hak'],
             meter_cabinet_photo=self.cleaned_data['meter_cabinet_photo'],
             hak_photo=self.cleaned_data['hak_photo']

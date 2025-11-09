@@ -86,10 +86,12 @@ def pricing_preview(request):
     wallbox_cable_length = Decimal(str(data.get('wallbox_cable_length') or 0))
     wallbox_pv_surplus = str(data.get('wallbox_pv_surplus')).lower() in ['1', 'true', 'on']
 
+    is_single_phase = (grid_type == '1p')
+
     # Determine package
     if storage_kwh and storage_kwh > 0:
         package = 'pro'
-    elif (desired_power and desired_power > 3) or inverter_class in ['5kva', '10kva'] or grid_type == 'TT':
+    elif (desired_power and desired_power > 3) or inverter_class in ['5kva', '10kva'] or is_single_phase:
         package = 'plus'
     else:
         package = 'basis'
@@ -100,7 +102,7 @@ def pricing_preview(request):
     travel_cost = _infer_travel_cost(site_address)
 
     surcharges = Decimal('0.00')
-    if grid_type == 'TT':
+    if is_single_phase:
         surcharges += _pc('surcharge_tt_grid', Decimal('150.00'))
     if main_fuse and main_fuse > 35:
         surcharges += _pc('surcharge_selective_fuse', Decimal('220.00'))
