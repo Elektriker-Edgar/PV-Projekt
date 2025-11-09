@@ -40,11 +40,10 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 .form-check-input:checked{background-color:var(--edgard-green);border-color:var(--edgard-green)}
 .file-upload-zone{border:2px dashed #dee2e6;border-radius:12px;padding:2rem;text-align:center;background:#f8f9fa;cursor:pointer;margin-bottom:1.5rem;transition:all 0.3s}
 .file-upload-zone:hover{border-color:var(--edgard-green);background:rgba(40,167,69,0.05)}
-.uploaded-file{background:rgba(40,167,69,0.1);border:1px solid var(--edgard-green);border-radius:8px;padding:1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:1rem}
-.uploaded-file img{width:100px;height:100px;border-radius:6px;object-fit:cover;border:2px solid var(--edgard-green);box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.uploaded-file .file-info{flex:1;text-align:left;padding:0 1rem}
+.uploaded-file{background:rgba(40,167,69,0.1);border:1px solid var(--edgard-green);border-radius:8px;padding:0.75rem 1rem;margin-top:0.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.uploaded-file .file-info{flex:1;text-align:left}
 .uploaded-file .file-name{font-weight:600;color:var(--edgard-blue);margin-bottom:0.25rem}
-.uploaded-file .file-size{font-size:0.85rem;color:var(--edgard-gray)}
+.uploaded-file .file-size{font-size:0.85rem;color:#6c757d}
 .price-display-card{background:linear-gradient(135deg,rgba(40,167,69,0.1),rgba(44,90,160,0.05));border:3px solid var(--edgard-green);border-radius:20px;padding:3rem 2rem;margin:2rem 0;text-align:center}
 .price-amount{font-size:4rem;font-weight:700;color:var(--edgard-green);margin:1rem 0}
 .price-breakdown{background:white;border-radius:12px;padding:1.5rem;margin-top:2rem;text-align:left}
@@ -352,7 +351,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Foto hochladen</p>
 <small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="meter_cabinet_photo" name="meter_cabinet_photo" accept="image/jpeg,image/png" style="display:none">
+<input type="file" id="meter_cabinet_photo" name="meter_cabinet_photo" accept="image/*,.pdf" style="display:none">
 </div>
 <div id="meter_cabinet_preview"></div>
 </div>
@@ -362,7 +361,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Foto hochladen</p>
 <small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="hak_photo" name="hak_photo" accept="image/jpeg,image/png" style="display:none">
+<input type="file" id="hak_photo" name="hak_photo" accept="image/*,.pdf" style="display:none">
 </div>
 <div id="hak_preview"></div>
 </div>
@@ -375,7 +374,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Foto hochladen</p>
 <small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="location_photo" name="location_photo" accept="image/jpeg,image/png" style="display:none">
+<input type="file" id="location_photo" name="location_photo" accept="image/*,.pdf" style="display:none">
 </div>
 <div id="location_preview"></div>
 </div>
@@ -385,7 +384,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Foto hochladen</p>
 <small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="cable_route_photo" name="cable_route_photo" accept="image/jpeg,image/png" style="display:none">
+<input type="file" id="cable_route_photo" name="cable_route_photo" accept="image/*,.pdf" style="display:none">
 </div>
 <div id="cable_route_preview"></div>
 </div>
@@ -398,7 +397,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 </div>
 
 <div class="form-floating">
-<textarea class="form-control" id="own_material_description" name="own_material_description" style="height:150px"></textarea>
+<textarea class="form-control" id="own_material_description" name="own_material_description" style="height:150px" disabled></textarea>
 <label>Eigenes Material beschreiben (optional)</label>
 <div class="form-text">Welche Komponenten bringen Sie mit? (z.B. Wechselrichter, Module, Speicher)</div>
 </div>
@@ -487,6 +486,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <div class="summary-item"><span>Wechselrichter</span><strong id="sum_wr_power">-</strong></div>
 <div class="summary-item" id="sum_storage_row" style="display:none"><span>Speicher</span><strong id="sum_storage">-</strong></div>
 <div class="summary-item" id="sum_own_comp_row" style="display:none"><span>Eigene Komponenten</span><strong id="sum_own_comp">Ja</strong></div>
+<div class="summary-item" id="sum_material_desc_row" style="display:none"><span>Material-Beschreibung</span><strong id="sum_material_desc" style="white-space:pre-wrap;text-align:right;max-width:60%">-</strong></div>
 </div>
 
 <div class="summary-section" id="sum_wallbox_section" style="display:none">
@@ -557,8 +557,23 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 let currentStep=1,totalSteps=6,priceData=null;
 
 document.addEventListener('DOMContentLoaded',function(){
-updateProgress();setupFileUploads();setupValidation();loadFormData();
+updateProgress();setupFileUploads();setupValidation();loadFormData();setupOwnComponentsToggle();
 });
+
+function setupOwnComponentsToggle(){
+const checkbox=document.getElementById('own_components');
+const textarea=document.getElementById('own_material_description');
+
+checkbox.addEventListener('change',function(){
+if(this.checked){
+textarea.disabled=false;
+textarea.focus();
+}else{
+textarea.disabled=true;
+textarea.value='';
+}
+});
+}
 
 function updateProgress(){
 const visibleSteps=[1,2,3];
@@ -718,6 +733,15 @@ document.getElementById('sum_storage').textContent=storageKwh+' kWh';
 
 if(document.getElementById('own_components').checked){
 document.getElementById('sum_own_comp_row').style.display='flex';
+const materialDesc=document.getElementById('own_material_description').value;
+if(materialDesc){
+const descRow=document.getElementById('sum_material_desc_row');
+const descText=document.getElementById('sum_material_desc');
+if(descRow&&descText){
+descText.textContent=materialDesc;
+descRow.style.display='flex';
+}
+}
 }
 
 if(document.getElementById('has_wallbox').checked){
@@ -827,30 +851,29 @@ document.getElementById('wallboxFields').style.display=this.checked?'block':'non
 
 function setupFileUploads(){
 const MAX_FILE_SIZE=5*1024*1024;
-const ALLOWED_TYPES=['image/jpeg','image/png'];
-const photoLabels={
-'meter_cabinet_photo':'Zählerschrank',
-'hak_photo':'Hausanschlusskasten',
-'location_photo':'Montageorte',
-'cable_route_photo':'Kabelwege'
-};
 
 document.querySelectorAll('.file-upload-zone').forEach(zone=>{
 const inputId=zone.dataset.target;
 const input=document.getElementById(inputId);
-if(!input)return;
-
-zone.addEventListener('click',()=>input.click());
-
-input.addEventListener('change',function(e){
-const file=this.files[0];
-if(!file)return;
-
-if(!ALLOWED_TYPES.includes(file.type)){
-alert('Bitte nur JPG oder PNG Dateien hochladen.');
-this.value='';
+if(!input){
+console.error('Input not found:',inputId);
 return;
 }
+
+zone.addEventListener('click',()=>{
+console.log('Zone clicked, opening file picker for:',inputId);
+input.click();
+});
+
+input.addEventListener('change',function(){
+console.log('File input changed:',inputId);
+const file=this.files[0];
+if(!file){
+console.log('No file selected');
+return;
+}
+
+console.log('File selected:',file.name,file.type,file.size);
 
 if(file.size>MAX_FILE_SIZE){
 alert(`Die Datei ist zu groß. Maximal 5MB erlaubt.\nIhre Datei: ${(file.size/1024/1024).toFixed(2)}MB`);
@@ -858,31 +881,47 @@ this.value='';
 return;
 }
 
-const preview=document.getElementById(inputId+'_preview');
-const reader=new FileReader();
-reader.onload=function(event){
+const fileExt=file.name.split('.').pop().toLowerCase();
+if(!['jpg','jpeg','png','pdf'].includes(fileExt)){
+alert('Bitte nur JPG, PNG oder PDF Dateien hochladen.');
+this.value='';
+return;
+}
+
+const previewId=inputId.replace('_photo','_preview');
+const preview=document.getElementById(previewId);
+if(!preview){
+console.error('Preview container not found:',previewId);
+return;
+}
 const fileSize=(file.size/1024).toFixed(1);
 preview.innerHTML=`
 <div class="uploaded-file">
-<img src="${event.target.result}" alt="Vorschau">
 <div class="file-info">
-<div class="file-name"><i class="fas fa-check-circle text-success me-1"></i>${file.name}</div>
-<div class="file-size">${fileSize} KB</div>
+<div class="file-name">
+<i class="fas fa-check-circle text-success me-2"></i>
+<strong>${file.name}</strong>
+</div>
+<div class="file-size text-muted">${fileSize} KB</div>
 </div>
 <button type="button" class="btn btn-sm btn-danger" onclick="removeFile('${inputId}')">
-<i class="fas fa-times"></i> Entfernen
+<i class="fas fa-times me-1"></i>Löschen
 </button>
 </div>
 `;
-};
-reader.readAsDataURL(file);
+console.log('Preview created for:',inputId);
 });
 });
+console.log('setupFileUploads() completed');
 }
 
 function removeFile(inputId){
-document.getElementById(inputId).value='';
-document.getElementById(inputId+'_preview').innerHTML='';
+const input=document.getElementById(inputId);
+const previewId=inputId.replace('_photo','_preview');
+const preview=document.getElementById(previewId);
+if(input)input.value='';
+if(preview)preview.innerHTML='';
+console.log('File removed:',inputId);
 }
 
 function saveFormData(){
@@ -914,6 +953,10 @@ if(key==='has_wallbox'){
 document.getElementById('wallboxFields').style.display=field.checked?'block':'none';
 }
 if(key==='wallbox_cable_installed')toggleWallboxCableLength();
+if(key==='own_components'){
+const textarea=document.getElementById('own_material_description');
+textarea.disabled=!field.checked;
+}
 }else{
 field.value=data[key];
 }
