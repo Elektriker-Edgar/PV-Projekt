@@ -1,0 +1,556 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Angebot {{ quote.quote_number }}{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'dashboard:quote_list' %}">Angebote</a>
+    </li>
+    <li class="breadcrumb-item active">{{ quote.quote_number }}</li>
+{% endblock %}
+
+{% block header_actions %}
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard:quote_pdf' quote.id %}" class="btn btn-sm btn-success">
+            <i class="fas fa-file-pdf"></i> PDF Download
+        </a>
+        <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> Drucken
+        </button>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-start">
+        <div>
+            <h1 class="page-title">Angebot {{ quote.quote_number }}</h1>
+            <p class="page-subtitle">Erstellt am {{ quote.created_at|date:"d.m.Y H:i" }} Uhr</p>
+        </div>
+        <div>
+            {% if quote.status == 'draft' %}
+                <span class="badge badge-secondary" style="font-size: 16px; padding: 8px 16px;">
+                    <i class="fas fa-file"></i> Entwurf
+                </span>
+            {% elif quote.status == 'sent' %}
+                <span class="badge badge-info" style="font-size: 16px; padding: 8px 16px;">
+                    <i class="fas fa-paper-plane"></i> Versendet
+                </span>
+            {% elif quote.status == 'accepted' %}
+                <span class="badge badge-success" style="font-size: 16px; padding: 8px 16px;">
+                    <i class="fas fa-check"></i> Angenommen
+                </span>
+            {% elif quote.status == 'rejected' %}
+                <span class="badge badge-danger" style="font-size: 16px; padding: 8px 16px;">
+                    <i class="fas fa-times"></i> Abgelehnt
+                </span>
+            {% elif quote.status == 'expired' %}
+                <span class="badge badge-warning" style="font-size: 16px; padding: 8px 16px;">
+                    <i class="fas fa-clock"></i> Abgelaufen
+                </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Customer & Precheck Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user"></i> Kundendaten & Precheck
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Kunde</label>
+                                <div class="info-value">
+                                    <a href="{% url 'dashboard:customer_detail' quote.precheck.site.customer.id %}" class="text-primary" style="font-weight: 600;">
+                                        {{ quote.precheck.site.customer.name }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Kundentyp</label>
+                                <div class="info-value">
+                                    {% if quote.precheck.site.customer.customer_type == 'private' %}
+                                        <span class="badge badge-info">
+                                            <i class="fas fa-user"></i> Privatkunde
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-building"></i> Geschäftskunde
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">E-Mail</label>
+                                <div class="info-value">
+                                    <a href="mailto:{{ quote.precheck.site.customer.email }}" class="text-primary">
+                                        <i class="far fa-envelope"></i> {{ quote.precheck.site.customer.email }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Telefon</label>
+                                <div class="info-value">
+                                    {% if quote.precheck.site.customer.phone %}
+                                        <a href="tel:{{ quote.precheck.site.customer.phone }}" class="text-primary">
+                                            <i class="fas fa-phone"></i> {{ quote.precheck.site.customer.phone }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="info-group">
+                                <label class="info-label">Verknüpfter Precheck</label>
+                                <div class="info-value">
+                                    <a href="{% url 'dashboard:precheck_detail' quote.precheck.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-clipboard-check"></i> Precheck #{{ quote.precheck.id }} ansehen
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quote Items -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-list"></i> Angebotspositionen
+                        <span class="badge badge-secondary ms-2">{{ quote.items.count }}</span>
+                    </h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-container">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Pos.</th>
+                                    <th>Beschreibung</th>
+                                    <th>Menge</th>
+                                    <th>Einzelpreis</th>
+                                    <th>Gesamt (Netto)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in quote.items.all %}
+                                <tr>
+                                    <td>
+                                        <span style="font-weight: 600; color: var(--neutral-900);">{{ forloop.counter }}</span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <div style="font-weight: 500; margin-bottom: 4px;">
+                                                {{ item.description }}
+                                            </div>
+                                            {% if item.details %}
+                                            <div class="text-muted" style="font-size: 12px;">
+                                                {{ item.details }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 500;">{{ item.quantity }} {{ item.unit }}</span>
+                                    </td>
+                                    <td>
+                                        <span style="color: var(--neutral-700);">{{ item.unit_price|floatformat:2 }} €</span>
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 600; color: var(--primary-blue);">
+                                            {{ item.total_price|floatformat:2 }} €
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <span class="text-muted">Keine Positionen vorhanden</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-calculator"></i> Preisberechnung
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="price-summary">
+                        <div class="price-row">
+                            <span class="price-label">Nettosumme</span>
+                            <span class="price-value">{{ quote.total_net|floatformat:2 }} €</span>
+                        </div>
+                        <div class="price-row">
+                            <span class="price-label">Mehrwertsteuer (19%)</span>
+                            <span class="price-value">{{ quote.total_vat|floatformat:2 }} €</span>
+                        </div>
+                        <div class="price-row price-total">
+                            <span class="price-label">Gesamtbetrag (Brutto)</span>
+                            <span class="price-value">{{ quote.total_gross|floatformat:2 }} €</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            {% if quote.notes %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-sticky-note"></i> Anmerkungen
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ quote.notes|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Status Management -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-exchange-alt"></i> Status ändern
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'dashboard:quote_update_status' quote.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Aktueller Status</label>
+                            <select name="status" class="form-select">
+                                <option value="draft" {% if quote.status == 'draft' %}selected{% endif %}>Entwurf</option>
+                                <option value="sent" {% if quote.status == 'sent' %}selected{% endif %}>Versendet</option>
+                                <option value="accepted" {% if quote.status == 'accepted' %}selected{% endif %}>Angenommen</option>
+                                <option value="rejected" {% if quote.status == 'rejected' %}selected{% endif %}>Abgelehnt</option>
+                                <option value="expired" {% if quote.status == 'expired' %}selected{% endif %}>Abgelaufen</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save"></i> Status speichern
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-bolt"></i> Aktionen
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'dashboard:quote_pdf' quote.id %}" class="btn btn-success">
+                            <i class="fas fa-file-pdf"></i> PDF herunterladen
+                        </a>
+                        <a href="mailto:{{ quote.precheck.site.customer.email }}" class="btn btn-primary">
+                            <i class="far fa-envelope"></i> E-Mail senden
+                        </a>
+                        <button class="btn btn-secondary" onclick="window.print()">
+                            <i class="fas fa-print"></i> Drucken
+                        </button>
+                        <a href="{% url 'dashboard:quote_list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left"></i> Zurück zur Liste
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-clock"></i> Zeitverlauf
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-icon" style="background: var(--success);">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Angebot erstellt</div>
+                                <div class="timeline-time">{{ quote.created_at|date:"d.m.Y H:i" }} Uhr</div>
+                            </div>
+                        </div>
+
+                        {% if quote.updated_at != quote.created_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon" style="background: var(--primary-blue);">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Zuletzt aktualisiert</div>
+                                <div class="timeline-time">{{ quote.updated_at|date:"d.m.Y H:i" }} Uhr</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if quote.status == 'sent' %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon" style="background: var(--info);">
+                                <i class="fas fa-paper-plane"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Angebot versendet</div>
+                            </div>
+                        </div>
+                        {% elif quote.status == 'accepted' %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon" style="background: var(--success);">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Angebot angenommen</div>
+                            </div>
+                        </div>
+                        {% elif quote.status == 'rejected' %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon" style="background: var(--danger);">
+                                <i class="fas fa-times"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Angebot abgelehnt</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Info -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-info-circle"></i> Zusammenfassung
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="summary-item">
+                        <div class="summary-label">Angebotsnummer</div>
+                        <div class="summary-value">{{ quote.quote_number }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Precheck-ID</div>
+                        <div class="summary-value">
+                            <a href="{% url 'dashboard:precheck_detail' quote.precheck.id %}" class="text-primary">
+                                #{{ quote.precheck.id }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Positionen</div>
+                        <div class="summary-value">{{ quote.items.count }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Erstellt am</div>
+                        <div class="summary-value">{{ quote.created_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Letzte Änderung</div>
+                        <div class="summary-value">{{ quote.updated_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .info-group {
+        margin-bottom: 0;
+    }
+
+    .info-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--neutral-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    .info-value {
+        font-size: 14px;
+        color: var(--neutral-800);
+        line-height: 1.5;
+    }
+
+    .price-summary {
+        background: var(--neutral-50);
+        padding: 24px;
+        border-radius: 8px;
+    }
+
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--neutral-200);
+    }
+
+    .price-row:last-child {
+        border-bottom: none;
+    }
+
+    .price-row.price-total {
+        padding-top: 20px;
+        margin-top: 12px;
+        border-top: 2px solid var(--neutral-300);
+        border-bottom: none;
+    }
+
+    .price-label {
+        font-size: 14px;
+        color: var(--neutral-600);
+        font-weight: 500;
+    }
+
+    .price-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--neutral-900);
+    }
+
+    .price-total .price-label {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--neutral-900);
+    }
+
+    .price-total .price-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--primary-blue);
+    }
+
+    .timeline {
+        position: relative;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 14px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--neutral-200);
+    }
+
+    .timeline-item {
+        display: flex;
+        gap: 16px;
+        padding-bottom: 24px;
+        position: relative;
+    }
+
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        z-index: 1;
+    }
+
+    .timeline-icon i {
+        color: white;
+        font-size: 14px;
+    }
+
+    .timeline-content {
+        flex: 1;
+        padding-top: 4px;
+    }
+
+    .timeline-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--neutral-900);
+        margin-bottom: 4px;
+    }
+
+    .timeline-time {
+        font-size: 12px;
+        color: var(--neutral-500);
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--neutral-200);
+    }
+
+    .summary-item:last-child {
+        border-bottom: none;
+    }
+
+    .summary-label {
+        font-size: 13px;
+        color: var(--neutral-600);
+    }
+
+    .summary-value {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--neutral-900);
+    }
+
+    @media print {
+        .sidebar,
+        .top-header,
+        .btn,
+        .card:nth-child(n+3) {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+        }
+
+        .page-content {
+            padding: 0 !important;
+        }
+    }
+</style>
+{% endblock %}

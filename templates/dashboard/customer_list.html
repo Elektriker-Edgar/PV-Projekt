@@ -1,0 +1,267 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Kunden{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item active">Kunden</li>
+{% endblock %}
+
+{% block header_actions %}
+    <a href="{% url 'dashboard:customer_export' %}" class="btn btn-sm btn-outline-primary">
+        <i class="fas fa-download"></i> CSV Export
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Kunden</h1>
+        <p class="page-subtitle">Verwalten Sie alle Kundendaten und deren Standorte</p>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Suche</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: white; border-right: none;">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                            <input
+                                type="text"
+                                name="search"
+                                class="form-control"
+                                placeholder="Name, E-Mail, Telefon..."
+                                value="{{ search_query }}"
+                                style="border-left: none;">
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Kundentyp</label>
+                        <select name="customer_type" class="form-select">
+                            <option value="">Alle Typen</option>
+                            <option value="private" {% if filter_type == 'private' %}selected{% endif %}>Privatkunde</option>
+                            <option value="business" {% if filter_type == 'business' %}selected{% endif %}>Geschäftskunde</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Sortierung</label>
+                        <select name="sort" class="form-select">
+                            <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Neueste zuerst</option>
+                            <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Älteste zuerst</option>
+                            <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Name A-Z</option>
+                            <option value="-name" {% if sort_by == '-name' %}selected{% endif %}>Name Z-A</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Filter anwenden
+                        </button>
+                        <a href="{% url 'dashboard:customer_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i> Zurücksetzen
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Card -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title">
+                Alle Kunden
+                <span class="badge badge-secondary ms-2">{{ total_count }}</span>
+            </h3>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-container">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Kontaktdaten</th>
+                            <th>Kundentyp</th>
+                            <th>Standorte</th>
+                            <th>Prechecks</th>
+                            <th>Registriert am</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                        <tr>
+                            <td>
+                                <span style="font-weight: 600; color: var(--neutral-900);">#{{ customer.id }}</span>
+                            </td>
+                            <td>
+                                <div style="font-weight: 500; color: var(--neutral-900);">
+                                    {{ customer.name }}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-size: 13px;">
+                                    <div class="text-muted mb-1">
+                                        <i class="far fa-envelope"></i> {{ customer.email|truncatechars:30 }}
+                                    </div>
+                                    {% if customer.phone %}
+                                    <div class="text-muted">
+                                        <i class="fas fa-phone"></i> {{ customer.phone }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if customer.customer_type == 'private' %}
+                                    <span class="badge badge-info">
+                                        <i class="fas fa-user"></i> Privatkunde
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-building"></i> Geschäftskunde
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span style="font-weight: 600; color: var(--primary-blue); font-size: 15px;">
+                                    {{ customer.sites.count }}
+                                </span>
+                                <span class="text-muted" style="font-size: 11px;">Standort{{ customer.sites.count|pluralize:"e" }}</span>
+                            </td>
+                            <td>
+                                <span style="font-weight: 600; color: var(--neutral-700); font-size: 15px;">
+                                    {{ customer.total_prechecks }}
+                                </span>
+                                <span class="text-muted" style="font-size: 11px;">Precheck{{ customer.total_prechecks|pluralize:"s" }}</span>
+                            </td>
+                            <td>
+                                <div style="font-size: 13px;">
+                                    <div style="font-weight: 500;">{{ customer.created_at|date:"d.m.Y" }}</div>
+                                    <div class="text-muted" style="font-size: 11px;">{{ customer.created_at|date:"H:i" }} Uhr</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'dashboard:customer_detail' customer.id %}"
+                                       class="btn btn-sm btn-primary"
+                                       title="Details anzeigen">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="mailto:{{ customer.email }}"
+                                       class="btn btn-sm btn-secondary"
+                                       title="E-Mail senden">
+                                        <i class="far fa-envelope"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="fas fa-users" style="font-size: 48px; color: var(--neutral-300); margin-bottom: 16px;"></i>
+                                <p class="text-muted mb-0">Keine Kunden gefunden</p>
+                                <small class="text-muted">Versuchen Sie, Ihre Filter anzupassen</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer" style="background: var(--neutral-50); padding: 16px 24px;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted" style="font-size: 13px;">
+                    Zeige {{ page_obj.start_index }} bis {{ page_obj.end_index }} von {{ page_obj.paginator.count }} Einträgen
+                </div>
+
+                <nav>
+                    <ul class="pagination mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_type %}&customer_type={{ filter_type }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_type %}&customer_type={{ filter_type }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_type %}&customer_type={{ filter_type }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_type %}&customer_type={{ filter_type }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_type %}&customer_type={{ filter_type }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .input-group-text {
+        border-color: var(--neutral-300);
+    }
+
+    .pagination {
+        gap: 4px;
+    }
+
+    .page-link {
+        border: 1px solid var(--neutral-200);
+        color: var(--neutral-600);
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: all 0.2s;
+        font-size: 13px;
+    }
+
+    .page-link:hover {
+        background: var(--neutral-100);
+        border-color: var(--neutral-300);
+        color: var(--neutral-900);
+    }
+
+    .page-item.active .page-link {
+        background: var(--primary-blue);
+        border-color: var(--primary-blue);
+        color: white;
+    }
+</style>
+{% endblock %}

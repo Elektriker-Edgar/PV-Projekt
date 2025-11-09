@@ -1,0 +1,624 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Precheck #{{ precheck.id }}{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'dashboard:precheck_list' %}">Prechecks</a>
+    </li>
+    <li class="breadcrumb-item active">Detail #{{ precheck.id }}</li>
+{% endblock %}
+
+{% block header_actions %}
+    <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> Drucken
+        </button>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-start">
+        <div>
+            <h1 class="page-title">Precheck #{{ precheck.id }}</h1>
+            <p class="page-subtitle">Erstellt am {{ precheck.created_at|date:"d.m.Y H:i" }} Uhr</p>
+        </div>
+        {% if quote %}
+        <a href="{% url 'dashboard:quote_detail' quote.id %}" class="btn btn-success">
+            <i class="fas fa-file-invoice"></i> Angebot {{ quote.quote_number }} ansehen
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Customer Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user"></i> Kundendaten
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Name</label>
+                                <div class="info-value">{{ precheck.site.customer.name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Kundentyp</label>
+                                <div class="info-value">
+                                    <span class="badge badge-info">
+                                        {{ precheck.site.customer.get_customer_type_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">E-Mail</label>
+                                <div class="info-value">
+                                    <a href="mailto:{{ precheck.site.customer.email }}" class="text-primary">
+                                        <i class="far fa-envelope"></i> {{ precheck.site.customer.email }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Telefon</label>
+                                <div class="info-value">
+                                    {% if precheck.site.customer.phone %}
+                                        <a href="tel:{{ precheck.site.customer.phone }}" class="text-primary">
+                                            <i class="fas fa-phone"></i> {{ precheck.site.customer.phone }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Site Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-building"></i> Standort-Informationen
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Adresse</label>
+                                <div class="info-value">{{ precheck.site.address|linebreaks }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Gebäudetyp</label>
+                                <div class="info-value">
+                                    <span class="badge badge-secondary">
+                                        {{ precheck.site.get_building_type_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-group">
+                                <label class="info-label">Baujahr</label>
+                                <div class="info-value">{{ precheck.site.construction_year|default:"-" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-group">
+                                <label class="info-label">Hauptsicherung</label>
+                                <div class="info-value">
+                                    <span style="font-weight: 600; color: var(--primary-blue);">
+                                        {{ precheck.site.main_fuse_ampere }} A
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-group">
+                                <label class="info-label">Netztyp</label>
+                                <div class="info-value">
+                                    {% if precheck.site.grid_type %}
+                                        <span class="badge badge-info">
+                                            {{ precheck.site.get_grid_type_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="info-group">
+                                <label class="info-label">Entfernung Zählerschrank zu HAK</label>
+                                <div class="info-value">{{ precheck.site.distance_meter_to_hak }} Meter</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PV System Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-solar-panel"></i> PV-System Details
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Gewünschte Leistung</label>
+                                <div class="info-value">
+                                    <span style="font-weight: 700; font-size: 20px; color: var(--primary-blue);">
+                                        {{ precheck.desired_power_kw }} kW
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Wechselrichter-Klasse</label>
+                                <div class="info-value">
+                                    <span class="badge badge-info" style="font-size: 14px;">
+                                        {{ precheck.inverter_label }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Speicher</label>
+                                <div class="info-value">
+                                    {% if precheck.storage_kwh %}
+                                        <span style="font-weight: 600; color: var(--success); font-size: 18px;">
+                                            <i class="fas fa-battery-full"></i> {{ precheck.storage_kwh }} kWh
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Kein Speicher</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Eigene Komponenten</label>
+                                <div class="info-value">
+                                    {% if precheck.own_components %}
+                                        <span class="badge badge-warning" style="font-size: 14px;">
+                                            <i class="fas fa-check"></i> Ja, Kunde bringt eigene Komponenten mit
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-success" style="font-size: 14px;">
+                                            <i class="fas fa-times"></i> Nein
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wallbox Information -->
+            {% if precheck.wallbox %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-charging-station"></i> Wallbox-Konfiguration
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Wallbox-Klasse</label>
+                                <div class="info-value">
+                                    <span class="badge badge-info" style="font-size: 14px;">
+                                        {{ precheck.get_wallbox_class_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Montageart</label>
+                                <div class="info-value">
+                                    {% if precheck.wallbox_mount %}
+                                        <span class="badge badge-secondary">
+                                            {{ precheck.get_wallbox_mount_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Zuleitung vorbereitet</label>
+                                <div class="info-value">
+                                    {% if precheck.wallbox_cable_prepared %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Ja
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-times"></i> Nein
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Kabellänge</label>
+                                <div class="info-value">
+                                    {% if precheck.wallbox_cable_length_m %}
+                                        {{ precheck.wallbox_cable_length_m }} Meter
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Uploaded Photos -->
+            {% if uploaded_files %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-images"></i> Hochgeladene Fotos
+                        <span class="badge badge-secondary ms-2">{{ uploaded_files|length }}</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% for label, photo in uploaded_files %}
+                        <div class="col-md-6">
+                            <div class="photo-card">
+                                <a href="{{ photo.url }}" target="_blank">
+                                    <img src="{{ photo.url }}" alt="{{ label }}" class="photo-img">
+                                    <div class="photo-overlay">
+                                        <i class="fas fa-search-plus"></i>
+                                    </div>
+                                </a>
+                                <div class="photo-label">
+                                    <i class="fas fa-image"></i> {{ label }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Notes -->
+            {% if precheck.notes %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-sticky-note"></i> Anmerkungen
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ precheck.notes|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-bolt"></i> Aktionen
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="mailto:{{ precheck.site.customer.email }}" class="btn btn-primary">
+                            <i class="far fa-envelope"></i> E-Mail senden
+                        </a>
+                        {% if precheck.site.customer.phone %}
+                        <a href="tel:{{ precheck.site.customer.phone }}" class="btn btn-secondary">
+                            <i class="fas fa-phone"></i> Anrufen
+                        </a>
+                        {% endif %}
+                        <button class="btn btn-secondary" onclick="window.print()">
+                            <i class="fas fa-print"></i> Drucken
+                        </button>
+                        <a href="{% url 'dashboard:precheck_list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left"></i> Zurück zur Liste
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-clock"></i> Zeitverlauf
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-icon" style="background: var(--success);">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Precheck erstellt</div>
+                                <div class="timeline-time">{{ precheck.created_at|date:"d.m.Y H:i" }} Uhr</div>
+                            </div>
+                        </div>
+
+                        {% if precheck.updated_at != precheck.created_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon" style="background: var(--primary-blue);">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Zuletzt aktualisiert</div>
+                                <div class="timeline-time">{{ precheck.updated_at|date:"d.m.Y H:i" }} Uhr</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if quote %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon" style="background: var(--success);">
+                                <i class="fas fa-file-invoice"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Angebot erstellt</div>
+                                <div class="timeline-time">{{ quote.created_at|date:"d.m.Y H:i" }} Uhr</div>
+                                <div style="margin-top: 4px;">
+                                    <a href="{% url 'dashboard:quote_detail' quote.id %}" class="text-primary" style="font-size: 12px;">
+                                        {{ quote.quote_number }} →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Info -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-info-circle"></i> Zusammenfassung
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="summary-item">
+                        <div class="summary-label">Precheck-ID</div>
+                        <div class="summary-value">#{{ precheck.id }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Erstellt am</div>
+                        <div class="summary-value">{{ precheck.created_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Letzte Änderung</div>
+                        <div class="summary-value">{{ precheck.updated_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                    {% if quote %}
+                    <div class="summary-item">
+                        <div class="summary-label">Angebot</div>
+                        <div class="summary-value">
+                            <a href="{% url 'dashboard:quote_detail' quote.id %}" class="text-primary">
+                                {{ quote.quote_number }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .info-group {
+        margin-bottom: 0;
+    }
+
+    .info-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--neutral-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    .info-value {
+        font-size: 14px;
+        color: var(--neutral-800);
+        line-height: 1.5;
+    }
+
+    /* Photo Cards */
+    .photo-card {
+        border: 1px solid var(--neutral-200);
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+    }
+
+    .photo-card a {
+        display: block;
+        position: relative;
+        aspect-ratio: 4/3;
+        overflow: hidden;
+    }
+
+    .photo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+
+    .photo-card:hover .photo-img {
+        transform: scale(1.1);
+    }
+
+    .photo-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .photo-overlay i {
+        color: white;
+        font-size: 32px;
+    }
+
+    .photo-card:hover .photo-overlay {
+        opacity: 1;
+    }
+
+    .photo-label {
+        padding: 12px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--neutral-700);
+        background: var(--neutral-50);
+    }
+
+    /* Timeline */
+    .timeline {
+        position: relative;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 14px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--neutral-200);
+    }
+
+    .timeline-item {
+        display: flex;
+        gap: 16px;
+        padding-bottom: 24px;
+        position: relative;
+    }
+
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        z-index: 1;
+    }
+
+    .timeline-icon i {
+        color: white;
+        font-size: 14px;
+    }
+
+    .timeline-content {
+        flex: 1;
+        padding-top: 4px;
+    }
+
+    .timeline-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--neutral-900);
+        margin-bottom: 4px;
+    }
+
+    .timeline-time {
+        font-size: 12px;
+        color: var(--neutral-500);
+    }
+
+    /* Summary */
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--neutral-200);
+    }
+
+    .summary-item:last-child {
+        border-bottom: none;
+    }
+
+    .summary-label {
+        font-size: 13px;
+        color: var(--neutral-600);
+    }
+
+    .summary-value {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--neutral-900);
+    }
+
+    @media print {
+        .sidebar,
+        .top-header,
+        .btn,
+        .card:last-child {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+        }
+
+        .page-content {
+            padding: 0 !important;
+        }
+    }
+</style>
+{% endblock %}

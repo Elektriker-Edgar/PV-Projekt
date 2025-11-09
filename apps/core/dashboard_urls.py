@@ -1,0 +1,32 @@
+"""
+Dashboard URL Configuration
+Admin-Dashboard URLs für EDGARD PV-Service
+
+Alle URLs sind unter /dashboard/ verfügbar
+"""
+from django.urls import path
+from . import dashboard_views
+
+app_name = 'dashboard'
+
+urlpatterns = [
+    # Dashboard Home - Übersicht mit Statistiken
+    path('', dashboard_views.DashboardHomeView.as_view(), name='home'),
+
+    # Precheck Management
+    path('prechecks/', dashboard_views.PrecheckListView.as_view(), name='precheck_list'),
+    path('prechecks/<int:pk>/', dashboard_views.PrecheckDetailView.as_view(), name='precheck_detail'),
+    path('prechecks/export/', dashboard_views.PrecheckExportView.as_view(), name='precheck_export'),
+
+    # Price Configuration Management
+    path('prices/', dashboard_views.PriceConfigListView.as_view(), name='price_list'),
+    path('prices/<int:pk>/edit/', dashboard_views.PriceConfigUpdateView.as_view(), name='price_update'),
+
+    # Customer Management
+    path('customers/', dashboard_views.CustomerListView.as_view(), name='customer_list'),
+    path('customers/<int:pk>/', dashboard_views.CustomerDetailView.as_view(), name='customer_detail'),
+
+    # Quote Management
+    path('quotes/', dashboard_views.QuoteListView.as_view(), name='quote_list'),
+    path('quotes/<int:pk>/', dashboard_views.QuoteDetailView.as_view(), name='quote_detail'),
+]

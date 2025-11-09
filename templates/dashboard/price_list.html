@@ -1,0 +1,345 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Preiskonfiguration{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item active">Preiskonfiguration</li>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Preiskonfiguration</h1>
+        <p class="page-subtitle">Verwalten Sie alle Preise für Anfahrt, Pakete, Material und Zusatzleistungen</p>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-1" style="font-size: 13px; font-weight: 600;">Anfahrt & Zonen</p>
+                            <h2 class="mb-0" style="font-size: 32px; font-weight: 700; color: var(--neutral-900);">
+                                {{ grouped_prices|length }}
+                            </h2>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #eff6ff; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-map-marker-alt" style="color: var(--primary-blue); font-size: 20px;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-1" style="font-size: 13px; font-weight: 600;">Zuschläge</p>
+                            <h2 class="mb-0" style="font-size: 32px; font-weight: 700; color: var(--neutral-900);">
+                                {{ grouped_prices.Zuschläge|length|default:0 }}
+                            </h2>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #fef3c7; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-plus-circle" style="color: var(--warning); font-size: 20px;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-1" style="font-size: 13px; font-weight: 600;">Pakete & Material</p>
+                            <h2 class="mb-0" style="font-size: 32px; font-weight: 700; color: var(--neutral-900);">
+                                {% widthratio grouped_prices.Pakete|length|default:0 1 1 %}{% widthratio grouped_prices.Material|length|default:0 1 1 %}
+                            </h2>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #dcfce7; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-box" style="color: #16a34a; font-size: 20px;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Price Categories -->
+    {% for category, prices in grouped_prices.items %}
+    {% if prices %}
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title">
+                {% if category == 'Anfahrt & Zonen' %}
+                    <i class="fas fa-map-marker-alt"></i>
+                {% elif category == 'Zuschläge' %}
+                    <i class="fas fa-plus-circle"></i>
+                {% elif category == 'Pakete' %}
+                    <i class="fas fa-box"></i>
+                {% elif category == 'Material' %}
+                    <i class="fas fa-tools"></i>
+                {% elif category == 'Wallbox' %}
+                    <i class="fas fa-charging-station"></i>
+                {% elif category == 'Kabel' %}
+                    <i class="fas fa-plug"></i>
+                {% endif %}
+                {{ category }}
+                <span class="badge badge-secondary ms-2">{{ prices|length }}</span>
+            </h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-container">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 60%;">Bezeichnung</th>
+                            <th style="width: 20%;">Wert</th>
+                            <th style="width: 10%;">Typ</th>
+                            <th style="width: 10%;">Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for price in prices %}
+                        <tr>
+                            <td>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--neutral-900);">
+                                        {{ price.get_price_type_display }}
+                                    </div>
+                                    {% if price.description %}
+                                        <div class="text-muted" style="font-size: 12px; margin-top: 4px;">
+                                            {{ price.description }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div id="price-value-{{ price.id }}">
+                                    <span style="font-weight: 700; font-size: 16px; color: var(--primary-blue);">
+                                        {{ price.value|floatformat:2 }}{% if price.is_percentage %} %{% else %} €{% endif %}
+                                    </span>
+                                </div>
+                                <div id="price-edit-{{ price.id }}" style="display: none;">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        class="form-control form-control-sm"
+                                        value="{{ price.value }}"
+                                        id="input-{{ price.id }}"
+                                        style="width: 120px;">
+                                </div>
+                            </td>
+                            <td>
+                                {% if price.is_percentage %}
+                                    <span class="badge badge-info">Prozent</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Euro</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-primary"
+                                        id="edit-btn-{{ price.id }}"
+                                        onclick="editPrice({{ price.id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-success"
+                                        id="save-btn-{{ price.id }}"
+                                        onclick="savePrice({{ price.id }})"
+                                        style="display: none;">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-secondary"
+                                        id="cancel-btn-{{ price.id }}"
+                                        onclick="cancelEdit({{ price.id }}, '{{ price.value }}')"
+                                        style="display: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <!-- Info Box -->
+    <div class="card" style="border-left: 4px solid var(--primary-blue);">
+        <div class="card-body">
+            <div class="d-flex align-items-start gap-3">
+                <div style="width: 40px; height: 40px; background: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-info-circle" style="color: var(--primary-blue); font-size: 18px;"></i>
+                </div>
+                <div>
+                    <h4 style="font-size: 14px; font-weight: 600; color: var(--neutral-900); margin: 0 0 8px 0;">
+                        Hinweise zur Preiskonfiguration
+                    </h4>
+                    <ul class="mb-0" style="font-size: 13px; color: var(--neutral-600); padding-left: 20px;">
+                        <li>Klicken Sie auf <i class="fas fa-edit"></i> um einen Preis zu bearbeiten</li>
+                        <li>Alle Änderungen werden sofort gespeichert</li>
+                        <li>Prozentuale Werte werden mit "%" angezeigt, Beträge mit "€"</li>
+                        <li>Diese Preise werden für die automatische Kalkulation in Prechecks verwendet</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-group-sm > .btn {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    .table tbody td {
+        vertical-align: middle;
+    }
+
+    .row {
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 1.5rem;
+    }
+
+    .g-4 {
+        gap: 1.5rem !important;
+    }
+</style>
+
+<script>
+function editPrice(id) {
+    // Hide display, show input
+    document.getElementById('price-value-' + id).style.display = 'none';
+    document.getElementById('price-edit-' + id).style.display = 'block';
+
+    // Hide edit button, show save/cancel
+    document.getElementById('edit-btn-' + id).style.display = 'none';
+    document.getElementById('save-btn-' + id).style.display = 'inline-block';
+    document.getElementById('cancel-btn-' + id).style.display = 'inline-block';
+
+    // Focus input
+    document.getElementById('input-' + id).focus();
+    document.getElementById('input-' + id).select();
+}
+
+function cancelEdit(id, originalValue) {
+    // Reset input to original value
+    document.getElementById('input-' + id).value = originalValue;
+
+    // Show display, hide input
+    document.getElementById('price-value-' + id).style.display = 'block';
+    document.getElementById('price-edit-' + id).style.display = 'none';
+
+    // Show edit button, hide save/cancel
+    document.getElementById('edit-btn-' + id).style.display = 'inline-block';
+    document.getElementById('save-btn-' + id).style.display = 'none';
+    document.getElementById('cancel-btn-' + id).style.display = 'none';
+}
+
+function savePrice(id) {
+    const newValue = document.getElementById('input-' + id).value;
+
+    // Show loading state
+    const saveBtn = document.getElementById('save-btn-' + id);
+    const originalContent = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    saveBtn.disabled = true;
+
+    // Send AJAX request
+    fetch('{% url "dashboard:price_update" 0 %}'.replace('/0/', '/' + id + '/'), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: 'value=' + encodeURIComponent(newValue)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update display
+            const displayEl = document.getElementById('price-value-' + id);
+            const isPercentage = data.is_percentage;
+            displayEl.querySelector('span').textContent = parseFloat(newValue).toFixed(2) + (isPercentage ? ' %' : ' €');
+
+            // Reset to view mode
+            cancelEdit(id, newValue);
+
+            // Show success message
+            showMessage('Preis erfolgreich aktualisiert', 'success');
+        } else {
+            // Show error message
+            showMessage('Fehler beim Speichern: ' + (data.error || 'Unbekannter Fehler'), 'danger');
+            saveBtn.innerHTML = originalContent;
+            saveBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Netzwerkfehler beim Speichern', 'danger');
+        saveBtn.innerHTML = originalContent;
+        saveBtn.disabled = false;
+    });
+}
+
+function showMessage(message, type) {
+    // Create alert
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.style.position = 'fixed';
+    alert.style.top = '20px';
+    alert.style.right = '20px';
+    alert.style.zIndex = '9999';
+    alert.style.minWidth = '300px';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    // Add to page
+    document.body.appendChild(alert);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        alert.remove();
+    }, 5000);
+}
+
+// Allow Enter key to save
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[id^="input-"]').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const id = this.id.replace('input-', '');
+                savePrice(id);
+            }
+        });
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const id = this.id.replace('input-', '');
+                const originalValue = document.getElementById('price-value-' + id).querySelector('span').textContent.replace(' %', '').replace(' €', '');
+                cancelEdit(id, originalValue);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

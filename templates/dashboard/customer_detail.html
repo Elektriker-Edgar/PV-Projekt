@@ -1,0 +1,530 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Kunde: {{ customer.name }}{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'dashboard:customer_list' %}">Kunden</a>
+    </li>
+    <li class="breadcrumb-item active">{{ customer.name }}</li>
+{% endblock %}
+
+{% block header_actions %}
+    <div class="d-flex gap-2">
+        <a href="mailto:{{ customer.email }}" class="btn btn-sm btn-outline-primary">
+            <i class="far fa-envelope"></i> E-Mail senden
+        </a>
+        {% if customer.phone %}
+        <a href="tel:{{ customer.phone }}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-phone"></i> Anrufen
+        </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">{{ customer.name }}</h1>
+        <p class="page-subtitle">Kunde seit {{ customer.created_at|date:"d.m.Y" }}</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Customer Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user"></i> Kundendaten
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Name</label>
+                                <div class="info-value">{{ customer.name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Kundentyp</label>
+                                <div class="info-value">
+                                    {% if customer.customer_type == 'private' %}
+                                        <span class="badge badge-info">
+                                            <i class="fas fa-user"></i> Privatkunde
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-building"></i> Geschäftskunde
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">E-Mail</label>
+                                <div class="info-value">
+                                    <a href="mailto:{{ customer.email }}" class="text-primary">
+                                        <i class="far fa-envelope"></i> {{ customer.email }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">Telefon</label>
+                                <div class="info-value">
+                                    {% if customer.phone %}
+                                        <a href="tel:{{ customer.phone }}" class="text-primary">
+                                            <i class="fas fa-phone"></i> {{ customer.phone }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GDPR Consent Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-shield-alt"></i> DSGVO Einwilligungen
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="consent-item">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="consent-label">Datenverarbeitung</span>
+                                    {% if customer.consent_data_processing %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Erteilt
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-danger">
+                                            <i class="fas fa-times"></i> Nicht erteilt
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {% if customer.consent_data_processing_date %}
+                                    <small class="text-muted">
+                                        <i class="far fa-clock"></i> {{ customer.consent_data_processing_date|date:"d.m.Y H:i" }} Uhr
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="consent-item">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="consent-label">Marketing</span>
+                                    {% if customer.consent_marketing %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Erteilt
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-times"></i> Nicht erteilt
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {% if customer.consent_marketing_date %}
+                                    <small class="text-muted">
+                                        <i class="far fa-clock"></i> {{ customer.consent_marketing_date|date:"d.m.Y H:i" }} Uhr
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sites List -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">
+                        <i class="fas fa-building"></i> Standorte
+                        <span class="badge badge-secondary ms-2">{{ sites.count }}</span>
+                    </h3>
+                </div>
+                <div class="card-body p-0">
+                    {% if sites %}
+                    <div class="table-container">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Adresse</th>
+                                    <th>Gebäudetyp</th>
+                                    <th>Hauptsicherung</th>
+                                    <th>Prechecks</th>
+                                    <th>Erstellt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for site in sites %}
+                                <tr>
+                                    <td>
+                                        <span style="font-weight: 600; color: var(--neutral-900);">#{{ site.id }}</span>
+                                    </td>
+                                    <td>
+                                        <div style="font-size: 13px; line-height: 1.4;">
+                                            {{ site.address|linebreaks|truncatewords:10 }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-secondary">
+                                            {{ site.get_building_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 600; color: var(--primary-blue);">
+                                            {{ site.main_fuse_ampere }} A
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 600;">{{ site.prechecks.count }}</span>
+                                    </td>
+                                    <td>
+                                        <div style="font-size: 13px;">
+                                            {{ site.created_at|date:"d.m.Y" }}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-building" style="font-size: 48px; color: var(--neutral-300); margin-bottom: 16px;"></i>
+                        <p class="text-muted mb-0">Keine Standorte vorhanden</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Prechecks List -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-clipboard-check"></i> Prechecks
+                        <span class="badge badge-secondary ms-2">{{ prechecks.count }}</span>
+                    </h3>
+                </div>
+                <div class="card-body p-0">
+                    {% if prechecks %}
+                    <div class="table-container">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Standort</th>
+                                    <th>Leistung</th>
+                                    <th>Speicher</th>
+                                    <th>Wallbox</th>
+                                    <th>Erstellt</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for precheck in prechecks %}
+                                <tr>
+                                    <td>
+                                        <span style="font-weight: 600; color: var(--neutral-900);">#{{ precheck.id }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="text-muted" style="font-size: 12px;">
+                                            {{ precheck.site.get_building_type_display }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 600; color: var(--primary-blue);">
+                                            {{ precheck.desired_power_kw }} kW
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if precheck.storage_kwh %}
+                                            <span class="badge badge-success">
+                                                {{ precheck.storage_kwh }} kWh
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if precheck.wallbox %}
+                                            <span class="badge badge-info">
+                                                {{ precheck.get_wallbox_class_display }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div style="font-size: 13px;">
+                                            {{ precheck.created_at|date:"d.m.Y" }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'dashboard:precheck_detail' precheck.id %}"
+                                           class="btn btn-sm btn-primary"
+                                           title="Details anzeigen">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard-check" style="font-size: 48px; color: var(--neutral-300); margin-bottom: 16px;"></i>
+                        <p class="text-muted mb-0">Keine Prechecks vorhanden</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-bolt"></i> Aktionen
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="mailto:{{ customer.email }}" class="btn btn-primary">
+                            <i class="far fa-envelope"></i> E-Mail senden
+                        </a>
+                        {% if customer.phone %}
+                        <a href="tel:{{ customer.phone }}" class="btn btn-secondary">
+                            <i class="fas fa-phone"></i> Anrufen
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'dashboard:customer_list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left"></i> Zurück zur Liste
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i> Statistik
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item">
+                        <div class="stat-icon" style="background: #dbeafe;">
+                            <i class="fas fa-building" style="color: var(--primary-blue);"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ sites.count }}</div>
+                            <div class="stat-label">Standort{{ sites.count|pluralize:"e" }}</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon" style="background: #d1fae5;">
+                            <i class="fas fa-clipboard-check" style="color: var(--success);"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ prechecks.count }}</div>
+                            <div class="stat-label">Precheck{{ prechecks.count|pluralize:"s" }}</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon" style="background: #fef3c7;">
+                            <i class="fas fa-file-invoice" style="color: var(--warning);"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ quotes.count }}</div>
+                            <div class="stat-label">Angebot{{ quotes.count|pluralize:"e" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-clock"></i> Zeitverlauf
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-icon" style="background: var(--success);">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Kunde registriert</div>
+                                <div class="timeline-time">{{ customer.created_at|date:"d.m.Y H:i" }} Uhr</div>
+                            </div>
+                        </div>
+
+                        {% if customer.updated_at != customer.created_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon" style="background: var(--primary-blue);">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Zuletzt aktualisiert</div>
+                                <div class="timeline-time">{{ customer.updated_at|date:"d.m.Y H:i" }} Uhr</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .info-group {
+        margin-bottom: 0;
+    }
+
+    .info-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--neutral-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    .info-value {
+        font-size: 14px;
+        color: var(--neutral-800);
+        line-height: 1.5;
+    }
+
+    .consent-item {
+        padding: 16px;
+        background: var(--neutral-50);
+        border-radius: 8px;
+    }
+
+    .consent-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--neutral-700);
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--neutral-200);
+    }
+
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--neutral-900);
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        color: var(--neutral-500);
+    }
+
+    .timeline {
+        position: relative;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 14px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--neutral-200);
+    }
+
+    .timeline-item {
+        display: flex;
+        gap: 16px;
+        padding-bottom: 24px;
+        position: relative;
+    }
+
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        z-index: 1;
+    }
+
+    .timeline-icon i {
+        color: white;
+        font-size: 14px;
+    }
+
+    .timeline-content {
+        flex: 1;
+        padding-top: 4px;
+    }
+
+    .timeline-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--neutral-900);
+        margin-bottom: 4px;
+    }
+
+    .timeline-time {
+        font-size: 12px;
+        color: var(--neutral-500);
+    }
+</style>
+{% endblock %}
