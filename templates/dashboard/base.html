@@ -524,13 +524,10 @@
                     <p>{{ request.user.email|truncatechars:20 }}</p>
                 </div>
             </div>
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn-logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Abmelden
-                </button>
-            </form>
+            <a href="/admin/logout/" class="btn-logout">
+                <i class="fas fa-sign-out-alt"></i>
+                Abmelden
+            </a>
         </div>
     </div>
 

@@ -11,9 +11,6 @@
 
 {% block header_actions %}
     <div class="d-flex gap-2">
-        <a href="{% url 'dashboard:quote_pdf' quote.id %}" class="btn btn-sm btn-success">
-            <i class="fas fa-file-pdf"></i> PDF Download
-        </a>
         <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
             <i class="fas fa-print"></i> Drucken
         </button>
@@ -69,7 +66,7 @@
                             <div class="info-group">
                                 <label class="info-label">Kunde</label>
                                 <div class="info-value">
-                                    <a href="{% url 'dashboard:customer_detail' quote.precheck.site.customer.id %}" class="text-primary" style="font-weight: 600;">
+                                    <a href="{% url 'dashboard:customer_detail' pk=quote.precheck.site.customer.id %}" class="text-primary" style="font-weight: 600;">
                                         {{ quote.precheck.site.customer.name }}
                                     </a>
                                 </div>
@@ -119,7 +116,7 @@
                             <div class="info-group">
                                 <label class="info-label">Verknüpfter Precheck</label>
                                 <div class="info-value">
-                                    <a href="{% url 'dashboard:precheck_detail' quote.precheck.id %}" class="btn btn-sm btn-outline-primary">
+                                    <a href="{% url 'dashboard:precheck_detail' pk=quote.precheck.id %}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-clipboard-check"></i> Precheck #{{ quote.precheck.id }} ansehen
                                     </a>
                                 </div>
@@ -158,24 +155,24 @@
                                     <td>
                                         <div>
                                             <div style="font-weight: 500; margin-bottom: 4px;">
-                                                {{ item.description }}
+                                                {{ item.text }}
                                             </div>
-                                            {% if item.details %}
+                                            {% if item.component %}
                                             <div class="text-muted" style="font-size: 12px;">
-                                                {{ item.details }}
+                                                {{ item.component.vendor }} - {{ item.component.sku }}
                                             </div>
                                             {% endif %}
                                         </div>
                                     </td>
                                     <td>
-                                        <span style="font-weight: 500;">{{ item.quantity }} {{ item.unit }}</span>
+                                        <span style="font-weight: 500;">{{ item.quantity }}</span>
                                     </td>
                                     <td>
                                         <span style="color: var(--neutral-700);">{{ item.unit_price|floatformat:2 }} €</span>
                                     </td>
                                     <td>
                                         <span style="font-weight: 600; color: var(--primary-blue);">
-                                            {{ item.total_price|floatformat:2 }} €
+                                            {{ item.line_total|floatformat:2 }} €
                                         </span>
                                     </td>
                                 </tr>
@@ -203,30 +200,30 @@
                     <div class="price-summary">
                         <div class="price-row">
                             <span class="price-label">Nettosumme</span>
-                            <span class="price-value">{{ quote.total_net|floatformat:2 }} €</span>
+                            <span class="price-value">{{ quote.subtotal|floatformat:2 }} €</span>
                         </div>
                         <div class="price-row">
-                            <span class="price-label">Mehrwertsteuer (19%)</span>
-                            <span class="price-value">{{ quote.total_vat|floatformat:2 }} €</span>
+                            <span class="price-label">Mehrwertsteuer ({{ quote.vat_rate }}%)</span>
+                            <span class="price-value">{{ quote.vat_amount|floatformat:2 }} €</span>
                         </div>
                         <div class="price-row price-total">
                             <span class="price-label">Gesamtbetrag (Brutto)</span>
-                            <span class="price-value">{{ quote.total_gross|floatformat:2 }} €</span>
+                            <span class="price-value">{{ quote.total|floatformat:2 }} €</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Notes -->
-            {% if quote.notes %}
+            <!-- Notes from Precheck -->
+            {% if quote.precheck.notes %}
             <div class="card mb-4">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-sticky-note"></i> Anmerkungen
+                        <i class="fas fa-sticky-note"></i> Anmerkungen aus Precheck
                     </h3>
                 </div>
                 <div class="card-body">
-                    <p class="mb-0">{{ quote.notes|linebreaks }}</p>
+                    <p class="mb-0">{{ quote.precheck.notes|linebreaks }}</p>
                 </div>
             </div>
             {% endif %}
@@ -234,33 +231,6 @@
 
         <!-- Right Column -->
         <div class="col-lg-4">
-            <!-- Status Management -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-exchange-alt"></i> Status ändern
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'dashboard:quote_update_status' quote.id %}">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label">Aktueller Status</label>
-                            <select name="status" class="form-select">
-                                <option value="draft" {% if quote.status == 'draft' %}selected{% endif %}>Entwurf</option>
-                                <option value="sent" {% if quote.status == 'sent' %}selected{% endif %}>Versendet</option>
-                                <option value="accepted" {% if quote.status == 'accepted' %}selected{% endif %}>Angenommen</option>
-                                <option value="rejected" {% if quote.status == 'rejected' %}selected{% endif %}>Abgelehnt</option>
-                                <option value="expired" {% if quote.status == 'expired' %}selected{% endif %}>Abgelaufen</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-save"></i> Status speichern
-                        </button>
-                    </form>
-                </div>
-            </div>
-
             <!-- Quick Actions -->
             <div class="card mb-4">
                 <div class="card-header">
@@ -270,9 +240,6 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'dashboard:quote_pdf' quote.id %}" class="btn btn-success">
-                            <i class="fas fa-file-pdf"></i> PDF herunterladen
-                        </a>
                         <a href="mailto:{{ quote.precheck.site.customer.email }}" class="btn btn-primary">
                             <i class="far fa-envelope"></i> E-Mail senden
                         </a>
@@ -364,7 +331,7 @@
                     <div class="summary-item">
                         <div class="summary-label">Precheck-ID</div>
                         <div class="summary-value">
-                            <a href="{% url 'dashboard:precheck_detail' quote.precheck.id %}" class="text-primary">
+                            <a href="{% url 'dashboard:precheck_detail' pk=quote.precheck.id %}" class="text-primary">
                                 #{{ quote.precheck.id }}
                             </a>
                         </div>

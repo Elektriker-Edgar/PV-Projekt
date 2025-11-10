@@ -3,6 +3,12 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, AuditLog
 
 
+# Konfiguriere die Standard-Admin-Site
+admin.site.site_header = 'PV Service Verwaltung'
+admin.site.site_title = 'PV Service Admin'
+admin.site.index_title = 'Dashboard'
+
+
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'role', 'is_staff', 'created_at')

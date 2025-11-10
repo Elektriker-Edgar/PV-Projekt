@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.core.middleware.AdminLoginRedirectMiddleware',  # Admin -> Dashboard Redirect
 ]
 
 ROOT_URLCONF = 'edgard_site.urls'
@@ -153,6 +154,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom User Model
 AUTH_USER_MODEL = 'core.User'
+
+# Login/Logout URLs
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGIN_URL = '/admin/login/'
 
 # REST Framework Settings
 REST_FRAMEWORK = {
