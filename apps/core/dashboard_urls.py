@@ -31,4 +31,16 @@ urlpatterns = [
     # Quote Management
     path('quotes/', dashboard_views.QuoteListView.as_view(), name='quote_list'),
     path('quotes/<int:pk>/', dashboard_views.QuoteDetailView.as_view(), name='quote_detail'),
+
+    # Product Catalog - Categories
+    path('catalog/categories/', dashboard_views.ProductCategoryListView.as_view(), name='category_list'),
+    path('catalog/categories/create/', dashboard_views.ProductCategoryCreateView.as_view(), name='category_create'),
+    path('catalog/categories/<int:pk>/edit/', dashboard_views.ProductCategoryUpdateView.as_view(), name='category_update'),
+    path('catalog/categories/<int:pk>/delete/', dashboard_views.ProductCategoryDeleteView.as_view(), name='category_delete'),
+
+    # Product Catalog - Products
+    path('catalog/products/', dashboard_views.ProductListView.as_view(), name='product_list'),
+    path('catalog/products/create/', dashboard_views.ProductCreateView.as_view(), name='product_create'),
+    path('catalog/products/<int:pk>/edit/', dashboard_views.ProductUpdateView.as_view(), name='product_update'),
+    path('catalog/products/<int:pk>/delete/', dashboard_views.ProductDeleteView.as_view(), name='product_delete'),
 ]

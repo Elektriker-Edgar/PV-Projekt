@@ -25,8 +25,8 @@ from django.views.generic import (
 )
 
 from apps.customers.models import Customer, Site
-from apps.quotes.models import Precheck, Quote, PriceConfig, QuoteItem
-from .forms import PriceConfigForm
+from apps.quotes.models import Precheck, Quote, PriceConfig, QuoteItem, ProductCategory, Product
+from .forms import PriceConfigForm, ProductCategoryForm, ProductForm
 
 
 class DashboardHomeView(LoginRequiredMixin, TemplateView):
@@ -725,6 +725,349 @@ class CustomerDeleteView(LoginRequiredMixin, DeleteView):
             request,
             f'Kunde "{customer_name}" (ID #{customer_id}) wurde gelöscht. '
             f'Entfernt: {sites_count} Standorte, {prechecks_count} Prechecks, {quotes_count} Angebote.'
+        )
+
+        return response
+
+
+# =============================================================================
+# PRODUCT CATALOG VIEWS - Produktkatalog-System
+# =============================================================================
+
+class ProductCategoryListView(LoginRequiredMixin, ListView):
+    """
+    Liste aller Produktkategorien
+
+    Features:
+    - Zeigt alle Kategorien mit Produktanzahl
+    - Sortierung nach sort_order
+    - Aktiv/Inaktiv Status
+    - Inline-Aktionen
+    """
+    model = ProductCategory
+    template_name = 'dashboard/category_list.html'
+    context_object_name = 'categories'
+    login_url = '/admin/login/'
+
+    def get_queryset(self):
+        """
+        Optimierte Query mit Produktanzahl
+        """
+        queryset = ProductCategory.objects.annotate(
+            active_product_count=Count('products', filter=Q(products__is_active=True))
+        ).order_by('sort_order', 'name')
+
+        # Suchfunktion
+        search_query = self.request.GET.get('search', '').strip()
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('search', '')
+        context['total_categories'] = ProductCategory.objects.count()
+        context['active_categories'] = ProductCategory.objects.filter(is_active=True).count()
+        return context
+
+
+class ProductCategoryCreateView(LoginRequiredMixin, View):
+    """
+    Erstellen einer neuen Produktkategorie (AJAX)
+    """
+    login_url = '/admin/login/'
+
+    def post(self, request, *args, **kwargs):
+        """
+        Erstellt eine neue Kategorie und gibt JSON zurück
+        """
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+
+        if not name:
+            messages.error(request, 'Kategoriename darf nicht leer sein.')
+            return redirect('dashboard:category_list')
+
+        # Prüfe ob Kategorie bereits existiert
+        if ProductCategory.objects.filter(name=name).exists():
+            messages.error(request, f'Kategorie "{name}" existiert bereits.')
+            return redirect('dashboard:category_list')
+
+        # Erstelle Kategorie
+        try:
+            # Ermittle höchste sort_order
+            from django.db.models import Max
+            max_sort = ProductCategory.objects.aggregate(Max('sort_order'))['sort_order__max'] or 0
+
+            category = ProductCategory.objects.create(
+                name=name,
+                description=description,
+                sort_order=max_sort + 10
+            )
+            messages.success(request, f'Kategorie "{category.name}" wurde erfolgreich erstellt.')
+        except Exception as e:
+            messages.error(request, f'Fehler beim Erstellen der Kategorie: {str(e)}')
+
+        return redirect('dashboard:category_list')
+
+
+class ProductCategoryUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    Bearbeiten einer Produktkategorie
+    """
+    model = ProductCategory
+    form_class = ProductCategoryForm
+    template_name = 'dashboard/category_form.html'
+    context_object_name = 'category'
+    success_url = reverse_lazy('dashboard:category_list')
+    login_url = '/admin/login/'
+
+    def form_valid(self, form):
+        """
+        Bei erfolgreicher Validierung: Success-Message
+        """
+        messages.success(
+            self.request,
+            f'Kategorie "{self.object.name}" wurde aktualisiert.'
+        )
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        """
+        Bei Validierungsfehlern: Error-Message
+        """
+        messages.error(
+            self.request,
+            'Fehler beim Speichern der Kategorie. Bitte prüfen Sie Ihre Eingaben.'
+        )
+        return super().form_invalid(form)
+
+
+class ProductCategoryDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Löschen einer Produktkategorie
+
+    WICHTIG: Verwendet PROTECT in models.py
+    Kategorie kann nicht gelöscht werden wenn noch Produkte zugeordnet sind
+    """
+    model = ProductCategory
+    login_url = '/admin/login/'
+    success_url = reverse_lazy('dashboard:category_list')
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Überschreibt delete() um eine Success-Message anzuzeigen
+        """
+        category = self.get_object()
+        category_name = category.name
+
+        # Prüfe ob Produkte vorhanden sind
+        product_count = category.products.count()
+        if product_count > 0:
+            messages.error(
+                request,
+                f'Kategorie "{category_name}" kann nicht gelöscht werden. '
+                f'Es sind noch {product_count} Produkt(e) zugeordnet.'
+            )
+            return redirect('dashboard:category_list')
+
+        # Lösche das Objekt
+        response = super().delete(request, *args, **kwargs)
+
+        # Success-Message
+        messages.success(
+            request,
+            f'Kategorie "{category_name}" wurde erfolgreich gelöscht.'
+        )
+
+        return response
+
+
+class ProductListView(LoginRequiredMixin, ListView):
+    """
+    Liste aller Produkte mit Filter und Suche
+
+    Features:
+    - Suche nach Name, SKU, Hersteller
+    - Filter nach Kategorie
+    - Filter nach Status (aktiv/inaktiv)
+    - Sortierung nach verschiedenen Feldern
+    - Paginierung (50 pro Seite)
+    - Zeigt Bruttopreise
+    """
+    model = Product
+    template_name = 'dashboard/product_list.html'
+    context_object_name = 'products'
+    paginate_by = 50
+    login_url = '/admin/login/'
+
+    def get_queryset(self):
+        """
+        Optimierte Query mit Suche und Filterung
+        """
+        queryset = Product.objects.select_related('category').order_by('category__sort_order', 'name')
+
+        # Suchfunktion
+        search_query = self.request.GET.get('search', '').strip()
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(sku__icontains=search_query) |
+                Q(manufacturer__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
+
+        # Filter: Kategorie
+        category_id = self.request.GET.get('category')
+        if category_id:
+            try:
+                queryset = queryset.filter(category_id=int(category_id))
+            except (ValueError, TypeError):
+                pass
+
+        # Filter: Status
+        status = self.request.GET.get('status')
+        if status == 'active':
+            queryset = queryset.filter(is_active=True)
+        elif status == 'inactive':
+            queryset = queryset.filter(is_active=False)
+
+        # Filter: Hervorgehoben
+        featured = self.request.GET.get('featured')
+        if featured == 'yes':
+            queryset = queryset.filter(is_featured=True)
+
+        # Sortierung
+        sort_by = self.request.GET.get('sort', 'name')
+        if sort_by in ['name', '-name', 'sku', '-sku', 'sales_price_net', '-sales_price_net', 'category__name', '-category__name']:
+            queryset = queryset.order_by(sort_by)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Suchparameter für Template
+        context['search_query'] = self.request.GET.get('search', '')
+        context['filter_category'] = self.request.GET.get('category', '')
+        context['filter_status'] = self.request.GET.get('status', '')
+        context['filter_featured'] = self.request.GET.get('featured', '')
+        context['sort_by'] = self.request.GET.get('sort', 'name')
+
+        # Alle Kategorien für Filter-Dropdown
+        context['categories'] = ProductCategory.objects.filter(is_active=True).order_by('sort_order', 'name')
+
+        # Statistiken
+        context['total_products'] = Product.objects.count()
+        context['active_products'] = Product.objects.filter(is_active=True).count()
+        context['featured_products'] = Product.objects.filter(is_featured=True).count()
+
+        return context
+
+
+class ProductCreateView(LoginRequiredMixin, View):
+    """
+    Erstellen eines neuen Produkts
+    Verwendet GET für Formular-Anzeige und POST für Speichern
+    """
+    login_url = '/admin/login/'
+
+    def get(self, request, *args, **kwargs):
+        """
+        Zeigt Formular zum Erstellen eines neuen Produkts
+        """
+        from django.shortcuts import render
+        form = ProductForm()
+        return render(request, 'dashboard/product_form.html', {
+            'form': form,
+            'is_create': True,
+        })
+
+    def post(self, request, *args, **kwargs):
+        """
+        Speichert neues Produkt
+        """
+        form = ProductForm(request.POST)
+        if form.is_valid():
+            product = form.save()
+            messages.success(request, f'Produkt "{product.name}" wurde erfolgreich erstellt.')
+            return redirect('dashboard:product_list')
+        else:
+            messages.error(request, 'Fehler beim Erstellen des Produkts. Bitte prüfen Sie Ihre Eingaben.')
+            from django.shortcuts import render
+            return render(request, 'dashboard/product_form.html', {
+                'form': form,
+                'is_create': True,
+            })
+
+
+class ProductUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    Bearbeiten eines Produkts
+    """
+    model = Product
+    form_class = ProductForm
+    template_name = 'dashboard/product_form.html'
+    context_object_name = 'product'
+    success_url = reverse_lazy('dashboard:product_list')
+    login_url = '/admin/login/'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_create'] = False
+        return context
+
+    def form_valid(self, form):
+        """
+        Bei erfolgreicher Validierung: Success-Message
+        """
+        messages.success(
+            self.request,
+            f'Produkt "{self.object.name}" wurde aktualisiert.'
+        )
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        """
+        Bei Validierungsfehlern: Error-Message
+        """
+        messages.error(
+            self.request,
+            'Fehler beim Speichern des Produkts. Bitte prüfen Sie Ihre Eingaben.'
+        )
+        return super().form_invalid(form)
+
+
+class ProductDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Löschen eines Produkts
+
+    WARNUNG: Dies löscht das Produkt permanent
+    Prüft ob Produkt in Angeboten verwendet wird
+    """
+    model = Product
+    login_url = '/admin/login/'
+    success_url = reverse_lazy('dashboard:product_list')
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Überschreibt delete() um eine Success-Message anzuzeigen
+        """
+        product = self.get_object()
+        product_name = product.name
+        product_sku = product.sku
+
+        # Lösche das Objekt
+        response = super().delete(request, *args, **kwargs)
+
+        # Success-Message
+        messages.success(
+            request,
+            f'Produkt "{product_name}" (SKU: {product_sku}) wurde erfolgreich gelöscht.'
         )
 
         return response

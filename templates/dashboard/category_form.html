@@ -1,0 +1,179 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Kategorie bearbeiten{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item">Katalog</li>
+    <li class="breadcrumb-item"><a href="{% url 'dashboard:category_list' %}">Kategorien</a></li>
+    <li class="breadcrumb-item active">Bearbeiten</li>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Kategorie bearbeiten</h1>
+        <p class="page-subtitle">Bearbeiten Sie die Produktkategorie "{{ category.name }}"</p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Form Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Kategorie-Daten</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                {{ form.name.label }} *
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger mt-1" style="font-size: 13px;">
+                                    {{ form.name.errors }}
+                                </div>
+                            {% endif %}
+                            {% if form.name.help_text %}
+                                <small class="text-muted">{{ form.name.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger mt-1" style="font-size: 13px;">
+                                    {{ form.description.errors }}
+                                </div>
+                            {% endif %}
+                            {% if form.description.help_text %}
+                                <small class="text-muted">{{ form.description.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.sort_order.id_for_label }}" class="form-label">
+                                {{ form.sort_order.label }}
+                            </label>
+                            {{ form.sort_order }}
+                            {% if form.sort_order.errors %}
+                                <div class="text-danger mt-1" style="font-size: 13px;">
+                                    {{ form.sort_order.errors }}
+                                </div>
+                            {% endif %}
+                            {% if form.sort_order.help_text %}
+                                <small class="text-muted">{{ form.sort_order.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    {{ form.is_active.label }}
+                                </label>
+                            </div>
+                            {% if form.is_active.errors %}
+                                <div class="text-danger mt-1" style="font-size: 13px;">
+                                    {{ form.is_active.errors }}
+                                </div>
+                            {% endif %}
+                            {% if form.is_active.help_text %}
+                                <small class="text-muted d-block mt-1">{{ form.is_active.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Änderungen speichern
+                            </button>
+                            <a href="{% url 'dashboard:category_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Abbrechen
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Info Card -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h3 class="card-title">Kategorie-Info</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">
+                            Kategorie-ID
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600;">
+                            #{{ category.id }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">
+                            Zugeordnete Produkte
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600;">
+                            <a href="{% url 'dashboard:product_list' %}?category={{ category.id }}" style="text-decoration: none;">
+                                {{ category.get_product_count }} Produkt{{ category.get_product_count|pluralize:"e" }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">
+                            Erstellt am
+                        </div>
+                        <div style="font-size: 14px;">
+                            {{ category.created_at|date:"d.m.Y H:i" }} Uhr
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <div class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">
+                            Zuletzt aktualisiert
+                        </div>
+                        <div style="font-size: 14px;">
+                            {{ category.updated_at|date:"d.m.Y H:i" }} Uhr
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Hinweise</h3>
+                </div>
+                <div class="card-body">
+                    <p style="font-size: 13px; margin-bottom: 12px;">
+                        <strong>Sortierreihenfolge:</strong> Kategorien mit niedrigeren Werten werden zuerst angezeigt.
+                    </p>
+                    <p style="font-size: 13px; margin-bottom: 12px;">
+                        <strong>Status:</strong> Inaktive Kategorien werden in Dropdown-Listen ausgeblendet.
+                    </p>
+                    <p style="font-size: 13px; margin-bottom: 0;">
+                        <strong>Löschen:</strong> Eine Kategorie kann nur gelöscht werden, wenn keine Produkte mehr zugeordnet sind.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

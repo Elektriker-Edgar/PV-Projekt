@@ -268,3 +268,152 @@ class PriceConfig(models.Model):
     def __str__(self):
         suffix = "%" if self.is_percentage else "€"
         return f"{self.get_price_type_display()}: {self.value}{suffix}"
+
+
+class ProductCategory(models.Model):
+    """
+    Produktkategorien für den Artikelkatalog
+    z.B. Installationsmaterial, Kabel, Dienstleistungen, Wechselrichter, Speicher, Zubehör
+    """
+    name = models.CharField(max_length=200, unique=True, verbose_name="Kategoriename")
+    description = models.TextField(blank=True, verbose_name="Beschreibung")
+    sort_order = models.IntegerField(default=0, verbose_name="Sortierreihenfolge")
+    is_active = models.BooleanField(default=True, verbose_name="Aktiv")
+
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="Erstellt am")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Aktualisiert am")
+
+    class Meta:
+        ordering = ['sort_order', 'name']
+        verbose_name = 'Produktkategorie'
+        verbose_name_plural = 'Produktkategorien'
+
+    def __str__(self):
+        return self.name
+
+    def get_product_count(self):
+        """Anzahl der Produkte in dieser Kategorie"""
+        return self.products.filter(is_active=True).count()
+
+
+class Product(models.Model):
+    """
+    Artikelkatalog für Produkte und Dienstleistungen
+    Verwendet für Angebotserstellung und Precheck-Kalkulation
+    """
+    UNIT_CHOICES = [
+        ('piece', 'Stück'),
+        ('meter', 'Meter'),
+        ('hour', 'Stunde'),
+        ('kwh', 'kWh'),
+        ('kwp', 'kWp'),
+        ('set', 'Set'),
+        ('package', 'Paket'),
+        ('lump_sum', 'Pauschal'),
+    ]
+
+    VAT_RATE_CHOICES = [
+        (Decimal('0.00'), '0% (Steuerfrei)'),
+        (Decimal('0.07'), '7% (Ermäßigt)'),
+        (Decimal('0.19'), '19% (Standard)'),
+    ]
+
+    category = models.ForeignKey(
+        ProductCategory,
+        on_delete=models.PROTECT,
+        related_name='products',
+        verbose_name="Kategorie"
+    )
+
+    # Grunddaten
+    name = models.CharField(max_length=200, verbose_name="Bezeichnung")
+    sku = models.CharField(max_length=100, unique=True, verbose_name="Artikelnummer")
+    description = models.TextField(blank=True, verbose_name="Beschreibung")
+    unit = models.CharField(max_length=20, choices=UNIT_CHOICES, default='piece', verbose_name="Einheit")
+
+    # Preise
+    purchase_price_net = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name="Einkaufspreis (netto)"
+    )
+    sales_price_net = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Verkaufspreis (netto)"
+    )
+    vat_rate = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        choices=VAT_RATE_CHOICES,
+        default=Decimal('0.19'),
+        verbose_name="MwSt.-Satz"
+    )
+
+    # Lagerbestand (optional)
+    stock_quantity = models.IntegerField(default=0, blank=True, null=True, verbose_name="Lagerbestand")
+    min_stock_level = models.IntegerField(default=0, blank=True, null=True, verbose_name="Mindestbestand")
+
+    # Status
+    is_active = models.BooleanField(default=True, verbose_name="Aktiv")
+    is_featured = models.BooleanField(default=False, verbose_name="Hervorgehoben")
+
+    # Zusatzinformationen
+    manufacturer = models.CharField(max_length=200, blank=True, verbose_name="Hersteller")
+    supplier = models.CharField(max_length=200, blank=True, verbose_name="Lieferant")
+    notes = models.TextField(blank=True, verbose_name="Notizen")
+
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="Erstellt am")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Aktualisiert am")
+
+    class Meta:
+        ordering = ['category__sort_order', 'category__name', 'name']
+        verbose_name = 'Produkt'
+        verbose_name_plural = 'Produkte'
+
+    def __str__(self):
+        return f"{self.sku} - {self.name}"
+
+    @property
+    def sales_price_gross(self):
+        """Verkaufspreis brutto (berechnet)"""
+        return self.sales_price_net * (1 + self.vat_rate)
+
+    @property
+    def purchase_price_gross(self):
+        """Einkaufspreis brutto (berechnet)"""
+        return self.purchase_price_net * (1 + self.vat_rate)
+
+    @property
+    def margin_amount(self):
+        """Marge in Euro"""
+        return self.sales_price_net - self.purchase_price_net
+
+    @property
+    def margin_percentage(self):
+        """Marge in Prozent"""
+        if self.purchase_price_net > 0:
+            return ((self.sales_price_net - self.purchase_price_net) / self.purchase_price_net) * 100
+        return Decimal('0.00')
+
+    @property
+    def is_low_stock(self):
+        """Prüft, ob Lagerbestand unter Mindestbestand liegt"""
+        if self.stock_quantity is not None and self.min_stock_level is not None:
+            return self.stock_quantity <= self.min_stock_level
+        return False
+
+    def get_unit_display_short(self):
+        """Kurze Einheit-Anzeige"""
+        unit_map = {
+            'piece': 'Stk.',
+            'meter': 'm',
+            'hour': 'h',
+            'kwh': 'kWh',
+            'kwp': 'kWp',
+            'set': 'Set',
+            'package': 'Pkt.',
+            'lump_sum': 'Psch.',
+        }
+        return unit_map.get(self.unit, self.get_unit_display())

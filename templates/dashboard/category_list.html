@@ -1,0 +1,285 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Produktkategorien{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item">Katalog</li>
+    <li class="breadcrumb-item active">Kategorien</li>
+{% endblock %}
+
+{% block header_actions %}
+    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+        <i class="fas fa-plus"></i> Neue Kategorie
+    </button>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Produktkategorien</h1>
+        <p class="page-subtitle">Verwalten Sie Kategorien für den Produktkatalog</p>
+    </div>
+
+    <!-- Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div style="width: 48px; height: 48px; background: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-folder" style="font-size: 24px; color: var(--primary-blue);"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase;">Gesamt</div>
+                            <div style="font-size: 24px; font-weight: 700; color: var(--neutral-900);">{{ total_categories }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div style="width: 48px; height: 48px; background: #d1fae5; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-check-circle" style="font-size: 24px; color: var(--success);"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase;">Aktiv</div>
+                            <div style="font-size: 24px; font-weight: 700; color: var(--neutral-900);">{{ active_categories }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div style="width: 48px; height: 48px; background: #fef3c7; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-box" style="font-size: 24px; color: var(--warning);"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase;">Inaktiv</div>
+                            <div style="font-size: 24px; font-weight: 700; color: var(--neutral-900);">{{ total_categories|add:"-"|add:active_categories|default:0 }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search/Filter Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="">
+                <div class="row g-3">
+                    <div class="col-md-10">
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: white; border-right: none;">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                            <input
+                                type="text"
+                                name="search"
+                                class="form-control"
+                                placeholder="Kategorie suchen..."
+                                value="{{ search_query }}"
+                                style="border-left: none;">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search"></i> Suchen
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Categories Card -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title">
+                Alle Kategorien
+                <span class="badge badge-secondary ms-2">{{ categories|length }}</span>
+            </h3>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-container">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">ID</th>
+                            <th>Name</th>
+                            <th>Beschreibung</th>
+                            <th style="width: 120px;">Reihenfolge</th>
+                            <th style="width: 120px;">Produkte</th>
+                            <th style="width: 100px;">Status</th>
+                            <th style="width: 200px;">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td>
+                                <span style="font-weight: 600; color: var(--neutral-900);">#{{ category.id }}</span>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600; color: var(--neutral-900); font-size: 14px;">
+                                    {{ category.name }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-muted" style="font-size: 13px;">
+                                    {{ category.description|truncatechars:60|default:"—" }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-secondary" style="font-size: 13px;">
+                                    {{ category.sort_order }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'dashboard:product_list' %}?category={{ category.id }}"
+                                   style="font-weight: 600; color: var(--primary-blue); font-size: 15px; text-decoration: none;">
+                                    {{ category.active_product_count }}
+                                </a>
+                                <span class="text-muted" style="font-size: 11px;">Produkt{{ category.active_product_count|pluralize:"e" }}</span>
+                            </td>
+                            <td>
+                                {% if category.is_active %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-check"></i> Aktiv
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-secondary">
+                                        <i class="fas fa-times"></i> Inaktiv
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'dashboard:category_update' category.id %}"
+                                       class="btn btn-sm btn-primary"
+                                       title="Bearbeiten">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" title="Löschen"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteCategoryModal{{ category.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+
+                                    <!-- Delete Confirmation Modal -->
+                                    <div class="modal fade" id="deleteCategoryModal{{ category.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title">
+                                                        <i class="fas fa-exclamation-triangle"></i> Kategorie löschen
+                                                    </h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p class="mb-3"><strong>Möchten Sie die Kategorie "{{ category.name }}" wirklich löschen?</strong></p>
+                                                    {% if category.active_product_count > 0 %}
+                                                    <div class="alert alert-danger mb-3">
+                                                        <i class="fas fa-exclamation-triangle"></i>
+                                                        <strong>ACHTUNG:</strong> Dieser Kategorie sind noch <strong>{{ category.active_product_count }} Produkt(e)</strong> zugeordnet.
+                                                    </div>
+                                                    <p class="text-danger mb-0">
+                                                        <strong>Die Kategorie kann nicht gelöscht werden, solange Produkte zugeordnet sind.</strong><br>
+                                                        Bitte verschieben oder löschen Sie zuerst alle zugeordneten Produkte.
+                                                    </p>
+                                                    {% else %}
+                                                    <p class="text-muted mb-0">Diese Aktion kann nicht rückgängig gemacht werden.</p>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                        <i class="fas fa-times"></i> Abbrechen
+                                                    </button>
+                                                    {% if category.active_product_count == 0 %}
+                                                    <form method="post" action="{% url 'dashboard:category_delete' pk=category.id %}" style="display: inline;">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-danger">
+                                                            <i class="fas fa-trash"></i> Löschen
+                                                        </button>
+                                                    </form>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="fas fa-folder-open" style="font-size: 48px; color: var(--neutral-300); margin-bottom: 16px;"></i>
+                                <p class="text-muted mb-0">Keine Kategorien gefunden</p>
+                                <small class="text-muted">Erstellen Sie eine neue Kategorie mit dem Button oben</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Category Modal -->
+<div class="modal fade" id="createCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--primary-blue); color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus"></i> Neue Kategorie erstellen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'dashboard:category_create' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Kategoriename *</label>
+                        <input type="text" name="name" class="form-control" placeholder="z.B. Installationsmaterial" required>
+                        <small class="text-muted">Eindeutiger Name der Kategorie</small>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Beschreibung</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Beschreibung der Kategorie (optional)"></textarea>
+                        <small class="text-muted">Optional: Zusätzliche Informationen</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Abbrechen
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Speichern
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .input-group-text {
+        border-color: var(--neutral-300);
+    }
+</style>
+{% endblock %}

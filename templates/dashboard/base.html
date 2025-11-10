@@ -502,6 +502,18 @@
             </div>
 
             <div class="nav-section">
+                <div class="nav-section-title">Produktkatalog</div>
+                <a href="{% url 'dashboard:category_list' %}" class="nav-link {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-folder"></i>
+                    <span>Kategorien</span>
+                </a>
+                <a href="{% url 'dashboard:product_list' %}" class="nav-link {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-box"></i>
+                    <span>Produkte</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
                 <div class="nav-section-title">Einstellungen</div>
                 <a href="#" class="nav-link">
                     <i class="fas fa-cog"></i>
