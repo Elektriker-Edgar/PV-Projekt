@@ -135,7 +135,7 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-filter"></i> Filter anwenden
                         </button>
-                        <a href="{% url 'dashboard:product_list' %}" class="btn btn-secondary">
+                        <a href="{% url 'dashboard:product_list' %}?reset=1" class="btn btn-secondary">
                             <i class="fas fa-redo"></i> Zurücksetzen
                         </a>
                     </div>
@@ -144,13 +144,38 @@
         </div>
     </div>
 
+    <form id="product-bulk-form" method="post" action="{% url 'dashboard:product_bulk_action' %}">
+        {% csrf_token %}
+        <input type="hidden" name="bulk_action" id="bulk-action-input">
+    </form>
+
     <!-- Products Card -->
     <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h3 class="card-title">
                 Alle Produkte
                 <span class="badge badge-secondary ms-2">{{ products|length }}</span>
             </h3>
+            <div class="d-flex flex-wrap align-items-center gap-2 bulk-action-bar disabled" id="bulk-action-bar">
+                <div class="text-muted small" id="bulk-selection-count">0 ausgewählt</div>
+                <select class="form-select form-select-sm" name="target_category" id="bulk-target-category" form="product-bulk-form">
+                    <option value="">Zielkategorie wählen</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bulk-action="move" disabled>
+                        <i class="fas fa-random"></i> Verschieben
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bulk-action="copy" disabled>
+                        <i class="fas fa-copy"></i> Kopieren
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bulk-action="delete" disabled>
+                        <i class="fas fa-trash"></i> Löschen
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="card-body p-0">
@@ -158,6 +183,9 @@
                 <table class="table mb-0" style="font-size: 13px;">
                     <thead>
                         <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" class="form-check-input" id="select-all-products">
+                            </th>
                             <th style="width: 100px;">SKU</th>
                             <th>Bezeichnung</th>
                             <th style="width: 140px;">Kategorie</th>
@@ -174,6 +202,15 @@
                     <tbody>
                         {% for product in products %}
                         <tr {% if not product.is_active %}style="opacity: 0.6;"{% endif %}>
+                            <td>
+                                <input
+                                    type="checkbox"
+                                    class="form-check-input product-select"
+                                    name="selected_products"
+                                    value="{{ product.id }}"
+                                    form="product-bulk-form"
+                                >
+                            </td>
                             <td>
                                 <code style="font-size: 12px; background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">
                                     {{ product.sku }}
@@ -296,7 +333,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="11" class="text-center py-5">
+                            <td colspan="12" class="text-center py-5">
                                 <i class="fas fa-box-open" style="font-size: 48px; color: var(--neutral-300); margin-bottom: 16px;"></i>
                                 <p class="text-muted mb-0">Keine Produkte gefunden</p>
                                 <small class="text-muted">Erstellen Sie ein neues Produkt oder passen Sie Ihre Filter an</small>
@@ -364,6 +401,38 @@
     </div>
 </div>
 
+<!-- Bulk Delete Confirmation Modal -->
+<div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Sammellöschung bestätigen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">
+                    Sie sind dabei, mehrere Produkte dauerhaft zu löschen. Diese Aktion kann <strong>nicht rückgängig</strong> gemacht werden.
+                </p>
+                <ul class="mb-3 text-muted" style="font-size: 13px;">
+                    <li>Alle ausgewählten Produkte werden entfernt.</li>
+                    <li>Zugeordnete Angebote behalten vorhandene Positionstexte, verwaiste Referenzen werden nicht automatisch bereinigt.</li>
+                </ul>
+                <p class="fw-semibold mb-0">Möchten Sie wirklich fortfahren?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Abbrechen
+                </button>
+                <button type="button" class="btn btn-danger" id="confirm-bulk-delete">
+                    <i class="fas fa-trash"></i> Ja, löschen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .input-group-text {
         border-color: var(--neutral-300);
@@ -402,5 +471,115 @@
     .table thead th {
         padding: 10px 12px;
     }
+
+    .bulk-action-bar.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectAll = document.getElementById('select-all-products');
+        const bulkForm = document.getElementById('product-bulk-form');
+        const bulkActionInput = document.getElementById('bulk-action-input');
+        const actionBar = document.getElementById('bulk-action-bar');
+        const selectionCount = document.getElementById('bulk-selection-count');
+        const productCheckboxes = Array.from(document.querySelectorAll('.product-select'));
+        const actionButtons = Array.from(document.querySelectorAll('[data-bulk-action]'));
+        const targetCategory = document.getElementById('bulk-target-category');
+        const deleteModalEl = document.getElementById('bulkDeleteModal');
+        const confirmDeleteBtn = document.getElementById('confirm-bulk-delete');
+        const hasBootstrap = typeof bootstrap !== 'undefined';
+        const deleteModal = deleteModalEl && hasBootstrap ? new bootstrap.Modal(deleteModalEl) : null;
+
+        function getSelected() {
+            return productCheckboxes.filter(cb => cb.checked);
+        }
+
+        function updateState() {
+            const selected = getSelected();
+            const count = selected.length;
+            selectionCount.textContent = count + ' ausgewählt';
+
+            if (count > 0) {
+                actionBar.classList.remove('disabled');
+                actionButtons.forEach(btn => btn.removeAttribute('disabled'));
+            } else {
+                actionBar.classList.add('disabled');
+                actionButtons.forEach(btn => btn.setAttribute('disabled', 'disabled'));
+            }
+
+            if (selectAll) {
+                selectAll.checked = count > 0 && count === productCheckboxes.length;
+                selectAll.indeterminate = count > 0 && count < productCheckboxes.length;
+            }
+        }
+
+        function submitBulkAction(action) {
+            if (!bulkForm || !bulkActionInput) {
+                return;
+            }
+            bulkActionInput.value = action;
+            bulkForm.submit();
+        }
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                productCheckboxes.forEach(cb => {
+                    cb.checked = selectAll.checked;
+                });
+                updateState();
+            });
+        }
+
+        productCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateState);
+        });
+
+        actionButtons.forEach(btn => {
+            btn.addEventListener('click', function (event) {
+                const selected = getSelected();
+                const action = btn.dataset.bulkAction;
+
+                if (!selected.length) {
+                    event.preventDefault();
+                    alert('Bitte wählen Sie mindestens ein Produkt aus, um diese Aktion auszuführen.');
+                    return;
+                }
+                if (action === 'copy' && selected.length !== 1) {
+                    event.preventDefault();
+                    alert('Bitte wählen Sie genau ein Produkt aus, das kopiert werden soll.');
+                    return;
+                }
+                if (action === 'move' && !targetCategory.value) {
+                    event.preventDefault();
+                    alert('Bitte wählen Sie eine Zielkategorie für die Verschiebung aus.');
+                    return;
+                }
+
+                if (action === 'delete') {
+                    event.preventDefault();
+                    if (deleteModal) {
+                        deleteModal.show();
+                    } else if (confirm('Wirklich alle ausgewählten Produkte löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+                        submitBulkAction('delete');
+                    }
+                    return;
+                }
+
+                submitBulkAction(action);
+            });
+        });
+
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', function () {
+                if (deleteModal) {
+                    deleteModal.hide();
+                }
+                submitBulkAction('delete');
+            });
+        }
+    });
+</script>
 {% endblock %}

@@ -8,12 +8,13 @@ Optimierte Queries mit select_related/prefetch_related
 import csv
 from datetime import datetime, timedelta
 from decimal import Decimal
+from urllib.parse import urlencode
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.db.models import Count, Sum, Q, Prefetch
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.views.generic import (
     TemplateView,
@@ -899,11 +900,30 @@ class ProductListView(LoginRequiredMixin, ListView):
     - Paginierung (50 pro Seite)
     - Zeigt Bruttopreise
     """
+    FILTER_FIELDS = ('search', 'category', 'status', 'featured', 'sort')
+    FILTER_SESSION_KEY = 'product_list_filters'
+
     model = Product
     template_name = 'dashboard/product_list.html'
     context_object_name = 'products'
     paginate_by = 50
     login_url = '/admin/login/'
+
+    def get(self, request, *args, **kwargs):
+        reset_requested = request.GET.get('reset') == '1'
+        if reset_requested:
+            request.session.pop(self.FILTER_SESSION_KEY, None)
+            return redirect(request.path)
+
+        stored_filters = request.session.get(self.FILTER_SESSION_KEY, {})
+        if stored_filters and not self._has_filter_query(request):
+            query_string = urlencode(stored_filters)
+            if query_string:
+                return redirect(f"{request.path}?{query_string}")
+
+        response = super().get(request, *args, **kwargs)
+        self._persist_filters(request)
+        return response
 
     def get_queryset(self):
         """
@@ -968,6 +988,77 @@ class ProductListView(LoginRequiredMixin, ListView):
 
         return context
 
+    def _has_filter_query(self, request):
+        return any(request.GET.get(field) not in (None, '') for field in self.FILTER_FIELDS)
+
+    def _persist_filters(self, request):
+        filters = {
+            field: request.GET.get(field)
+            for field in self.FILTER_FIELDS
+        }
+        clean_filters = {k: v for k, v in filters.items() if v not in (None, '')}
+
+        if clean_filters:
+            request.session[self.FILTER_SESSION_KEY] = clean_filters
+        else:
+            request.session.pop(self.FILTER_SESSION_KEY, None)
+
+
+class ProductBulkActionView(LoginRequiredMixin, View):
+    """
+    Verarbeitet Mehrfachaktionen (Löschen, Verschieben, Kopieren) für Produkte.
+    """
+    login_url = '/admin/login/'
+
+    def post(self, request, *args, **kwargs):
+        selected_ids = request.POST.getlist('selected_products')
+        action = request.POST.get('bulk_action')
+
+        if not selected_ids:
+            messages.error(request, 'Bitte wählen Sie mindestens ein Produkt aus.')
+            return redirect('dashboard:product_list')
+
+        if action == 'delete':
+            products = Product.objects.filter(id__in=selected_ids)
+            count = products.count()
+            names = list(products.values_list('name', flat=True))
+            products.delete()
+            messages.success(
+                request,
+                f'{count} Produkt(e) wurden gelöscht: {", ".join(names[:3])}{"..." if count > 3 else ""}'
+            )
+            return redirect('dashboard:product_list')
+
+        if action == 'move':
+            target_category_id = request.POST.get('target_category')
+            if not target_category_id:
+                messages.error(request, 'Bitte wählen Sie eine Zielkategorie für die Verschiebung aus.')
+                return redirect('dashboard:product_list')
+            try:
+                category = ProductCategory.objects.get(id=target_category_id)
+            except ProductCategory.DoesNotExist:
+                messages.error(request, 'Die ausgewählte Zielkategorie existiert nicht.')
+                return redirect('dashboard:product_list')
+
+            updated = Product.objects.filter(id__in=selected_ids).update(category=category)
+            messages.success(
+                request,
+                f'{updated} Produkt(e) wurden in die Kategorie "{category.name}" verschoben.'
+            )
+            return redirect('dashboard:product_list')
+
+        if action == 'copy':
+            if len(selected_ids) != 1:
+                messages.error(request, 'Bitte wählen Sie genau ein Produkt zum Kopieren aus.')
+                return redirect('dashboard:product_list')
+            product_id = selected_ids[0]
+            messages.info(request, 'Produkt wird kopiert. Bitte passen Sie die Daten im folgenden Formular an.')
+            copy_url = f"{reverse('dashboard:product_create')}?copy_from={product_id}"
+            return redirect(copy_url)
+
+        messages.error(request, 'Unbekannte Aktion. Bitte wählen Sie eine gültige Massenaktion aus.')
+        return redirect('dashboard:product_list')
+
 
 class ProductCreateView(LoginRequiredMixin, View):
     """
@@ -980,8 +1071,8 @@ class ProductCreateView(LoginRequiredMixin, View):
         """
         Zeigt Formular zum Erstellen eines neuen Produkts
         """
-        from django.shortcuts import render
-        form = ProductForm()
+        initial = self._get_copy_initial(request)
+        form = ProductForm(initial=initial)
         return render(request, 'dashboard/product_form.html', {
             'form': form,
             'is_create': True,
@@ -998,11 +1089,38 @@ class ProductCreateView(LoginRequiredMixin, View):
             return redirect('dashboard:product_list')
         else:
             messages.error(request, 'Fehler beim Erstellen des Produkts. Bitte prüfen Sie Ihre Eingaben.')
-            from django.shortcuts import render
             return render(request, 'dashboard/product_form.html', {
                 'form': form,
                 'is_create': True,
             })
+
+    def _get_copy_initial(self, request):
+        copy_from = request.GET.get('copy_from')
+        if not copy_from:
+            return {}
+        try:
+            product = Product.objects.get(pk=copy_from)
+        except Product.DoesNotExist:
+            messages.error(request, 'Das ausgewählte Produkt konnte nicht gefunden werden.')
+            return {}
+
+        return {
+            'category': product.category_id,
+            'name': product.name,
+            'sku': product.sku,
+            'description': product.description,
+            'unit': product.unit,
+            'purchase_price_net': product.purchase_price_net,
+            'sales_price_net': product.sales_price_net,
+            'vat_rate': product.vat_rate,
+            'stock_quantity': product.stock_quantity,
+            'min_stock_level': product.min_stock_level,
+            'manufacturer': product.manufacturer,
+            'supplier': product.supplier,
+            'notes': product.notes,
+            'is_active': product.is_active,
+            'is_featured': product.is_featured,
+        }
 
 
 class ProductUpdateView(LoginRequiredMixin, UpdateView):

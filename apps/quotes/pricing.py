@@ -1,12 +1,39 @@
 from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
-from .models import PriceConfig, Precheck
+from .models import Product, Precheck
 from .helpers import infer_inverter_class_key
 
 
 VAT_RATE = Decimal("0.19")
+
+PRECHECK_DEFAULTS: Dict[str, Decimal] = {
+    "package_basis": Decimal("890.00"),
+    "package_plus": Decimal("1490.00"),
+    "package_pro": Decimal("2290.00"),
+    "travel_zone_0": Decimal("0.00"),
+    "travel_zone_30": Decimal("50.00"),
+    "travel_zone_60": Decimal("95.00"),
+    "surcharge_tt_grid": Decimal("150.00"),
+    "surcharge_selective_fuse": Decimal("220.00"),
+    "material_ac_wiring": Decimal("180.00"),
+    "material_spd": Decimal("320.00"),
+    "material_meter_upgrade": Decimal("450.00"),
+    "material_storage_kwh": Decimal("800.00"),
+    "wallbox_base_4kw": Decimal("890.00"),
+    "wallbox_base_11kw": Decimal("1290.00"),
+    "wallbox_base_22kw": Decimal("1690.00"),
+    "wallbox_stand_mount": Decimal("350.00"),
+    "wallbox_pv_surplus": Decimal("0.00"),
+    "cable_wr_up_to_5kw": Decimal("15.00"),
+    "cable_wr_5_to_10kw": Decimal("25.00"),
+    "cable_wr_above_10kw": Decimal("35.00"),
+    "cable_wb_4kw": Decimal("12.00"),
+    "cable_wb_11kw": Decimal("20.00"),
+    "cable_wb_22kw": Decimal("30.00"),
+    "discount_complete_kit": Decimal("15.00"),
+}
 
 
 @dataclass
@@ -26,21 +53,43 @@ class PricingInput:
     wallbox_pv_surplus: bool = False
 
 
-def _pc(key: str, default: Decimal) -> Decimal:
-    try:
-        obj = PriceConfig.objects.get(price_type=key)
-        return obj.value
-    except PriceConfig.DoesNotExist:
-        return default
+def _precheck_sku(key: str) -> str:
+    return f"PCHK-{key.upper().replace('_', '-')}"
 
 
-def _infer_travel_cost(address: str) -> Decimal:
+class PrecheckCatalog:
+    """Hilfsklasse f\u00fcr alle Precheck-Preisbausteine aus dem Produktkatalog."""
+
+    def __init__(self) -> None:
+        sku_map = {key: _precheck_sku(key) for key in PRECHECK_DEFAULTS.keys()}
+        products = Product.objects.filter(
+            sku__in=sku_map.values(),
+            is_active=True,
+        )
+        self._products: Dict[str, Product] = {}
+        reverse_lookup = {sku: key for key, sku in sku_map.items()}
+        for product in products:
+            key = reverse_lookup.get(product.sku)
+            if key:
+                self._products[key] = product
+
+    def value(self, key: str) -> Decimal:
+        product = self._products.get(key)
+        if product:
+            return product.sales_price_net
+        return PRECHECK_DEFAULTS[key]
+
+    def product(self, key: str) -> Optional[Product]:
+        return self._products.get(key)
+
+
+def _infer_travel_cost(address: str, catalog: PrecheckCatalog) -> Decimal:
     text = (address or "").lower()
     if "hamburg" in text:
-        return _pc("travel_zone_0", Decimal("0.00"))
+        return catalog.value("travel_zone_0")
     if any(city in text for city in ["norderstedt", "ahrensburg", "pinneberg"]):
-        return _pc("travel_zone_30", Decimal("50.00"))
-    return _pc("travel_zone_60", Decimal("95.00"))
+        return catalog.value("travel_zone_30")
+    return catalog.value("travel_zone_60")
 
 
 def _quantize(value: Decimal) -> Decimal:
@@ -62,6 +111,8 @@ def calculate_pricing(data: PricingInput) -> Dict[str, Decimal]:
 
     inverter_class_key = infer_inverter_class_key(desired_power)
 
+    catalog = PrecheckCatalog()
+
     if storage_kwh > 0:
         package = "pro"
     elif desired_power > 3 or inverter_class_key in {"5kva", "10kva"} or grid_type == "1p":
@@ -70,26 +121,26 @@ def calculate_pricing(data: PricingInput) -> Dict[str, Decimal]:
         package = "basis"
 
     base_price = {
-        "basis": _pc("package_basis", Decimal("890.00")),
-        "plus": _pc("package_plus", Decimal("1490.00")),
-        "pro": _pc("package_pro", Decimal("2290.00")),
+        "basis": catalog.value("package_basis"),
+        "plus": catalog.value("package_plus"),
+        "pro": catalog.value("package_pro"),
     }[package]
 
-    travel_cost = _infer_travel_cost(data.site_address)
+    travel_cost = _infer_travel_cost(data.site_address, catalog)
 
     surcharges = Decimal("0.00")
     if grid_type == "1p":
-        surcharges += _pc("surcharge_tt_grid", Decimal("150.00"))
+        surcharges += catalog.value("surcharge_tt_grid")
     if main_fuse > 35:
-        surcharges += _pc("surcharge_selective_fuse", Decimal("220.00"))
+        surcharges += catalog.value("surcharge_selective_fuse")
     if distance > 15:
         extra = distance - Decimal("15")
         if desired_power <= 5:
-            price_per_meter = _pc("cable_wr_up_to_5kw", Decimal("15.00"))
+            price_per_meter = catalog.value("cable_wr_up_to_5kw")
         elif desired_power <= 10:
-            price_per_meter = _pc("cable_wr_5_to_10kw", Decimal("25.00"))
+            price_per_meter = catalog.value("cable_wr_5_to_10kw")
         else:
-            price_per_meter = _pc("cable_wr_above_10kw", Decimal("35.00"))
+            price_per_meter = catalog.value("cable_wr_above_10kw")
         surcharges += extra * price_per_meter
 
     inverter_cost = Decimal("0.00")
@@ -104,36 +155,36 @@ def calculate_pricing(data: PricingInput) -> Dict[str, Decimal]:
             "10kva": Decimal("2800.00"),
         }
         inverter_cost = inv_price_map.get(inverter_class_key, Decimal("0.00"))
-        inverter_cost += _pc("material_ac_wiring", Decimal("180.00"))
+        inverter_cost += catalog.value("material_ac_wiring")
         if package in {"plus", "pro"}:
-            inverter_cost += _pc("material_spd", Decimal("320.00"))
-            inverter_cost += _pc("material_meter_upgrade", Decimal("450.00"))
+            inverter_cost += catalog.value("material_spd")
+            inverter_cost += catalog.value("material_meter_upgrade")
         if package == "pro" and storage_kwh > 0:
-            storage_cost = storage_kwh * _pc("material_storage_kwh", Decimal("800.00"))
+            storage_cost = storage_kwh * catalog.value("material_storage_kwh")
 
     if data.has_wallbox:
         power = data.wallbox_power
         if power == "4kw":
-            wallbox_cost += _pc("wallbox_base_4kw", Decimal("890.00"))
+            wallbox_cost += catalog.value("wallbox_base_4kw")
         elif power == "11kw":
-            wallbox_cost += _pc("wallbox_base_11kw", Decimal("1290.00"))
+            wallbox_cost += catalog.value("wallbox_base_11kw")
         elif power == "22kw":
-            wallbox_cost += _pc("wallbox_base_22kw", Decimal("1690.00"))
+            wallbox_cost += catalog.value("wallbox_base_22kw")
 
         if data.wallbox_mount == "stand":
-            wallbox_cost += _pc("wallbox_stand_mount", Decimal("350.00"))
+            wallbox_cost += catalog.value("wallbox_stand_mount")
 
         if data.wallbox_pv_surplus:
-            wallbox_cost += _pc("wallbox_pv_surplus", Decimal("0.00"))
+            wallbox_cost += catalog.value("wallbox_pv_surplus")
 
         if not data.wallbox_cable_installed and data.wallbox_cable_length > 0:
             length = Decimal(str(data.wallbox_cable_length))
             if power == "4kw":
-                price = _pc("cable_wb_4kw", Decimal("12.00"))
+                price = catalog.value("cable_wb_4kw")
             elif power == "11kw":
-                price = _pc("cable_wb_11kw", Decimal("20.00"))
+                price = catalog.value("cable_wb_11kw")
             elif power == "22kw":
-                price = _pc("cable_wb_22kw", Decimal("30.00"))
+                price = catalog.value("cable_wb_22kw")
             else:
                 price = Decimal("0.00")
             wallbox_cost += length * price
@@ -142,14 +193,12 @@ def calculate_pricing(data: PricingInput) -> Dict[str, Decimal]:
 
     discount = Decimal("0.00")
     if not data.own_components:
-        try:
-            disc = PriceConfig.objects.get(price_type="discount_complete_kit")
-            if disc.is_percentage:
-                discount = (base_price * disc.value) / Decimal("100")
-            else:
-                discount = disc.value
-        except PriceConfig.DoesNotExist:
-            discount = base_price * Decimal("0.15")
+        discount_value = catalog.value("discount_complete_kit")
+        discount_product = catalog.product("discount_complete_kit")
+        if discount_product and discount_product.unit == "percent":
+            discount = (base_price * discount_value) / Decimal("100")
+        else:
+            discount = discount_value
 
     net_total = base_price + travel_cost + surcharges + material_cost - discount
     net_total = _quantize(net_total)

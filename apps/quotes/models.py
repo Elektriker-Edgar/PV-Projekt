@@ -310,6 +310,7 @@ class Product(models.Model):
         ('set', 'Set'),
         ('package', 'Paket'),
         ('lump_sum', 'Pauschal'),
+        ('percent', 'Prozent'),
     ]
 
     VAT_RATE_CHOICES = [
@@ -415,5 +416,6 @@ class Product(models.Model):
             'set': 'Set',
             'package': 'Pkt.',
             'lump_sum': 'Psch.',
+            'percent': '%',
         }
         return unit_map.get(self.unit, self.get_unit_display())
