@@ -159,6 +159,51 @@
                                        title="E-Mail senden">
                                         <i class="far fa-envelope"></i>
                                     </a>
+                                    <button type="button" class="btn btn-sm btn-danger" title="Löschen"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteCustomerModal{{ customer.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+
+                                    <!-- Delete Confirmation Modal -->
+                                    <div class="modal fade" id="deleteCustomerModal{{ customer.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title">
+                                                        <i class="fas fa-exclamation-triangle"></i> Kunde löschen
+                                                    </h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p class="mb-3"><strong>Möchten Sie den Kunden "{{ customer.name }}" wirklich löschen?</strong></p>
+                                                    <div class="alert alert-danger mb-3">
+                                                        <i class="fas fa-exclamation-triangle"></i>
+                                                        <strong>ACHTUNG:</strong> Dies ist eine destruktive Operation!
+                                                    </div>
+                                                    <p class="mb-2"><strong>Folgende Daten werden CASCADE gelöscht:</strong></p>
+                                                    <ul class="mb-0">
+                                                        <li><strong>{{ customer.sites.count }}</strong> Standort(e)</li>
+                                                        <li><strong>{{ customer.total_prechecks }}</strong> Precheck(s)</li>
+                                                        <li>Alle verknüpften Angebote</li>
+                                                        <li>Alle hochgeladenen Dateien</li>
+                                                    </ul>
+                                                    <p class="text-danger mt-3 mb-0"><strong>Diese Aktion kann NICHT rückgängig gemacht werden!</strong></p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                        <i class="fas fa-times"></i> Abbrechen
+                                                    </button>
+                                                    <form method="post" action="{% url 'dashboard:customer_delete' pk=customer.id %}" style="display: inline;">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-danger">
+                                                            <i class="fas fa-trash"></i> Endgültig löschen
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
                         </tr>

@@ -18,6 +18,7 @@ from django.utils import timezone
 from django.views.generic import (
     TemplateView,
     ListView,
+    DeleteView,
     DetailView,
     UpdateView,
     View
@@ -644,3 +645,86 @@ class QuoteDetailView(LoginRequiredMixin, DetailView):
         context['site'] = self.object.precheck.site
 
         return context
+
+
+# =============================================================================
+# DELETE VIEWS - Löschfunktionen
+# =============================================================================
+
+class PrecheckDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Löschen eines Prechecks
+
+    WICHTIG: Löscht CASCADE:
+    - Verknüpfte Quotes und QuoteItems
+    - Hochgeladene Dateien (meter_cabinet_photo, hak_photo, etc.)
+
+    ACHTUNG: Löscht NICHT den Customer/Site!
+    Die bleiben erhalten für andere Prechecks.
+    """
+    model = Precheck
+    login_url = '/admin/login/'
+    success_url = reverse_lazy('dashboard:precheck_list')
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Überschreibt delete() um eine Success-Message anzuzeigen
+        """
+        precheck = self.get_object()
+        precheck_id = precheck.id
+        customer_name = precheck.site.customer.name
+
+        # Lösche das Objekt
+        response = super().delete(request, *args, **kwargs)
+
+        # Success-Message
+        messages.success(
+            request,
+            f'Precheck #{precheck_id} von {customer_name} wurde erfolgreich gelöscht.'
+        )
+
+        return response
+
+
+class CustomerDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Löschen eines Kunden
+
+    WICHTIG: Löscht CASCADE:
+    - Alle Sites des Kunden
+    - Alle Prechecks aller Sites
+    - Alle Quotes aller Prechecks
+    - Alle hochgeladenen Dateien
+
+    WARNUNG: Dies ist eine destruktive Operation!
+    Alle Daten des Kunden gehen unwiderruflich verloren.
+    """
+    model = Customer
+    login_url = '/admin/login/'
+    success_url = reverse_lazy('dashboard:customer_list')
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Überschreibt delete() um eine Success-Message anzuzeigen
+        und Statistiken zu sammeln
+        """
+        customer = self.get_object()
+        customer_name = customer.name
+        customer_id = customer.id
+
+        # Sammle Statistiken vor dem Löschen
+        sites_count = customer.sites.count()
+        prechecks_count = Precheck.objects.filter(site__customer=customer).count()
+        quotes_count = Quote.objects.filter(precheck__site__customer=customer).count()
+
+        # Lösche das Objekt (CASCADE löscht alles verknüpfte)
+        response = super().delete(request, *args, **kwargs)
+
+        # Success-Message mit Statistiken
+        messages.success(
+            request,
+            f'Kunde "{customer_name}" (ID #{customer_id}) wurde gelöscht. '
+            f'Entfernt: {sites_count} Standorte, {prechecks_count} Prechecks, {quotes_count} Angebote.'
+        )
+
+        return response

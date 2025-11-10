@@ -16,6 +16,7 @@ urlpatterns = [
     # Precheck Management
     path('prechecks/', dashboard_views.PrecheckListView.as_view(), name='precheck_list'),
     path('prechecks/<int:pk>/', dashboard_views.PrecheckDetailView.as_view(), name='precheck_detail'),
+    path('prechecks/<int:pk>/delete/', dashboard_views.PrecheckDeleteView.as_view(), name='precheck_delete'),
     path('prechecks/export/', dashboard_views.PrecheckExportView.as_view(), name='precheck_export'),
 
     # Price Configuration Management
@@ -25,6 +26,7 @@ urlpatterns = [
     # Customer Management
     path('customers/', dashboard_views.CustomerListView.as_view(), name='customer_list'),
     path('customers/<int:pk>/', dashboard_views.CustomerDetailView.as_view(), name='customer_detail'),
+    path('customers/<int:pk>/delete/', dashboard_views.CustomerDeleteView.as_view(), name='customer_delete'),
 
     # Quote Management
     path('quotes/', dashboard_views.QuoteListView.as_view(), name='quote_list'),
