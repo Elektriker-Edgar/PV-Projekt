@@ -1,43 +1,71 @@
 from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from .models import Product, Precheck
-from .helpers import infer_inverter_class_key
 
 
 VAT_RATE = Decimal("0.19")
 
 PRECHECK_DEFAULTS: Dict[str, Decimal] = {
+    # Gebäude & Netz
+    "building_efh": Decimal("0.00"),
+    "building_mfh": Decimal("100.00"),
+    "building_commercial": Decimal("50.00"),
+    "grid_1p": Decimal("100.00"),
+    "grid_3p": Decimal("0.00"),
+    # Wechselrichter
+    "inverter_tier_3": Decimal("700.00"),
+    "inverter_tier_5": Decimal("1000.00"),
+    "inverter_tier_10": Decimal("1500.00"),
+    "inverter_tier_20": Decimal("2000.00"),
+    "inverter_tier_30": Decimal("2200.00"),
+    # Speicher
+    "storage_tier_3": Decimal("1000.00"),
+    "storage_tier_5": Decimal("1300.00"),
+    "storage_tier_10": Decimal("2000.00"),
+    # Kabelpreise
+    "wr_cable_pm_lt10": Decimal("5.00"),
+    "wr_cable_pm_lt20": Decimal("15.00"),
+    "wr_cable_pm_lt30": Decimal("22.00"),
+    "wallbox_cable_pm_lt11": Decimal("7.00"),
+    "wallbox_cable_pm_lt20": Decimal("14.00"),
+    # Wallbox-Basiskosten & Extras
+    "wallbox_base_4kw": Decimal("300.00"),
+    "wallbox_base_11kw": Decimal("500.00"),
+    "wallbox_base_22kw": Decimal("800.00"),
+    "wallbox_mount_stand": Decimal("200.00"),
+    "wallbox_pv_surplus": Decimal("200.00"),
+    # Pakete
     "package_basis": Decimal("890.00"),
     "package_plus": Decimal("1490.00"),
     "package_pro": Decimal("2290.00"),
-    "travel_zone_0": Decimal("0.00"),
-    "travel_zone_30": Decimal("50.00"),
-    "travel_zone_60": Decimal("95.00"),
-    "surcharge_tt_grid": Decimal("150.00"),
-    "surcharge_selective_fuse": Decimal("220.00"),
-    "material_ac_wiring": Decimal("180.00"),
-    "material_spd": Decimal("320.00"),
-    "material_meter_upgrade": Decimal("450.00"),
-    "material_storage_kwh": Decimal("800.00"),
-    "wallbox_base_4kw": Decimal("890.00"),
-    "wallbox_base_11kw": Decimal("1290.00"),
-    "wallbox_base_22kw": Decimal("1690.00"),
-    "wallbox_stand_mount": Decimal("350.00"),
-    "wallbox_pv_surplus": Decimal("0.00"),
-    "cable_wr_up_to_5kw": Decimal("15.00"),
-    "cable_wr_5_to_10kw": Decimal("25.00"),
-    "cable_wr_above_10kw": Decimal("35.00"),
-    "cable_wb_4kw": Decimal("12.00"),
-    "cable_wb_11kw": Decimal("20.00"),
-    "cable_wb_22kw": Decimal("30.00"),
-    "discount_complete_kit": Decimal("15.00"),
 }
+
+INVERTER_TIERS = [
+    (Decimal("3"), "inverter_tier_3"),
+    (Decimal("5"), "inverter_tier_5"),
+    (Decimal("10"), "inverter_tier_10"),
+    (Decimal("20"), "inverter_tier_20"),
+    (Decimal("30"), "inverter_tier_30"),
+]
+
+STORAGE_TIERS = [
+    (Decimal("3"), "storage_tier_3"),
+    (Decimal("5"), "storage_tier_5"),
+    (Decimal("10"), "storage_tier_10"),
+]
+
+WR_CABLE_TIERS = [
+    (Decimal("10"), "wr_cable_pm_lt10"),
+    (Decimal("20"), "wr_cable_pm_lt20"),
+    (Decimal("30"), "wr_cable_pm_lt30"),
+]
 
 
 @dataclass
 class PricingInput:
+    building_type: str = ""
     site_address: str = ""
     main_fuse_ampere: int = 0
     grid_type: str = ""
@@ -58,10 +86,10 @@ def _precheck_sku(key: str) -> str:
 
 
 class PrecheckCatalog:
-    """Hilfsklasse f\u00fcr alle Precheck-Preisbausteine aus dem Produktkatalog."""
+    """Lädt alle Precheck-Preisbausteine aus dem Produktkatalog."""
 
     def __init__(self) -> None:
-        sku_map = {key: _precheck_sku(key) for key in PRECHECK_DEFAULTS.keys()}
+        sku_map = {key: _precheck_sku(key) for key in PRECHECK_DEFAULTS}
         products = Product.objects.filter(
             sku__in=sku_map.values(),
             is_active=True,
@@ -83,15 +111,6 @@ class PrecheckCatalog:
         return self._products.get(key)
 
 
-def _infer_travel_cost(address: str, catalog: PrecheckCatalog) -> Decimal:
-    text = (address or "").lower()
-    if "hamburg" in text:
-        return catalog.value("travel_zone_0")
-    if any(city in text for city in ["norderstedt", "ahrensburg", "pinneberg"]):
-        return catalog.value("travel_zone_30")
-    return catalog.value("travel_zone_60")
-
-
 def _quantize(value: Decimal) -> Decimal:
     return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
@@ -102,135 +121,135 @@ def _as_bool(value: Any) -> bool:
     return str(value).lower() in {"1", "true", "on", "yes"}
 
 
+def _price_for_tier(value: Decimal, tiers, catalog: PrecheckCatalog) -> Decimal:
+    for limit, key in tiers:
+        if value <= limit:
+            return catalog.value(key)
+    # Fallback auf letzte Stufe
+    return catalog.value(tiers[-1][1])
+
+
+def _building_surcharge(building_type: str, catalog: PrecheckCatalog) -> Decimal:
+    mapping = {
+        "mfh": "building_mfh",
+        "commercial": "building_commercial",
+        "efh": "building_efh",
+    }
+    key = mapping.get(building_type or "efh", "building_efh")
+    return catalog.value(key)
+
+
+def _grid_surcharge(grid_type: str, catalog: PrecheckCatalog) -> Decimal:
+    if (grid_type or "").lower() == "1p":
+        return catalog.value("grid_1p")
+    return catalog.value("grid_3p")
+
+
+def _inverter_price(desired_power: Decimal, catalog: PrecheckCatalog) -> Decimal:
+    if desired_power <= 0:
+        return Decimal("0.00")
+    return _price_for_tier(desired_power, INVERTER_TIERS, catalog)
+
+
+def _storage_price(storage_kwh: Decimal, catalog: PrecheckCatalog) -> Decimal:
+    if storage_kwh <= 0:
+        return Decimal("0.00")
+    return _price_for_tier(storage_kwh, STORAGE_TIERS, catalog)
+
+
+def _wr_cable_price(desired_power: Decimal, distance: Decimal, catalog: PrecheckCatalog) -> Decimal:
+    if distance <= 0:
+        return Decimal("0.00")
+    price_per_meter = _price_for_tier(desired_power if desired_power > 0 else Decimal("0"), WR_CABLE_TIERS, catalog)
+    return distance * price_per_meter
+
+
+def _wallbox_prices(data: PricingInput, catalog: PrecheckCatalog) -> Dict[str, Decimal]:
+    if not data.has_wallbox:
+        return {
+            "wallbox_base_price": Decimal("0.00"),
+            "wallbox_cable_cost": Decimal("0.00"),
+            "wallbox_extra_cost": Decimal("0.00"),
+        }
+
+    base = Decimal("0.00")
+    if data.wallbox_power == "4kw":
+        base = catalog.value("wallbox_base_4kw")
+    elif data.wallbox_power == "11kw":
+        base = catalog.value("wallbox_base_11kw")
+    elif data.wallbox_power == "22kw":
+        base = catalog.value("wallbox_base_22kw")
+
+    cable_cost = Decimal("0.00")
+    cable_length = Decimal(str(data.wallbox_cable_length or 0))
+    if not data.wallbox_cable_installed and cable_length > 0:
+        if data.wallbox_power == "4kw":
+            price_per_meter = catalog.value("wallbox_cable_pm_lt11")
+        else:
+            price_per_meter = catalog.value("wallbox_cable_pm_lt20")
+        cable_cost = cable_length * price_per_meter
+
+    extras = Decimal("0.00")
+    if data.wallbox_mount == "stand":
+        extras += catalog.value("wallbox_mount_stand")
+    if data.wallbox_pv_surplus:
+        extras += catalog.value("wallbox_pv_surplus")
+
+    return {
+        "wallbox_base_price": base,
+        "wallbox_cable_cost": cable_cost,
+        "wallbox_extra_cost": extras,
+    }
+
+
 def calculate_pricing(data: PricingInput) -> Dict[str, Decimal]:
+    catalog = PrecheckCatalog()
     desired_power = Decimal(str(data.desired_power_kw or 0))
     storage_kwh = Decimal(str(data.storage_kwh or 0))
     distance = Decimal(str(data.distance_meter or 0))
-    main_fuse = int(data.main_fuse_ampere or 0)
-    grid_type = (data.grid_type or "").lower()
 
-    inverter_class_key = infer_inverter_class_key(desired_power)
+    building_surcharge = _building_surcharge(data.building_type, catalog)
+    grid_surcharge = _grid_surcharge(data.grid_type, catalog)
+    inverter_price = _inverter_price(desired_power, catalog)
+    storage_price = _storage_price(storage_kwh, catalog)
+    wr_cable_cost = _wr_cable_price(desired_power, distance, catalog)
+    wallbox_prices = _wallbox_prices(data, catalog)
 
-    catalog = PrecheckCatalog()
+    components = {
+        "building_surcharge": _quantize(building_surcharge),
+        "grid_surcharge": _quantize(grid_surcharge),
+        "inverter_price": _quantize(inverter_price),
+        "storage_price": _quantize(storage_price),
+        "wr_cable_cost": _quantize(wr_cable_cost),
+        "wallbox_base_price": _quantize(wallbox_prices["wallbox_base_price"]),
+        "wallbox_cable_cost": _quantize(wallbox_prices["wallbox_cable_cost"]),
+        "wallbox_extra_cost": _quantize(wallbox_prices["wallbox_extra_cost"]),
+    }
 
-    if storage_kwh > 0:
-        package = "pro"
-    elif desired_power > 3 or inverter_class_key in {"5kva", "10kva"} or grid_type == "1p":
-        package = "plus"
-    else:
-        package = "basis"
-
-    base_price = {
-        "basis": catalog.value("package_basis"),
-        "plus": catalog.value("package_plus"),
-        "pro": catalog.value("package_pro"),
-    }[package]
-
-    travel_cost = _infer_travel_cost(data.site_address, catalog)
-
-    surcharges = Decimal("0.00")
-    if grid_type == "1p":
-        surcharges += catalog.value("surcharge_tt_grid")
-    if main_fuse > 35:
-        surcharges += catalog.value("surcharge_selective_fuse")
-    if distance > 15:
-        extra = distance - Decimal("15")
-        if desired_power <= 5:
-            price_per_meter = catalog.value("cable_wr_up_to_5kw")
-        elif desired_power <= 10:
-            price_per_meter = catalog.value("cable_wr_5_to_10kw")
-        else:
-            price_per_meter = catalog.value("cable_wr_above_10kw")
-        surcharges += extra * price_per_meter
-
-    inverter_cost = Decimal("0.00")
-    storage_cost = Decimal("0.00")
-    wallbox_cost = Decimal("0.00")
-
-    if not data.own_components:
-        inv_price_map = {
-            "1kva": Decimal("800.00"),
-            "3kva": Decimal("1200.00"),
-            "5kva": Decimal("1800.00"),
-            "10kva": Decimal("2800.00"),
-        }
-        inverter_cost = inv_price_map.get(inverter_class_key, Decimal("0.00"))
-        inverter_cost += catalog.value("material_ac_wiring")
-        if package in {"plus", "pro"}:
-            inverter_cost += catalog.value("material_spd")
-            inverter_cost += catalog.value("material_meter_upgrade")
-        if package == "pro" and storage_kwh > 0:
-            storage_cost = storage_kwh * catalog.value("material_storage_kwh")
-
-    if data.has_wallbox:
-        power = data.wallbox_power
-        if power == "4kw":
-            wallbox_cost += catalog.value("wallbox_base_4kw")
-        elif power == "11kw":
-            wallbox_cost += catalog.value("wallbox_base_11kw")
-        elif power == "22kw":
-            wallbox_cost += catalog.value("wallbox_base_22kw")
-
-        if data.wallbox_mount == "stand":
-            wallbox_cost += catalog.value("wallbox_stand_mount")
-
-        if data.wallbox_pv_surplus:
-            wallbox_cost += catalog.value("wallbox_pv_surplus")
-
-        if not data.wallbox_cable_installed and data.wallbox_cable_length > 0:
-            length = Decimal(str(data.wallbox_cable_length))
-            if power == "4kw":
-                price = catalog.value("cable_wb_4kw")
-            elif power == "11kw":
-                price = catalog.value("cable_wb_11kw")
-            elif power == "22kw":
-                price = catalog.value("cable_wb_22kw")
-            else:
-                price = Decimal("0.00")
-            wallbox_cost += length * price
-
-    material_cost = inverter_cost + storage_cost + wallbox_cost
-
-    discount = Decimal("0.00")
-    if not data.own_components:
-        discount_value = catalog.value("discount_complete_kit")
-        discount_product = catalog.product("discount_complete_kit")
-        if discount_product and discount_product.unit == "percent":
-            discount = (base_price * discount_value) / Decimal("100")
-        else:
-            discount = discount_value
-
-    net_total = base_price + travel_cost + surcharges + material_cost - discount
-    net_total = _quantize(net_total)
+    net_total = _quantize(sum(components.values()))
     vat_amount = _quantize(net_total * VAT_RATE)
     gross_total = _quantize(net_total + vat_amount)
 
-    return {
-        "package": package,
-        "base_price": _quantize(base_price),
-        "travel_cost": _quantize(travel_cost),
-        "surcharges": _quantize(surcharges),
-        "inverter_cost": _quantize(inverter_cost),
-        "storage_cost": _quantize(storage_cost),
-        "wallbox_cost": _quantize(wallbox_cost),
-        "material_cost": _quantize(material_cost),
-        "discount": _quantize(discount),
+    result = {
+        **components,
         "net_total": net_total,
         "vat_amount": vat_amount,
         "gross_total": gross_total,
     }
+    return result
 
 
 def pricing_input_from_request(data: Dict[str, Any]) -> PricingInput:
     def dec(key: str, fallback: str = None) -> Decimal:
         value = data.get(key)
-        if value in (None, '') and fallback:
+        if value in (None, "") and fallback:
             value = data.get(fallback)
-        if value in (None, ''):
+        if value in (None, ""):
             value = "0"
         return Decimal(str(value))
 
     return PricingInput(
+        building_type=(data.get("building_type") or "efh").lower(),
         site_address=data.get("site_address") or "",
         main_fuse_ampere=int(data.get("main_fuse_ampere") or 0),
         grid_type=(data.get("grid_type") or "").lower(),
@@ -250,6 +269,7 @@ def pricing_input_from_request(data: Dict[str, Any]) -> PricingInput:
 def pricing_input_from_precheck(precheck: Precheck) -> PricingInput:
     site = precheck.site
     return PricingInput(
+        building_type=getattr(site, "building_type", "efh"),
         site_address=getattr(site, "address", ""),
         main_fuse_ampere=site.main_fuse_ampere,
         grid_type=(site.grid_type or "").lower(),
@@ -262,7 +282,7 @@ def pricing_input_from_precheck(precheck: Precheck) -> PricingInput:
         wallbox_mount=getattr(precheck, "wallbox_mount", "") or "",
         wallbox_cable_installed=getattr(precheck, "wallbox_cable_prepared", False),
         wallbox_cable_length=getattr(precheck, "wallbox_cable_length_m", Decimal("0")) or Decimal("0"),
-        wallbox_pv_surplus=False,  # Placeholder bis Feature unterstützt wird
+        wallbox_pv_surplus=getattr(precheck, "wallbox_pv_surplus", False),
     )
 
 
@@ -271,15 +291,14 @@ def pricing_to_response(pricing: Dict[str, Decimal]) -> Dict[str, Any]:
         return float(value)
 
     return {
-        "package": pricing["package"],
-        "basePrice": f(pricing["base_price"]),
-        "travelCost": f(pricing["travel_cost"]),
-        "surcharges": f(pricing["surcharges"]),
-        "inverterCost": f(pricing["inverter_cost"]),
-        "storageCost": f(pricing["storage_cost"]),
-        "wallboxCost": f(pricing["wallbox_cost"]),
-        "materialCost": f(pricing["material_cost"]),
-        "discount": f(pricing["discount"]),
+        "buildingSurcharge": f(pricing["building_surcharge"]),
+        "gridSurcharge": f(pricing["grid_surcharge"]),
+        "inverterPrice": f(pricing["inverter_price"]),
+        "storagePrice": f(pricing["storage_price"]),
+        "wrCableCost": f(pricing["wr_cable_cost"]),
+        "wallboxBasePrice": f(pricing["wallbox_base_price"]),
+        "wallboxCableCost": f(pricing["wallbox_cable_cost"]),
+        "wallboxExtraCost": f(pricing["wallbox_extra_cost"]),
         "totalNet": f(pricing["net_total"]),
         "vatAmount": f(pricing["vat_amount"]),
         "total": f(pricing["gross_total"]),

@@ -114,6 +114,11 @@ class PrecheckForm(forms.Form):
         label="Montage-Art",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+    wallbox_pv_surplus = forms.BooleanField(
+        required=False,
+        label="PV-Überschussladen aktivieren",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
     wallbox_cable_installed = forms.BooleanField(
         required=False,
         label="Kabel bereits verlegt",
@@ -187,11 +192,13 @@ class PrecheckForm(forms.Form):
         
         has_wallbox = self.cleaned_data.get('has_wallbox', False)
         wallbox_cable_length = self.cleaned_data.get('wallbox_cable_length')
+        wallbox_pv_surplus = self.cleaned_data.get('wallbox_pv_surplus', False)
         if not has_wallbox:
             wallbox_power = ''
             wallbox_mount = ''
             wallbox_cable_prepared = False
             wallbox_cable_length = None
+            wallbox_pv_surplus = False
         else:
             wallbox_power = self.cleaned_data.get('wallbox_power') or ''
             wallbox_mount = self.cleaned_data.get('wallbox_mount') or ''
@@ -210,6 +217,7 @@ class PrecheckForm(forms.Form):
             wallbox_mount=wallbox_mount,
             wallbox_cable_prepared=wallbox_cable_prepared,
             wallbox_cable_length_m=wallbox_cable_length,
+            wallbox_pv_surplus=wallbox_pv_surplus,
             notes=self.cleaned_data['notes'],
             # File Uploads
             meter_cabinet_photo=self.cleaned_data.get('meter_cabinet_photo'),

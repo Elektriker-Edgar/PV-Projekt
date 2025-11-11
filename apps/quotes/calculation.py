@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Dict, List, Tuple
 from datetime import timedelta
 from django.utils import timezone
-from .models import Quote, QuoteItem, Component, Precheck, PriceConfig
+from .models import Quote, QuoteItem, Component, Precheck
 from .pricing import pricing_input_from_precheck, calculate_pricing
 from .helpers import infer_inverter_class_key, inverter_label_from_power
 
@@ -311,14 +311,6 @@ class QuoteCalculator:
 
 # Hilfsfunktionen
 
-def _package_label(package_key: str) -> str:
-    return {
-        'basis': 'Basis-Paket',
-        'plus': 'Plus-Paket',
-        'pro': 'Pro-Paket',
-    }.get(package_key, package_key.title())
-
-
 def _add_item(quote: Quote, text: str, amount: Decimal):
     if not amount or amount == Decimal('0.00'):
         return
@@ -337,13 +329,19 @@ def _build_quote_from_pricing(precheck: Precheck, pricing: Dict[str, Decimal]) -
         status='review'
     )
 
-    _add_item(quote, _package_label(pricing['package']), pricing['base_price'])
-    _add_item(quote, 'Anfahrtskosten', pricing['travel_cost'])
-    _add_item(quote, 'Zuschläge', pricing['surcharges'])
-    _add_item(quote, 'Installation & Komponenten Wechselrichter', pricing['inverter_cost'])
-    _add_item(quote, 'Speicherinstallation', pricing['storage_cost'])
-    _add_item(quote, 'Wallbox & Installation', pricing['wallbox_cost'])
-    _add_item(quote, 'Rabatt', -pricing['discount'])
+    component_map = [
+        ('Gebäudezuschlag', 'building_surcharge'),
+        ('Hausanschluss', 'grid_surcharge'),
+        ('Wechselrichter', 'inverter_price'),
+        ('Speicher', 'storage_price'),
+        ('Kabelführung WR', 'wr_cable_cost'),
+        ('Wallbox', 'wallbox_base_price'),
+        ('Wallbox-Kabel', 'wallbox_cable_cost'),
+        ('Wallbox-Zusatz', 'wallbox_extra_cost'),
+    ]
+
+    for label, key in component_map:
+        _add_item(quote, label, pricing.get(key, Decimal('0.00')))
 
     quote.subtotal = pricing['net_total']
     quote.vat_rate = Decimal('19.00')

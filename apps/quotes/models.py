@@ -80,6 +80,25 @@ class Precheck(models.Model):
         help_text="Länge der Wallbox-Zuleitung in Metern"
     )
 
+    PACKAGE_CHOICES = [
+        ('', 'Kein Paket ausgewählt'),
+        ('basis', 'Basis-Paket'),
+        ('plus', 'Plus-Paket'),
+        ('pro', 'Pro-Paket'),
+    ]
+
+    package_choice = models.CharField(
+        max_length=10,
+        choices=PACKAGE_CHOICES,
+        blank=True,
+        default='',
+        help_text="Vom Kunden gewünschtes Leistungspaket"
+    )
+    wallbox_pv_surplus = models.BooleanField(
+        default=False,
+        help_text="PV-Überschussladen für die Wallbox gewünscht"
+    )
+
     # FILE UPLOADS - Fotos für technische Bewertung
     meter_cabinet_photo = models.ImageField(
         upload_to='precheck/meter_cabinet/%Y/%m/',

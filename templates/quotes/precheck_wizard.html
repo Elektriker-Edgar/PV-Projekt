@@ -245,13 +245,14 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <div class="form-text">Batteriespeicher. Typisch: 5-15 kWh</div>
 </div>
 
+
 <div id="wallboxFields">
 <h6 class="text-success mb-3"><i class="fas fa-charging-station me-2"></i>Wallbox-Konfiguration</h6>
 
 <div class="form-floating mb-3">
 <select class="form-select" id="wallbox_power" name="wallbox_power">
 <option value="">Wählen Sie...</option>
-<option value="<4kw">bis 4 kW</option>
+<option value="4kw">bis 4 kW</option>
 <option value="11kw">11 kW (Standard)</option>
 <option value="22kw">22 kW (Schnellladung)</option>
 </select>
@@ -310,13 +311,17 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 
 <div class="price-breakdown">
 <h6 class="text-muted mb-3"><i class="fas fa-list me-2"></i>Preisaufschlüsselung</h6>
-<div class="breakdown-item"><span>Elektroinstallation Wechselrichter</span><span id="breakdownInverter">0€</span></div>
-<div class="breakdown-item" id="breakdownStorageRow" style="display:none"><span>Speicherinstallation</span><span id="breakdownStorage">0€</span></div>
-<div class="breakdown-item" id="breakdownWallboxRow" style="display:none"><span>Wallbox & Installation</span><span id="breakdownWallbox">0€</span></div>
-<div class="breakdown-item"><span>Zuschläge</span><span id="breakdownSurcharges">0€</span></div>
-<div class="breakdown-item"><span>Material</span><span id="breakdownMaterial">0€</span></div>
-<div class="breakdown-item" id="breakdownDiscountRow" style="display:none"><span class="text-success">Rabatt</span><span class="text-success" id="breakdownDiscount">-0€</span></div>
-<div class="breakdown-item"><strong>Gesamtpreis</strong><strong id="breakdownTotal">0€</strong></div>
+<div class="breakdown-item"><span>Gebäudezuschlag</span><span id="breakdownBuilding">0€</span></div>
+<div class="breakdown-item"><span>Hausanschluss</span><span id="breakdownGrid">0€</span></div>
+<div class="breakdown-item"><span>Wechselrichter</span><span id="breakdownInverter">0€</span></div>
+<div class="breakdown-item" id="breakdownStorageRow" style="display:none"><span>Speicher</span><span id="breakdownStorage">0€</span></div>
+<div class="breakdown-item" id="breakdownCableRow" style="display:none"><span>Kabelführung WR</span><span id="breakdownCable">0€</span></div>
+<div class="breakdown-item" id="breakdownWallboxBaseRow" style="display:none"><span>Wallbox</span><span id="breakdownWallboxBase">0€</span></div>
+<div class="breakdown-item" id="breakdownWallboxCableRow" style="display:none"><span>Wallbox-Kabel</span><span id="breakdownWallboxCable">0€</span></div>
+<div class="breakdown-item" id="breakdownWallboxExtraRow" style="display:none"><span>Wallbox-Zusatz</span><span id="breakdownWallboxExtra">0€</span></div>
+<div class="breakdown-item"><strong>Gesamtpreis (netto)</strong><strong id="breakdownNet">0€</strong></div>
+<div class="breakdown-item"><span>MwSt. (19%)</span><span id="breakdownVat">0€</span></div>
+<div class="breakdown-item"><strong>Gesamtpreis (brutto)</strong><strong id="breakdownTotal">0€</strong></div>
 </div>
 </div>
 
@@ -694,27 +699,47 @@ saveFormData();
 function updatePriceDisplay(data){
 const total=data.total||0;
 document.getElementById('finalPriceDisplay').textContent=formatCurrency(total);
-document.getElementById('breakdownInverter').textContent=formatCurrency(data.inverterCost||0);
-if(data.storageCost&&data.storageCost>0){
+document.getElementById('breakdownBuilding').textContent=formatCurrency(data.buildingSurcharge||0);
+document.getElementById('breakdownGrid').textContent=formatCurrency(data.gridSurcharge||0);
+document.getElementById('breakdownInverter').textContent=formatCurrency(data.inverterPrice||0);
+
+if(data.storagePrice&&data.storagePrice>0){
 document.getElementById('breakdownStorageRow').style.display='flex';
-document.getElementById('breakdownStorage').textContent=formatCurrency(data.storageCost);
+document.getElementById('breakdownStorage').textContent=formatCurrency(data.storagePrice);
 }else{
 document.getElementById('breakdownStorageRow').style.display='none';
 }
-if(data.wallboxCost&&data.wallboxCost>0){
-document.getElementById('breakdownWallboxRow').style.display='flex';
-document.getElementById('breakdownWallbox').textContent=formatCurrency(data.wallboxCost);
+
+if(data.wrCableCost&&data.wrCableCost>0){
+document.getElementById('breakdownCableRow').style.display='flex';
+document.getElementById('breakdownCable').textContent=formatCurrency(data.wrCableCost);
 }else{
-document.getElementById('breakdownWallboxRow').style.display='none';
+document.getElementById('breakdownCableRow').style.display='none';
 }
-document.getElementById('breakdownSurcharges').textContent=formatCurrency(data.surcharges||0);
-document.getElementById('breakdownMaterial').textContent=formatCurrency(data.materialCost||0);
-if(data.discount&&data.discount>0){
-document.getElementById('breakdownDiscountRow').style.display='flex';
-document.getElementById('breakdownDiscount').textContent='-'+formatCurrency(data.discount);
+
+if(data.wallboxBasePrice&&data.wallboxBasePrice>0){
+document.getElementById('breakdownWallboxBaseRow').style.display='flex';
+document.getElementById('breakdownWallboxBase').textContent=formatCurrency(data.wallboxBasePrice);
 }else{
-document.getElementById('breakdownDiscountRow').style.display='none';
+document.getElementById('breakdownWallboxBaseRow').style.display='none';
 }
+
+if(data.wallboxCableCost&&data.wallboxCableCost>0){
+document.getElementById('breakdownWallboxCableRow').style.display='flex';
+document.getElementById('breakdownWallboxCable').textContent=formatCurrency(data.wallboxCableCost);
+}else{
+document.getElementById('breakdownWallboxCableRow').style.display='none';
+}
+
+if(data.wallboxExtraCost&&data.wallboxExtraCost>0){
+document.getElementById('breakdownWallboxExtraRow').style.display='flex';
+document.getElementById('breakdownWallboxExtra').textContent=formatCurrency(data.wallboxExtraCost);
+}else{
+document.getElementById('breakdownWallboxExtraRow').style.display='none';
+}
+
+document.getElementById('breakdownNet').textContent=formatCurrency(data.totalNet||0);
+document.getElementById('breakdownVat').textContent=formatCurrency(data.vatAmount||0);
 document.getElementById('breakdownTotal').textContent=formatCurrency(total);
 }
 
@@ -726,50 +751,72 @@ const locations={'basement':'Keller','garage':'Garage','attic':'Dachboden','util
 document.getElementById('sum_building_type').textContent=buildingTypes[document.getElementById('building_type').value]||'-';
 document.getElementById('sum_construction_year').textContent=document.getElementById('construction_year').value||'-';
 
-if(document.getElementById('has_renovation').checked){
-document.getElementById('sum_renovation_row').style.display='flex';
+const renovationCheckbox=document.getElementById('has_renovation');
+const renovationRow=document.getElementById('sum_renovation_row');
+if(renovationCheckbox&&renovationCheckbox.checked){
+renovationRow.style.display='flex';
 document.getElementById('sum_renovation_year').textContent=document.getElementById('renovation_year').value||'-';
+}else{
+renovationRow.style.display='none';
 }
 
-document.getElementById('sum_main_fuse').textContent=document.getElementById('main_fuse_ampere').value+' A';
+document.getElementById('sum_main_fuse').textContent=(document.getElementById('main_fuse_ampere').value||'-')+' A';
 document.getElementById('sum_grid_type').textContent=gridTypes[document.getElementById('grid_type').value]||'-';
-document.getElementById('sum_distance').textContent=document.getElementById('distance_meter_to_hak').value+' m';
+document.getElementById('sum_distance').textContent=(document.getElementById('distance_meter_to_hak').value||'0')+' m';
 document.getElementById('sum_inverter_loc').textContent=locations[document.getElementById('inverter_location').value]||'-';
 
 const storageLoc=document.getElementById('storage_location').value;
-if(storageLoc&&storageLoc!==''){
-document.getElementById('sum_storage_loc_row').style.display='flex';
+const storageLocRow=document.getElementById('sum_storage_loc_row');
+if(storageLoc){
+storageLocRow.style.display='flex';
 document.getElementById('sum_storage_loc').textContent=storageLoc==='same_as_inverter'?'Wie WR':(locations[storageLoc]||storageLoc);
+}else{
+storageLocRow.style.display='none';
 }
 
-document.getElementById('sum_wr_power').textContent=document.getElementById('desired_power_kw').value+' kW';
+document.getElementById('sum_wr_power').textContent=(document.getElementById('desired_power_kw').value||'0')+' kW';
+
 
 const storageKwh=document.getElementById('storage_kwh').value;
-if(storageKwh&&storageKwh>0){
-document.getElementById('sum_storage_row').style.display='flex';
+const storageRow=document.getElementById('sum_storage_row');
+if(storageKwh&&Number(storageKwh)>0){
+storageRow.style.display='flex';
 document.getElementById('sum_storage').textContent=storageKwh+' kWh';
+}else{
+storageRow.style.display='none';
 }
 
-if(document.getElementById('own_components').checked){
-document.getElementById('sum_own_comp_row').style.display='flex';
+const ownComponents=document.getElementById('own_components').checked;
+const ownCompRow=document.getElementById('sum_own_comp_row');
+const materialDescRow=document.getElementById('sum_material_desc_row');
+if(ownComponents){
+ownCompRow.style.display='flex';
 const materialDesc=document.getElementById('own_material_description').value;
 if(materialDesc){
-const descRow=document.getElementById('sum_material_desc_row');
-const descText=document.getElementById('sum_material_desc');
-if(descRow&&descText){
-descText.textContent=materialDesc;
-descRow.style.display='flex';
+materialDescRow.style.display='flex';
+document.getElementById('sum_material_desc').textContent=materialDesc;
+}else{
+materialDescRow.style.display='none';
 }
-}
+}else{
+ownCompRow.style.display='none';
+materialDescRow.style.display='none';
 }
 
-if(document.getElementById('has_wallbox').checked){
-document.getElementById('sum_wallbox_section').style.display='block';
-document.getElementById('sum_wb_power').textContent=document.getElementById('wallbox_power').value||'-';
-document.getElementById('sum_wb_mount').textContent=document.getElementById('wallbox_mount').value==='wall'?'Wand':'Ständer';
+const wallboxSection=document.getElementById('sum_wallbox_section');
+const hasWallbox=document.getElementById('has_wallbox').checked;
+if(hasWallbox){
+wallboxSection.style.display='block';
+const wbPower=document.getElementById('wallbox_power').value||'-';
+const wbMount=document.getElementById('wallbox_mount').value;
+document.getElementById('sum_wb_power').textContent=wbPower;
+document.getElementById('sum_wb_mount').textContent=wbMount==='stand'?'Ständer':'Wand';
 
+const wbPvRow=document.getElementById('sum_wb_pv_row');
 if(document.getElementById('wallbox_pv_surplus').checked){
-document.getElementById('sum_wb_pv_row').style.display='flex';
+wbPvRow.style.display='flex';
+}else{
+wbPvRow.style.display='none';
 }
 
 const cableInstalled=document.getElementById('wallbox_cable_installed').checked;
@@ -779,6 +826,8 @@ document.getElementById('sum_wb_cable').textContent='Bereits verlegt';
 const cableLen=document.getElementById('wallbox_cable_length').value;
 document.getElementById('sum_wb_cable').textContent=cableLen?cableLen+' m verlegen':'-';
 }
+}else{
+wallboxSection.style.display='none';
 }
 
 if(priceData){
