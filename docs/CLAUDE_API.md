@@ -71,7 +71,7 @@ class PriceConfig(models.Model):
 ### Verwendung im Code
 
 ```python
-# Helper-Funktion zum Abrufen von Preisen
+# Helper-Funktion zum Abrufen von Preisen (Legacy)
 def _pc(key: str, default: Decimal) -> Decimal:
     """
     Holt einen Preis aus der Datenbank.
@@ -82,12 +82,27 @@ def _pc(key: str, default: Decimal) -> Decimal:
         return obj.value
     except PriceConfig.DoesNotExist:
         return default
-
-# Beispiele:
-wallbox_price = _pc('wallbox_base_11kw', Decimal('1290.00'))
-cable_price = _pc('cable_wr_5_to_10kw', Decimal('25.00'))
-travel_cost = _pc('travel_zone_0', Decimal('0.00'))
 ```
+
+> **Hinweis (seit 2025‑11‑11):** Die Precheck-Kalkulation nutzt `PriceConfig` nicht mehr direkt. Alle aktuell verwendeten Werte leben als Produkte mit den SKUs `PCHK-*` im Produktkatalog (siehe [CLAUDE_PRODUKTKATALOG.md](CLAUDE_PRODUKTKATALOG.md)). `PriceConfig` bleibt für alte Angebote und Admin-Views erhalten.
+
+---
+
+## �Y"T Precheck Pricing Engine (Product Catalog Driven)
+
+**Datei:** `apps/quotes/pricing.py`
+
+Die Live-Preisberechnung summiert klar definierte Bausteine aus dem Produktkatalog. Jeder Baustein hat eine SKU `PCHK-<KEY>` und lässt sich im Dashboard pflegen. Wichtige Gruppen:
+
+| Baustein | Keys / Beispiele | Beschreibung |
+|----------|------------------|--------------|
+| Gebäude & Netz | `PCHK-BUILDING-EFH`, `PCHK-GRID-1P` | Feste Auf-/Abschläge je Gebäudetyp und Hausanschluss |
+| Wechselrichter | `PCHK-INVERTER-TIER-3/5/10/20/30` | Pauschalen pro Leistungsbereich |
+| Speicher | `PCHK-STORAGE-TIER-3/5/10` | Speicherstaffeln (optional) |
+| WR-Kabel | `PCHK-WR-CABLE-PM-LT10/LT20/LT30` | Preis pro Meter basierend auf WR-Leistung |
+| Wallbox | `PCHK-WALLBOX-BASE-*`, `PCHK-WALLBOX-CABLE-PM-*`, `PCHK-WALLBOX-MOUNT-STAND`, `PCHK-WALLBOX-PV-SURPLUS` | Basiskosten, Kabelmeter, Extras (Ständer, Überschussladen) |
+
+`calculate_pricing()` liest die passenden Produkte, fasst sie zu Netto-/MwSt-/Bruttosummen zusammen und stellt jede Komponente in der API-Response dar. Neue/angepasste Preise bitte direkt über den Produktkatalog pflegen; Migration `0014_update_precheck_price_catalog.py` legt die Standardwerte an.
 
 ---
 
@@ -117,23 +132,24 @@ travel_cost = _pc('travel_zone_0', Decimal('0.00'))
 ```python
 {
     # Standort & Elektro
-    "site_address": str,                    # Für Anfahrtskosten-Berechnung
-    "main_fuse_ampere": int,                # Für Zuschlag selektive Sicherung
-    "grid_type": str,                       # '3p', '1p', 'TT'
-    "distance_meter_to_inverter": Decimal,  # Entfernung Zähler→WR in Metern
+    "building_type": "mfh",                 # 'efh', 'mfh', 'commercial'
+    "site_address": "Hamburg",              # optional – nur für spätere Auswertungen
+    "main_fuse_ampere": 35,
+    "grid_type": "1p",                      # '3p', '1p', 'tt'
+    "distance_meter_to_inverter": 12,       # alternativ: distance_meter_to_hak
 
     # PV-System
-    "desired_power_kw": Decimal,            # WR-Leistung (für Kabelpreis)
-    "storage_kwh": Decimal,                 # Speichergröße (0 = kein Speicher)
-    "own_components": bool,                 # Kunde bringt eigene Komponenten
+    "desired_power_kw": 6,                  # bestimmt WR-Staffel + Kabelpreis
+    "storage_kwh": 4,                       # 0 oder leer = kein Speicher
+    "own_components": false,                # aktuell nur informativ
 
-    # Wallbox-Parameter (NEU)
-    "has_wallbox": bool,                    # Wallbox gewünscht?
-    "wallbox_power": str,                   # '4kw', '11kw', '22kw'
-    "wallbox_mount": str,                   # 'wall', 'stand'
-    "wallbox_cable_installed": bool,        # Kabel bereits verlegt?
-    "wallbox_cable_length": Decimal,        # Kabellänge in Metern
-    "wallbox_pv_surplus": bool,             # PV-Überschussladen gewünscht?
+    # Wallbox (optional)
+    "has_wallbox": true,
+    "wallbox_power": "11kw",                # '4kw', '11kw', '22kw'
+    "wallbox_mount": "stand",               # 'wall' oder 'stand'
+    "wallbox_cable_installed": false,
+    "wallbox_cable_length": 10,
+    "wallbox_pv_surplus": true
 }
 ```
 
@@ -141,300 +157,123 @@ travel_cost = _pc('travel_zone_0', Decimal('0.00'))
 
 ```json
 {
-    "package": "pro",              // 'basis', 'plus', 'pro'
-    "basePrice": 2290.0,           // Paket-Grundpreis
-    "travelCost": 0.0,             // Anfahrtskosten
-    "surcharges": 125.0,           // Zuschläge (inkl. WR-Kabelkosten)
-    "inverterCost": 2750.0,        // WR + AC-Verkabelung + ggf. SPD/Meter
-    "storageCost": 8000.0,         // Speicher-Kosten (0 wenn kein Speicher)
-    "wallboxCost": 1790.0,         // Wallbox-Gesamtkosten (0 wenn keine Wallbox)
-    "materialCost": 12540.0,       // Summe: inverter + storage + wallbox
-    "discount": 343.5,             // Komplett-Kit Rabatt
-    "total": 14611.5               // Endpreis inkl. aller Faktoren
+    "buildingSurcharge": 100.0,
+    "gridSurcharge": 100.0,
+    "inverterPrice": 1500.0,
+    "storagePrice": 1300.0,
+    "wrCableCost": 60.0,
+    "wallboxBasePrice": 500.0,
+    "wallboxCableCost": 140.0,
+    "wallboxExtraCost": 400.0,
+    "totalNet": 4100.0,
+    "vatAmount": 779.0,
+    "total": 4879.0
 }
 ```
+
+- Jeder Betrag entspricht genau einem PCHK-Produkt (siehe Tabelle oben).
+- `totalNet` ist die Summe aller Bausteine, `vatAmount` = 19 % davon, `total` = Brutto.
+- Es gibt keine Paket- oder Rabatt-Felder mehr; alles ist transparent nach Komponenten aufgeschlüsselt.
 
 ---
 
 ## 🧮 Preisberechnung-Logik (Detailliert)
 
-### 1. Paket-Bestimmung
+Die aktuelle Engine besteht aus wenigen, transparenten Schritten – jede Stufe greift auf genau einen Produktdatensatz zurück:
 
-```python
-# Automatische Paket-Auswahl basierend auf Kundenanforderungen
-if storage_kwh and storage_kwh > 0:
-    package = 'pro'        # Speicher vorhanden → Pro-Paket (2.290€)
-elif (desired_power and desired_power > 3) or grid_type == 'TT':
-    package = 'plus'       # >3kW oder TT-Netz → Plus-Paket (1.490€)
-else:
-    package = 'basis'      # Standard → Basis-Paket (890€)
+1. **Gebäude & Netz**
+   - uilding_type → PCHK-BUILDING-*
+   - grid_type → PCHK-GRID-*
 
-# Basis-Preis aus DB holen
-base_price = _pc({
-    'basis': 'package_basis',
-    'plus': 'package_plus',
-    'pro': 'package_pro'
-}[package], {
-    'basis': Decimal('890.00'),
-    'plus': Decimal('1490.00'),
-    'pro': Decimal('2290.00')
-}[package])
-```
+2. **Wechselrichter**
+   - Leistung wird gerundet und einer Staffel (PCHK-INVERTER-TIER-*) zugeordnet.
 
-### 2. Anfahrtskosten (Ortbasiert)
+3. **Speicher (optional)**
+   - Falls storage_kwh > 0, wählt _storage_price die passende Staffel (PCHK-STORAGE-TIER-*).
 
-```python
-def _infer_travel_cost(address: str) -> Decimal:
-    """
-    Berechnet Anfahrtskosten basierend auf Adresse.
+4. **Kabelkosten WR**
+   - Auf Basis der WR-Leistung wird der Meterpreis (PCHK-WR-CABLE-PM-LT*) gewählt und mit distance_meter_to_inverter multipliziert.
 
-    Zonen:
-    - Zone 0: Hamburg (0€)
-    - Zone 30: bis 30km (50€)
-    - Zone 60: bis 60km (95€)
-    """
-    a = (address or '').lower()
+5. **Wallbox (optional)**
+   - Basispreis (PCHK-WALLBOX-BASE-*), Kabelmeter (PCHK-WALLBOX-CABLE-PM-*) und Extras (Ständer/PV-Überschuss) werden separat addiert.
 
-    if 'hamburg' in a:
-        return _pc('travel_zone_0', Decimal('0.00'))
+6. **Summen & MwSt.**
+   - 	otalNet = Summe aller Komponenten
+   - atAmount = totalNet * 0.19
+   - 	otal = totalNet + vatAmount
 
-    if any(x in a for x in ['norderstedt', 'ahrensburg', 'pinneberg']):
-        return _pc('travel_zone_30', Decimal('50.00'))
-
-    return _pc('travel_zone_60', Decimal('95.00'))
-```
-
-### 3. Zuschläge
-
-```python
-surcharges = Decimal('0.00')
-
-# TT-Netz Zuschlag (150€)
-if grid_type == 'TT':
-    surcharges += _pc('surcharge_tt_grid', Decimal('150.00'))
-
-# Selektive Vorsicherung (220€) bei Hauptsicherung >35A
-if main_fuse and main_fuse > 35:
-    surcharges += _pc('surcharge_selective_fuse', Decimal('220.00'))
-```
-
-### 4. Variable WR-Kabelkosten (NEU)
-
-```python
-# Kabel über 15m → Extra-Kosten abhängig von WR-Leistung
-if distance and distance > 15:
-    extra_distance = distance - Decimal('15')
-
-    # Kabelpreis abhängig von WR-Leistung
-    if desired_power <= 5:
-        cable_price = _pc('cable_wr_up_to_5kw', Decimal('15.00'))
-    elif desired_power <= 10:
-        cable_price = _pc('cable_wr_5_to_10kw', Decimal('25.00'))
-    else:
-        cable_price = _pc('cable_wr_above_10kw', Decimal('35.00'))
-
-    surcharges += extra_distance * cable_price
-```
-
-**Beispiel:**
-- Distanz: 20m
-- WR-Leistung: 6kW
-- Extra-Distanz: 20m - 15m = 5m
-- Kabelpreis: 25€/m (5-10kW Klasse)
-- **Kosten:** 5m × 25€/m = 125€
-
-### 5. Wallbox-Berechnung (NEU)
-
-```python
-wallbox_cost = Decimal('0.00')
-
-if has_wallbox:
-    # 5.1 Base-Installation (abhängig von Leistungsklasse)
-    if wallbox_power == '4kw':
-        wallbox_cost += _pc('wallbox_base_4kw', Decimal('890.00'))
-    elif wallbox_power == '11kw':
-        wallbox_cost += _pc('wallbox_base_11kw', Decimal('1290.00'))
-    elif wallbox_power == '22kw':
-        wallbox_cost += _pc('wallbox_base_22kw', Decimal('1690.00'))
-
-    # 5.2 Ständer-Montage Zuschlag (350€)
-    if wallbox_mount == 'stand':
-        wallbox_cost += _pc('wallbox_stand_mount', Decimal('350.00'))
-
-    # 5.3 PV-Überschussladen (aktuell kostenlos)
-    if wallbox_pv_surplus:
-        wallbox_cost += _pc('wallbox_pv_surplus', Decimal('0.00'))
-
-    # 5.4 Kabelverlegung (abhängig von Leistungsklasse)
-    if not wallbox_cable_installed and wallbox_cable_length > 0:
-        if wallbox_power == '4kw':
-            cable_price = _pc('cable_wb_4kw', Decimal('12.00'))
-        elif wallbox_power == '11kw':
-            cable_price = _pc('cable_wb_11kw', Decimal('20.00'))
-        elif wallbox_power == '22kw':
-            cable_price = _pc('cable_wb_22kw', Decimal('30.00'))
-        else:
-            cable_price = Decimal('0.00')
-
-        wallbox_cost += wallbox_cable_length * cable_price
-```
-
-**Beispiel:**
-- Wallbox: 11kW
-- Montage: Wand
-- Kabel: 25m (nicht verlegt)
-- PV-Überschuss: Ja
-- **Berechnung:**
-  - Base: 1.290€
-  - Ständer: 0€
-  - PV-Überschuss: 0€
-  - Kabel: 25m × 20€/m = 500€
-  - **Gesamt:** 1.790€
-
-### 6. Materialkosten
-
-```python
-inverter_cost = Decimal('0.00')
-storage_cost = Decimal('0.00')
-
-if not own_components:
-    # 6.1 Wechselrichter
-    inv_price_map = {
-        '1kva': Decimal('800.00'),
-        '3kva': Decimal('1200.00'),
-        '5kva': Decimal('1800.00'),
-        '10kva': Decimal('2800.00')
-    }
-    # Ableitung anhand der gewünschten Leistung
-    inv_price = inv_price_map.get(_infer_inverter_class(desired_power_kw), Decimal('0.00'))
-
-    # Optional: Preis aus Component-DB überschreiben
-    try:
-        db_inv = Component.objects.filter(type='inverter').first()
-        if db_inv:
-            inv_price = db_inv.unit_price
-    except Exception:
-        pass
-
-    inverter_cost += inv_price
-
-    # 6.2 AC-Verkabelung (immer dabei)
-    inverter_cost += _pc('material_ac_wiring', Decimal('180.00'))
-
-    # 6.3 Überspannungsschutz + Zählerplatz (nur Plus & Pro)
-    if package in ['plus', 'pro']:
-        inverter_cost += _pc('material_spd', Decimal('320.00'))
-        inverter_cost += _pc('material_meter_upgrade', Decimal('450.00'))
-
-    # 6.4 Speicher (nur Pro)
-    if package == 'pro' and storage_kwh and storage_kwh > 0:
-        storage_cost = storage_kwh * _pc('material_storage_kwh', Decimal('800.00'))
-
-# Gesamtmaterial
-material = inverter_cost + storage_cost + wallbox_cost
-```
-```python
-def _infer_inverter_class(power_kw: Decimal) -> str:
-    if power_kw <= Decimal('1.5'):
-        return '1kva'
-    if power_kw <= Decimal('3.5'):
-        return '3kva'
-    if power_kw <= Decimal('6.5'):
-        return '5kva'
-    return '10kva'
-```
-
-### 7. Rabatt (Komplett-Kit)
-
-```python
-discount = Decimal('0.00')
-
-if not own_components:
-    try:
-        disc = PriceConfig.objects.get(price_type='discount_complete_kit')
-        if disc.is_percentage:
-            discount = (base_price * disc.value) / Decimal('100')
-        else:
-            discount = disc.value
-    except PriceConfig.DoesNotExist:
-        # Fallback: 15% Rabatt
-        discount = (base_price * Decimal('0.15'))
-```
-
-### 8. Gesamtpreis
-
-```python
-total = base_price + travel_cost + surcharges + material - discount
-```
+Keine Rabatte, Pakete oder Travel-Zonen mehr – jeder Cent ist ein eigener Datensatz im Produktkatalog.
 
 ---
 
-## 📝 Beispiel-Requests & Responses
+## ?? Beispiel-Requests & Responses
 
-### Beispiel 1: Basis-Paket (kein Speicher, keine Wallbox)
+### Beispiel 1: Einfamilienhaus ohne Speicher/Wallbox
 
 **Request:**
 ```bash
-curl -X POST "http://192.168.178.30:8025/api/pricing/preview/" \
-  -d "site_address=Hamburg" \
-  -d "main_fuse_ampere=35" \
-  -d "grid_type=3p" \
-  -d "distance_meter_to_inverter=10" \
-  -d "desired_power_kw=2.5" \
-  -d "storage_kwh=0" \
-  -d "has_wallbox=false" \
-  -d "own_components=false"
+curl -X POST "http://192.168.178.30:8025/api/pricing/preview/"
+  -d "building_type=efh"
+  -d "site_address=Hamburg"
+  -d "main_fuse_ampere=35"
+  -d "grid_type=3p"
+  -d "distance_meter_to_inverter=8"
+  -d "desired_power_kw=4"
+  -d "storage_kwh=0"
+  -d "has_wallbox=false"
 ```
 
 **Response:**
 ```json
 {
-    "package": "basis",
-    "basePrice": 890.0,
-    "travelCost": 0.0,
-    "surcharges": 0.0,
-    "inverterCost": 1380.0,
-    "storageCost": 0.0,
-    "wallboxCost": 0.0,
-    "materialCost": 1380.0,
-    "discount": 133.5,
-    "total": 2136.5
+    "buildingSurcharge": 0.0,
+    "gridSurcharge": 0.0,
+    "inverterPrice": 1000.0,
+    "storagePrice": 0.0,
+    "wrCableCost": 40.0,
+    "wallboxBasePrice": 0.0,
+    "wallboxCableCost": 0.0,
+    "wallboxExtraCost": 0.0,
+    "totalNet": 1040.0,
+    "vatAmount": 197.6,
+    "total": 1237.6
 }
 ```
 
-### Beispiel 2: Pro-Paket mit Wallbox
+### Beispiel 2: Mehrfamilienhaus mit Speicher & Wallbox
 
 **Request:**
 ```bash
-curl -X POST "http://192.168.178.30:8025/api/pricing/preview/" \
-  -d "site_address=Hamburg" \
-  -d "main_fuse_ampere=35" \
-  -d "grid_type=3p" \
-  -d "distance_meter_to_inverter=20" \
-  -d "desired_power_kw=6" \
-  -d "storage_kwh=10" \
-  -d "has_wallbox=true" \
-  -d "wallbox_power=11kw" \
-  -d "wallbox_mount=wall" \
-  -d "wallbox_cable_installed=false" \
-  -d "wallbox_cable_length=25" \
-  -d "wallbox_pv_surplus=true" \
-  -d "own_components=false"
+curl -X POST "http://192.168.178.30:8025/api/pricing/preview/"
+  -d "building_type=mfh"
+  -d "site_address=Hamburg"
+  -d "main_fuse_ampere=40"
+  -d "grid_type=1p"
+  -d "distance_meter_to_inverter=12"
+  -d "desired_power_kw=6"
+  -d "storage_kwh=4"
+  -d "has_wallbox=true"
+  -d "wallbox_power=11kw"
+  -d "wallbox_mount=stand"
+  -d "wallbox_cable_installed=false"
+  -d "wallbox_cable_length=10"
+  -d "wallbox_pv_surplus=true"
 ```
 
 **Response:**
 ```json
 {
-    "package": "pro",
-    "basePrice": 2290.0,
-    "travelCost": 0.0,
-    "surcharges": 125.0,        // 5m WR-Kabel × 25€/m
-    "inverterCost": 2750.0,
-    "storageCost": 8000.0,
-    "wallboxCost": 1790.0,      // 1290€ Base + 500€ Kabel
-    "materialCost": 12540.0,
-    "discount": 343.5,
-    "total": 14611.5
+    "buildingSurcharge": 100.0,
+    "gridSurcharge": 100.0,
+    "inverterPrice": 1500.0,
+    "storagePrice": 1300.0,
+    "wrCableCost": 60.0,
+    "wallboxBasePrice": 500.0,
+    "wallboxCableCost": 140.0,
+    "wallboxExtraCost": 400.0,
+    "totalNet": 4100.0,
+    "vatAmount": 779.0,
+    "total": 4879.0
 }
 ```
 

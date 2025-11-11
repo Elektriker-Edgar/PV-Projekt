@@ -18,6 +18,8 @@
 | `core` | Customer | Kundenstammdaten | name, email, phone, type |
 | `core` | Site | Installationsorte | address, customer, grid_operator |
 | `quotes` | **PriceConfig** | Preiskonfiguration | price_type, value, is_percentage |
+| `quotes` | **ProductCategory** | Produktkategorien | name, description, sort_order |
+| `quotes` | **Product** | Produktkatalog | sku, name, category, purchase_price, sales_price |
 | `quotes` | Quote | Angebote | customer, site, total_price, status |
 | `quotes` | Precheck | Vorprüfungen | customer, site, price_data |
 | `quotes` | Component | Komponenten-Katalog | type, manufacturer, model, price |
@@ -418,6 +420,206 @@ class Component(models.Model):
     manufacturer = models.CharField(max_length=100)
     model = models.CharField(max_length=100)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+```
+
+---
+
+## 📦 Produktkatalog-Modelle (NEU v1.2.0)
+
+### ProductCategory Model
+
+**Datei:** `apps/quotes/models.py` (Zeilen 273-297)
+**Erstellt:** 2025-11-11
+
+```python
+class ProductCategory(models.Model):
+    """Produktkategorien für den Artikelkatalog"""
+    name = models.CharField(max_length=200, unique=True, verbose_name="Kategoriename")
+    description = models.TextField(blank=True, verbose_name="Beschreibung")
+    sort_order = models.IntegerField(default=0, verbose_name="Sortierreihenfolge")
+    is_active = models.BooleanField(default=True, verbose_name="Aktiv")
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['sort_order', 'name']
+        verbose_name = "Produktkategorie"
+        verbose_name_plural = "Produktkategorien"
+
+    def get_product_count(self):
+        """Anzahl aktiver Produkte in dieser Kategorie"""
+        return self.products.filter(is_active=True).count()
+```
+
+### Product Model
+
+**Datei:** `apps/quotes/models.py` (Zeilen 299-419)
+**Erstellt:** 2025-11-11
+
+```python
+class Product(models.Model):
+    """Artikelkatalog für Produkte und Dienstleistungen"""
+
+    UNIT_CHOICES = [
+        ('piece', 'Stück'), ('meter', 'Meter'), ('hour', 'Stunde'),
+        ('kwh', 'kWh'), ('kwp', 'kWp'), ('set', 'Set'),
+        ('package', 'Paket'), ('lump_sum', 'Pauschal'),
+    ]
+
+    VAT_RATE_CHOICES = [
+        (Decimal('0.00'), '0% (Steuerfrei)'),
+        (Decimal('0.07'), '7% (Ermäßigt)'),
+        (Decimal('0.19'), '19% (Standard)'),
+    ]
+
+    # Basis-Felder
+    category = models.ForeignKey(ProductCategory, on_delete=models.PROTECT,
+                                 related_name='products')
+    name = models.CharField(max_length=200, verbose_name="Bezeichnung")
+    sku = models.CharField(max_length=100, unique=True, verbose_name="Artikelnummer (SKU)")
+    description = models.TextField(blank=True, verbose_name="Beschreibung")
+    unit = models.CharField(max_length=20, choices=UNIT_CHOICES, default='piece')
+
+    # Preise (Netto)
+    purchase_price_net = models.DecimalField(max_digits=10, decimal_places=2,
+                                             default=Decimal('0.00'))
+    sales_price_net = models.DecimalField(max_digits=10, decimal_places=2)
+    vat_rate = models.DecimalField(max_digits=4, decimal_places=2,
+                                   choices=VAT_RATE_CHOICES, default=Decimal('0.19'))
+
+    # Lagerbestand (optional)
+    stock_quantity = models.IntegerField(default=0, blank=True, null=True)
+    min_stock_level = models.IntegerField(default=0, blank=True, null=True)
+
+    # Status
+    is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
+
+    # Zusatzinformationen
+    manufacturer = models.CharField(max_length=200, blank=True)
+    supplier = models.CharField(max_length=200, blank=True)
+    notes = models.TextField(blank=True)
+
+    # Berechnete Properties
+    @property
+    def sales_price_gross(self):
+        """Verkaufspreis brutto (berechnet)"""
+        return self.sales_price_net * (1 + self.vat_rate)
+
+    @property
+    def purchase_price_gross(self):
+        """Einkaufspreis brutto (berechnet)"""
+        return self.purchase_price_net * (1 + self.vat_rate)
+
+    @property
+    def margin_amount(self):
+        """Marge in Euro"""
+        return self.sales_price_net - self.purchase_price_net
+
+    @property
+    def margin_percentage(self):
+        """Marge in Prozent"""
+        if self.purchase_price_net > 0:
+            return ((self.sales_price_net - self.purchase_price_net) /
+                    self.purchase_price_net) * 100
+        return Decimal('0.00')
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Produkt"
+        verbose_name_plural = "Produkte"
+```
+
+### Migration 0010 - ProductCategory & Product
+
+**Datei:** `apps/quotes/migrations/0010_productcategory_product.py`
+**Status:** ✅ Applied
+**Erstellt:** 2025-11-11
+
+```python
+class Migration(migrations.Migration):
+    dependencies = [
+        ('quotes', '0006_seed_wallbox_pricing'),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='ProductCategory',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True)),
+                ('name', models.CharField(max_length=200, unique=True)),
+                ('description', models.TextField(blank=True)),
+                ('sort_order', models.IntegerField(default=0)),
+                ('is_active', models.BooleanField(default=True)),
+                ('created_at', models.DateTimeField(default=timezone.now)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+            ],
+            options={
+                'ordering': ['sort_order', 'name'],
+            },
+        ),
+        migrations.CreateModel(
+            name='Product',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True)),
+                ('name', models.CharField(max_length=200)),
+                ('sku', models.CharField(max_length=100, unique=True)),
+                ('description', models.TextField(blank=True)),
+                ('unit', models.CharField(max_length=20, choices=UNIT_CHOICES)),
+                ('purchase_price_net', models.DecimalField(max_digits=10, decimal_places=2)),
+                ('sales_price_net', models.DecimalField(max_digits=10, decimal_places=2)),
+                ('vat_rate', models.DecimalField(max_digits=4, decimal_places=2)),
+                ('stock_quantity', models.IntegerField(blank=True, null=True)),
+                ('min_stock_level', models.IntegerField(blank=True, null=True)),
+                ('is_active', models.BooleanField(default=True)),
+                ('is_featured', models.BooleanField(default=False)),
+                ('manufacturer', models.CharField(max_length=200, blank=True)),
+                ('supplier', models.CharField(max_length=200, blank=True)),
+                ('notes', models.TextField(blank=True)),
+                ('created_at', models.DateTimeField(default=timezone.now)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('category', models.ForeignKey(on_delete=models.PROTECT, to='quotes.productcategory')),
+            ],
+            options={
+                'ordering': ['name'],
+            },
+        ),
+    ]
+```
+
+### Test-Daten
+
+**Script:** `create_test_products.py`
+**Erstellt:** 2025-11-11
+
+**Erstellte Kategorien (7):**
+1. **Precheck-Artikel** - Artikel für Precheck-Kalkulation (6 Produkte)
+2. **Wechselrichter** - Wechselrichter für PV-Anlagen (4 Produkte)
+3. **Speicher** - Batteriespeicher-Systeme (3 Produkte)
+4. **Installationsmaterial** - Material für die Installation (4 Produkte)
+5. **Kabel** - DC- und AC-Kabel (4 Produkte)
+6. **Dienstleistungen** - Montage, Planung und Beratung (5 Produkte)
+7. **Zubehör** - Diverses Zubehör (4 Produkte)
+
+**Beispiel-Produkte:**
+```python
+# Precheck-Artikel
+PRECHK-BASE      | Basis-Paket                    | 150€ → 299€  (99,3% Marge)
+PRECHK-PLUS      | Plus-Paket                     | 250€ → 499€  (99,6% Marge)
+PRECHK-PRO       | Pro-Paket                      | 400€ → 799€  (99,8% Marge)
+TRAVEL-0         | Anfahrt Zone 0 (Hamburg)       | 20€  → 50€   (150% Marge)
+TRAVEL-30        | Anfahrt Zone 30 (bis 30km)     | 30€  → 75€   (150% Marge)
+TRAVEL-60        | Anfahrt Zone 60 (bis 60km)     | 50€  → 125€  (150% Marge)
+
+# Wechselrichter
+INV-FRONIUS-5    | Fronius Symo 5.0-3-M           | 800€ → 1200€ (50% Marge)
+INV-FRONIUS-10   | Fronius Symo 10.0-3-M          | 1200€ → 1800€ (50% Marge)
+INV-KOSTAL-8     | KOSTAL PLENTICORE plus 8.5     | 900€ → 1400€ (55,6% Marge)
+INV-SMA-6        | SMA Sunny Tripower 6.0         | 850€ → 1300€ (52,9% Marge)
+
+# Wallboxen
+ACC-WALLBOX-11KW | Wallbox 11kW                   | 600€ → 1100€ (83,3% Marge)
+ACC-WALLBOX-22KW | Wallbox 22kW                   | 800€ → 1400€ (75% Marge)
 ```
 
 ---

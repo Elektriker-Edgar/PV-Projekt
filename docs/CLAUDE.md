@@ -4,8 +4,8 @@
 
 **EDGARD Elektro** - Professionelle Django-Website für PV-Anlagen Elektroinstallationsservice in Hamburg mit automatisierter Angebotserstellung und Live-Preisberechnung.
 
-**Status:** ✅ VOLL FUNKTIONSFÄHIG + WALLBOX-INTEGRATION
-**Version:** 1.1.0 (2025-01-08)
+**Status:** ✅ VOLL FUNKTIONSFÄHIG + WALLBOX + PRODUKTKATALOG
+**Version:** 1.2.0 (2025-11-11)
 **Live-URL (Dev):** http://192.168.178.30:8025/precheck/
 
 ---
@@ -29,29 +29,45 @@ python manage.py runserver 192.168.178.30:8025
 
 ```
 E:\ANPR\PV-Service\
-├── CLAUDE.md                           # Diese Datei - Hauptdokumentation
-├── CLAUDE_API.md                       # API & Backend Details
-├── CLAUDE_FRONTEND.md                  # Frontend & JavaScript
-├── CLAUDE_DATABASE.md                  # Datenbank & Migrationen
-├── CLAUDE_DEPLOYMENT.md                # Deployment & Testing
+├── docs/
+│   ├── CLAUDE.md                       # Diese Datei - Hauptdokumentation
+│   ├── CLAUDE_API.md                   # API & Backend Details
+│   ├── CLAUDE_FRONTEND.md              # Frontend & JavaScript
+│   ├── CLAUDE_DATABASE.md              # Datenbank & Migrationen
+│   ├── CLAUDE_ADMIN.md                 # Admin-Dashboard
+│   ├── CLAUDE_PRODUKTKATALOG.md        # ⭐ NEU: Produktkatalog-System
+│   └── CLAUDE_DEPLOYMENT.md            # Deployment & Testing
 │
 ├── manage.py
 ├── requirements.txt
+├── create_test_products.py             # ⭐ NEU: Test-Daten für Produktkatalog
 ├── edgard_site/                        # Django Project
 ├── apps/
-│   ├── quotes/                         # ⭐ Hauptapp: Pricing & Precheck
-│   │   ├── models.py                   # PriceConfig, Quote, Precheck
+│   ├── quotes/                         # ⭐ Hauptapp: Pricing, Precheck, Products
+│   │   ├── models.py                   # PriceConfig, Quote, Precheck, ProductCategory, Product
 │   │   ├── api_views.py                # pricing_preview API
 │   │   └── migrations/
-│   │       ├── 0005_alter_priceconfig_price_type.py
-│   │       └── 0006_seed_wallbox_pricing.py
-│   ├── core/                           # User, Customer, Site
+│   │       ├── 0006_seed_wallbox_pricing.py
+│   │       └── 0010_productcategory_product.py  # ⭐ NEU
+│   ├── core/                           # User, Customer, Site, Dashboard
+│   │   ├── dashboard_views.py          # ⭐ +8 Views für Produktkatalog
+│   │   ├── dashboard_urls.py           # ⭐ +8 URLs
+│   │   └── forms.py                    # ⭐ ProductCategoryForm, ProductForm
 │   ├── customers/
 │   ├── inventory/
 │   └── ...
 ├── templates/
-│   └── quotes/
-│       └── precheck_wizard.html        # ⭐ 6-Schritte Preisrechner
+│   ├── quotes/
+│   │   └── precheck_wizard.html        # 6-Schritte Preisrechner
+│   └── dashboard/                      # ⭐ Admin-Dashboard
+│       ├── base.html                   # Mit Produktkatalog-Navigation
+│       ├── category_list.html          # ⭐ NEU: Kategorienliste
+│       ├── category_form.html          # ⭐ NEU
+│       ├── product_list.html           # ⭐ NEU: Produktliste
+│       ├── product_form.html           # ⭐ NEU
+│       ├── precheck_list.html          # ⭐ Mit Bootstrap Delete-Modal
+│       ├── customer_list.html          # ⭐ Mit Bootstrap Delete-Modal
+│       └── ...
 └── static/
 ```
 
@@ -64,6 +80,12 @@ E:\ANPR\PV-Service\
 - **Wallbox-Integration** (3 Leistungsklassen: 4kW, 11kW, 22kW)
 - **Variable Kabelpreise** abhängig von WR/Wallbox-Leistung
 - **Database-Driven Pricing** (25 PriceConfig-Einträge)
+- **Produktkatalog-System** (⭐ NEU v1.2.0)
+  - 7 Kategorien (Precheck, Wechselrichter, Speicher, etc.)
+  - 30+ Produkte mit EK/VK-Preisen
+  - Automatische Brutto-Berechnung & Margen
+  - Filter, Suche, Pagination
+  - Bootstrap Delete-Modals mit CASCADE-Warnungen
 - **Enter-Taste Navigation** (springt zum nächsten Feld)
 - **3-Punkte Progress-Bar** (Standort → PV-System → Preis) mit zentrierten Labels dank gemeinsamer Flex-Spalten
 - **LocalStorage Persistierung** (Daten überleben Page-Reload)
@@ -123,6 +145,8 @@ Für tiefere Einblicke in spezifische Bereiche, siehe:
 - **[CLAUDE_API.md](CLAUDE_API.md)** - API-Endpoints, Preisberechnung-Logik, PriceConfig Model
 - **[CLAUDE_FRONTEND.md](CLAUDE_FRONTEND.md)** - HTML-Struktur, JavaScript-Funktionen, CSS
 - **[CLAUDE_DATABASE.md](CLAUDE_DATABASE.md)** - Models, Migrationen, Schema
+- **[CLAUDE_ADMIN.md](CLAUDE_ADMIN.md)** - Admin-Dashboard Views & Templates
+- **[CLAUDE_PRODUKTKATALOG.md](CLAUDE_PRODUKTKATALOG.md)** - ⭐ NEU: Produktkatalog-System & Delete-Modals
 - **[CLAUDE_DEPLOYMENT.md](CLAUDE_DEPLOYMENT.md)** - Deployment, Testing, Known Issues
 
 ---
@@ -238,22 +262,37 @@ python-decouple==3.8
 
 ---
 
-## 📝 Letzte Änderungen (2025-01-08)
+## 📝 Letzte Änderungen
+
+### Version 1.2.0 (2025-11-11)
+
+✅ **Produktkatalog-System (NEU):**
+- 2 neue Models: ProductCategory, Product
+- Migration 0010 erstellt & angewendet
+- 8 neue Views (Category & Product CRUD)
+- 4 neue Templates (kompakte 11-Spalten-Tabelle)
+- Test-Daten-Script mit 30 Produkten
+- Automatische Brutto-Berechnung & Margen
+
+✅ **Bootstrap Delete-Modals:**
+- Professionelle Lösch-Bestätigungen für alle Bereiche
+- CASCADE-Warnungen bei Customer/Precheck-Deletion
+- PROTECT-Warnungen bei Category-Deletion
+- Rot-gelbe Warnfarben für bessere UX
+
+✅ **Dashboard-Erweiterungen:**
+- Sidebar mit Produktkatalog-Navigation
+- Filter & Suche für Produkte
+- Inline-Editing vorbereitet
+- CSV-Export-Buttons
+
+### Version 1.1.0 (2025-01-08)
 
 ✅ **Wallbox-Integration komplett:**
 - 11 neue PriceConfig-Einträge
 - Variable Kabelpreise (WR & Wallbox)
 - Frontend-Felder in Schritt 1 & 2
 - API-Berechnung erweitert
-
-✅ **UX-Verbesserungen:**
-- Enter-Navigation (springt zum nächsten Feld)
-- 3-Punkte Progress-Bar (statt 6)
-- Optimierte Feldanordnung
-
-✅ **Bug-Fixes:**
-- Zusammenfassung wird korrekt befüllt
-- Progress-Labels perfekt zentriert
 
 ---
 

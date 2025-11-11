@@ -632,3 +632,13 @@ function updateProgress() {
 
 **ZurÃ¼ck zur Hauptdokumentation:** [CLAUDE.md](CLAUDE.md)
 **Siehe auch:** [CLAUDE_API.md](CLAUDE_API.md) - API & Backend
+
+---
+
+## ?? Update 2025-11-11: Vereinfachte Preisanzeige
+
+- **Keine Paketauswahl mehr in Schritt 2:** Das Formular fragt nur noch Leistung, Speicher und Wallbox-Konfiguration ab. Eventuelle Paketwünsche werden später manuell erfasst.
+- **Neue Breakdown-Felder:** Die Preisbox (Schritt 3) zeigt Gebäude-, Netz-, WR-, Speicher-, Kabel- und Wallbox-Komponenten separat (reakdownBuilding, reakdownGrid, reakdownCable, reakdownWallboxBase …) plus Netto/MwSt./Brutto.
+- **priceData Struktur:** Frontend erwartet jetzt uildingSurcharge, gridSurcharge, inverterPrice, storagePrice, wrCableCost, wallboxBasePrice, wallboxCableCost, wallboxExtraCost, 	otalNet, atAmount, 	otal.
+- **Zusammenfassung:** Die vorherige Paket-Badge entfällt. Stattdessen werden nur noch technisch relevante Angaben angezeigt.
+
