@@ -3,7 +3,7 @@ from django.utils import timezone
 from decimal import Decimal
 from apps.customers.models import Site
 from apps.core.models import User
-from .validators import validate_image_file, validate_pdf_file
+from .validators import validate_media_file
 from .helpers import inverter_label_from_power
 
 
@@ -104,33 +104,33 @@ class Precheck(models.Model):
     )
 
     # FILE UPLOADS - Fotos für technische Bewertung
-    meter_cabinet_photo = models.ImageField(
+    meter_cabinet_photo = models.FileField(
         upload_to='precheck/meter_cabinet/%Y/%m/',
-        validators=[validate_image_file],
+        validators=[validate_media_file],
         null=True,
         blank=True,
-        help_text="Foto Zählerschrank (JPG/PNG, max 5MB)"
+        help_text="Datei Zählerschrank (JPG, PNG oder PDF, max 5MB)"
     )
-    hak_photo = models.ImageField(
+    hak_photo = models.FileField(
         upload_to='precheck/hak/%Y/%m/',
-        validators=[validate_image_file],
+        validators=[validate_media_file],
         null=True,
         blank=True,
-        help_text="Foto Hausanschlusskasten (JPG/PNG, max 5MB)"
+        help_text="Datei Hausanschlusskasten (JPG, PNG oder PDF, max 5MB)"
     )
-    location_photo = models.ImageField(
+    location_photo = models.FileField(
         upload_to='precheck/locations/%Y/%m/',
-        validators=[validate_image_file],
+        validators=[validate_media_file],
         null=True,
         blank=True,
-        help_text="Foto Montageorte (JPG/PNG, max 5MB)"
+        help_text="Datei Montageorte (JPG, PNG oder PDF, max 5MB)"
     )
-    cable_route_photo = models.ImageField(
+    cable_route_photo = models.FileField(
         upload_to='precheck/cables/%Y/%m/',
-        validators=[validate_image_file],
+        validators=[validate_media_file],
         null=True,
         blank=True,
-        help_text="Foto Kabelwege (JPG/PNG, max 5MB)"
+        help_text="Datei Kabelwege (JPG, PNG oder PDF, max 5MB)"
     )
 
     # Legacy-Feld (behalten für Rückwärtskompatibilität)
@@ -156,18 +156,24 @@ class Precheck(models.Model):
     def get_all_uploads(self):
         """Helper-Methode: Gibt alle hochgeladenen Dateien zurück"""
         files = []
-        if self.meter_cabinet_photo:
-            files.append(('Zählerschrank', self.meter_cabinet_photo))
-        if self.hak_photo:
-            files.append(('Hausanschlusskasten', self.hak_photo))
-        if self.location_photo:
-            files.append(('Montageorte', self.location_photo))
-        if self.cable_route_photo:
-            files.append(('Kabelwege', self.cable_route_photo))
+        photo_categories = set()
 
-        # Zusätzlich alle Fotos aus PrecheckPhoto holen
+        # Primär alle Dateien aus PrecheckPhoto (Mehrfach-Uploads)
         for photo in self.photos.all():
             files.append((photo.get_category_display(), photo.photo))
+            photo_categories.add(photo.category)
+
+        # Legacy-Felder nur ergänzen, wenn keine PrecheckPhoto-Einträge existieren
+        legacy_mapping = [
+            ('meter_cabinet', 'Zählerschrank', self.meter_cabinet_photo),
+            ('hak', 'Hausanschlusskasten', self.hak_photo),
+            ('location', 'Montageorte', self.location_photo),
+            ('cable_route', 'Kabelwege', self.cable_route_photo),
+        ]
+
+        for category, label, file_field in legacy_mapping:
+            if file_field and category not in photo_categories:
+                files.append((label, file_field))
 
         return files
 
@@ -183,10 +189,10 @@ class PrecheckPhoto(models.Model):
 
     precheck = models.ForeignKey(Precheck, on_delete=models.CASCADE, related_name='photos')
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
-    photo = models.ImageField(
+    photo = models.FileField(
         upload_to='precheck/photos/%Y/%m/',
-        validators=[validate_image_file],
-        help_text="Foto (JPG/PNG, max 5MB)"
+        validators=[validate_media_file],
+        help_text="Datei (JPG, PNG oder PDF, max 5MB)"
     )
     uploaded_at = models.DateTimeField(default=timezone.now)
 

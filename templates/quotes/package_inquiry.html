@@ -216,6 +216,14 @@ body {
     color: #6c757d;
 }
 
+.file-error {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    min-height: 1.25rem;
+    display: none;
+}
+
 /* Submit Button - Same as Precheck primary button */
 .btn-submit {
     background: linear-gradient(135deg, var(--edgard-green), #20754a);
@@ -447,20 +455,20 @@ body {
 <div class="file-upload-zone" data-target="meter_cabinet_photo">
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Fotos hochladen</p>
-<small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="meter_cabinet_photo" name="meter_cabinet_photo" accept="image/*,.pdf" multiple style="display:none">
+<small class="text-muted">JPG, PNG oder PDF bis 5MB (Mehrfachauswahl moeglich)</small>
+<input type="file" id="meter_cabinet_photo" name="meter_cabinet_photo" accept=".jpg,.jpeg,.png,.pdf" multiple style="display:none">
 </div>
-<div id="meter_cabinet_preview"></div>
+<div id="meter_cabinet_preview"></div><div class="file-error" id="meter_cabinet_photo_error"></div>
 </div>
 <div class="col-md-6">
 <h6 class="text-muted mb-3">Hausanschlusskasten</h6>
 <div class="file-upload-zone" data-target="hak_photo">
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Fotos hochladen</p>
-<small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="hak_photo" name="hak_photo" accept="image/*,.pdf" multiple style="display:none">
+<small class="text-muted">JPG, PNG oder PDF bis 5MB (Mehrfachauswahl moeglich)</small>
+<input type="file" id="hak_photo" name="hak_photo" accept=".jpg,.jpeg,.png,.pdf" multiple style="display:none">
 </div>
-<div id="hak_preview"></div>
+<div id="hak_preview"></div><div class="file-error" id="hak_photo_error"></div>
 </div>
 </div>
 
@@ -470,20 +478,20 @@ body {
 <div class="file-upload-zone" data-target="location_photo">
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Fotos hochladen</p>
-<small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="location_photo" name="location_photo" accept="image/*,.pdf" multiple style="display:none">
+<small class="text-muted">JPG, PNG oder PDF bis 5MB (Mehrfachauswahl moeglich)</small>
+<input type="file" id="location_photo" name="location_photo" accept=".jpg,.jpeg,.png,.pdf" multiple style="display:none">
 </div>
-<div id="location_preview"></div>
+<div id="location_preview"></div><div class="file-error" id="location_photo_error"></div>
 </div>
 <div class="col-md-6">
 <h6 class="text-muted mb-3">Kabelwege</h6>
 <div class="file-upload-zone" data-target="cable_route_photo">
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Fotos hochladen</p>
-<small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="cable_route_photo" name="cable_route_photo" accept="image/*,.pdf" multiple style="display:none">
+<small class="text-muted">JPG, PNG oder PDF bis 5MB (Mehrfachauswahl moeglich)</small>
+<input type="file" id="cable_route_photo" name="cable_route_photo" accept=".jpg,.jpeg,.png,.pdf" multiple style="display:none">
 </div>
-<div id="cable_route_preview"></div>
+<div id="cable_route_preview"></div><div class="file-error" id="cable_route_photo_error"></div>
 </div>
 </div>
 
@@ -497,7 +505,7 @@ body {
 <label class="form-check-label" for="{{ form.consent.id_for_label }}">
 {{ form.consent.label }} (siehe <a href="#" target="_blank">Datenschutzerklärung</a>)
 </label>
-<div class="invalid-feedback">Bitte bestätigen Sie die Datenschutzerklärung.</div>
+<div class="invalid-feedback">Bitte bestätigen Sie die Datenschutzerklärung.</div><div class="text-danger small mt-2" id="package_consent_hint" style="display:none">Bitte bestaetigen Sie die Verarbeitung Ihrer Daten.</div>
 </div>
 
 <!-- SUBMIT -->
@@ -541,6 +549,18 @@ document.getElementById('packageForm').addEventListener('submit', function(e) {
         isValid = false;
     }
 
+    const consentCheckbox = form.querySelector('[type="checkbox"][required]');
+    const consentHint = document.getElementById('package_consent_hint');
+    if (consentCheckbox) {
+        if (!consentCheckbox.checked) {
+            consentCheckbox.classList.add('is-invalid');
+            if (consentHint) consentHint.style.display = 'block';
+            isValid = false;
+        } else if (consentHint) {
+            consentHint.style.display = 'none';
+        }
+    }
+
     if (!isValid) {
         e.preventDefault();
         window.scrollTo({top: 0, behavior: 'smooth'});
@@ -551,11 +571,11 @@ document.getElementById('packageForm').addEventListener('submit', function(e) {
     }
 });
 
-// File Upload Handler für Multiple Files mit kumulativer Auswahl
-function setupFileUploads() {
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    const fileStorage = {}; // Speicher für alle Dateien pro Input
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_FILE_EXTENSIONS = ['jpg','jpeg','png','pdf'];
+const packageFileStorage = {};
 
+function setupFileUploads() {
     document.querySelectorAll('.file-upload-zone').forEach(zone => {
         const inputId = zone.dataset.target;
         const input = document.getElementById(inputId);
@@ -563,129 +583,128 @@ function setupFileUploads() {
             console.error('Input not found:', inputId);
             return;
         }
+        packageFileStorage[inputId] = packageFileStorage[inputId] || [];
+        const preview = document.getElementById(inputId.replace('_photo', '_preview'));
+        const errorEl = document.getElementById(`${inputId}_error`);
 
-        // Initialisiere Datei-Speicher für dieses Input
-        fileStorage[inputId] = [];
-
-        zone.addEventListener('click', () => {
-            input.click();
-        });
+        zone.addEventListener('click', () => input.click());
 
         input.addEventListener('change', function() {
             const newFiles = Array.from(this.files);
             if (newFiles.length === 0) return;
+            let errorMessage = '';
 
-            const previewId = inputId.replace('_photo', '_preview');
-            const preview = document.getElementById(previewId);
-            if (!preview) {
-                console.error('Preview container not found:', previewId);
-                return;
-            }
-
-            // Neue Dateien validieren und zu bestehenden hinzufügen
             newFiles.forEach(file => {
-                // Dateigröße prüfen
-                if (file.size > MAX_FILE_SIZE) {
-                    alert(`Die Datei "${file.name}" ist zu groß. Maximal 5MB erlaubt.\nIhre Datei: ${(file.size/1024/1024).toFixed(2)}MB`);
+                const validationError = validatePackageFile(file);
+                if (validationError) {
+                    errorMessage = validationError.replace('%filename%', file.name);
                     return;
                 }
 
-                // Dateityp prüfen
-                const fileExt = file.name.split('.').pop().toLowerCase();
-                if (!['jpg', 'jpeg', 'png', 'pdf'].includes(fileExt)) {
-                    alert(`Die Datei "${file.name}" hat ein ungültiges Format. Bitte nur JPG, PNG oder PDF.`);
-                    return;
-                }
-
-                // Duplikate vermeiden (gleicher Name)
-                const isDuplicate = fileStorage[inputId].some(f => f.name === file.name);
+                const isDuplicate = packageFileStorage[inputId].some(existing =>
+                    existing.name === file.name &&
+                    existing.lastModified === file.lastModified &&
+                    existing.size === file.size
+                );
                 if (isDuplicate) {
-                    alert(`Die Datei "${file.name}" wurde bereits hinzugefügt.`);
+                    errorMessage = `Die Datei "${file.name}" wurde bereits hinzugefuegt.`;
                     return;
                 }
 
-                // Datei zum Speicher hinzufügen
-                fileStorage[inputId].push(file);
+                packageFileStorage[inputId].push(file);
             });
 
-            // Input aktualisieren mit allen Dateien
-            updateInputFiles(inputId, fileStorage[inputId]);
+            if (errorMessage) {
+                showPackageFileError(errorEl, errorMessage);
+            } else {
+                clearPackageFileError(errorEl);
+            }
 
-            // Preview neu aufbauen
-            renderPreview(inputId, fileStorage[inputId], preview);
+            updatePackageInputFiles(inputId);
+            renderPackagePreview(inputId, preview);
         });
     });
-
-    // Hilfsfunktion: Input mit allen Dateien aktualisieren
-    function updateInputFiles(inputId, files) {
-        const input = document.getElementById(inputId);
-        const dt = new DataTransfer();
-        files.forEach(file => dt.items.add(file));
-        input.files = dt.files;
-    }
-
-    // Hilfsfunktion: Preview rendern
-    function renderPreview(inputId, files, preview) {
-        preview.innerHTML = '';
-        files.forEach((file, index) => {
-            const fileSize = (file.size / 1024).toFixed(1);
-            const fileDiv = document.createElement('div');
-            fileDiv.className = 'uploaded-file mb-2';
-            fileDiv.innerHTML = `
-                <div class="file-info">
-                    <div class="file-name">
-                        <i class="fas fa-check-circle text-success me-2"></i>
-                        <strong>${file.name}</strong>
-                    </div>
-                    <div class="file-size text-muted">${fileSize} KB</div>
-                </div>
-                <button type="button" class="btn btn-sm btn-danger" onclick="removeFileFromList('${inputId}', ${index})">
-                    <i class="fas fa-times me-1"></i>Löschen
-                </button>
-            `;
-            preview.appendChild(fileDiv);
-        });
-    }
-
-    // Global verfügbar machen für onclick-Handler
-    window.fileStorage = fileStorage;
-    window.updateInputFiles = updateInputFiles;
-    window.renderPreview = renderPreview;
 }
+
+function validatePackageFile(file) {
+    if (file.size > MAX_FILE_SIZE) {
+        return 'Die Datei "%filename%" ist zu gross. Maximal 5MB erlaubt.';
+    }
+    const extension = file.name.split('.').pop().toLowerCase();
+    if (!ALLOWED_FILE_EXTENSIONS.includes(extension)) {
+        return 'Das Format der Datei "%filename%" wird nicht unterstuetzt. Erlaubt sind JPG, PNG oder PDF.';
+    }
+    return '';
+}
+
+function updatePackageInputFiles(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const dt = new DataTransfer();
+    (packageFileStorage[inputId] || []).forEach(file => dt.items.add(file));
+    input.files = dt.files;
+}
+
+function renderPackagePreview(inputId, preview) {
+    if (!preview) return;
+    preview.innerHTML = '';
+    const files = packageFileStorage[inputId] || [];
+    files.forEach((file, index) => {
+        const fileSize = (file.size / 1024).toFixed(1);
+        const fileDiv = document.createElement('div');
+        fileDiv.className = 'uploaded-file mb-2';
+        fileDiv.innerHTML = `
+            <div class="file-info">
+                <div class="file-name">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    <strong>${file.name}</strong>
+                </div>
+                <div class="file-size text-muted">${fileSize} KB</div>
+            </div>
+        `;
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-sm btn-danger';
+        removeBtn.innerHTML = '<i class="fas fa-times me-1"></i>Loeschen';
+        removeBtn.addEventListener('click', () => removeFileFromList(inputId, index));
+        fileDiv.appendChild(removeBtn);
+        preview.appendChild(fileDiv);
+    });
+}
+
+function showPackageFileError(element, message) {
+    if (!element) return;
+    element.textContent = message;
+    element.style.display = 'block';
+}
+
+function clearPackageFileError(element) {
+    if (!element) return;
+    element.textContent = '';
+    element.style.display = 'none';
+}
+
 
 // Einzelne Datei aus der Liste entfernen
 function removeFileFromList(inputId, fileIndex) {
-    if (!window.fileStorage || !window.fileStorage[inputId]) return;
+    if (!packageFileStorage[inputId]) return;
 
     const previewId = inputId.replace('_photo', '_preview');
     const preview = document.getElementById(previewId);
 
-    // Datei aus dem Speicher entfernen
-    window.fileStorage[inputId].splice(fileIndex, 1);
+    packageFileStorage[inputId].splice(fileIndex, 1);
+    updatePackageInputFiles(inputId);
 
-    // Input mit verbleibenden Dateien aktualisieren
-    window.updateInputFiles(inputId, window.fileStorage[inputId]);
-
-    // Preview neu rendern
     if (preview) {
-        window.renderPreview(inputId, window.fileStorage[inputId], preview);
+        renderPackagePreview(inputId, preview);
+    }
+
+    const errorEl = document.getElementById(`${inputId}_error`);
+    if (errorEl && (packageFileStorage[inputId] || []).length === 0) {
+        clearPackageFileError(errorEl);
     }
 }
 
-// Alle Dateien eines Inputs entfernen
-function removeFile(inputId) {
-    const input = document.getElementById(inputId);
-    const previewId = inputId.replace('_photo', '_preview');
-    const preview = document.getElementById(previewId);
-
-    // Speicher leeren
-    if (window.fileStorage && window.fileStorage[inputId]) {
-        window.fileStorage[inputId] = [];
-    }
-
-    if (input) input.value = '';
-    if (preview) preview.innerHTML = '';
-}
 
 // Setup beim Laden der Seite
 setupFileUploads();
@@ -724,13 +743,16 @@ if (emailField) {
 
 // Checkbox-Validierung
 const consentCheckbox = document.querySelector('[type="checkbox"][required]');
+const consentHint = document.getElementById('package_consent_hint');
 if (consentCheckbox) {
     consentCheckbox.addEventListener('change', function() {
         if (this.checked) {
             this.classList.remove('is-invalid');
             this.classList.add('is-valid');
+            if (consentHint) consentHint.style.display = 'none';
         } else {
             this.classList.add('is-invalid');
+            if (consentHint) consentHint.style.display = 'block';
         }
     });
 }

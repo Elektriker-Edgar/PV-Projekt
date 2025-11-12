@@ -10,6 +10,26 @@ from .calculation import create_quote_from_precheck
 from .pricing import pricing_input_from_precheck, calculate_pricing
 
 
+FILE_UPLOAD_FIELDS = (
+    'meter_cabinet_photo',
+    'hak_photo',
+    'location_photo',
+    'cable_route_photo',
+)
+
+
+def _collect_uploaded_files(files):
+    """
+    Normalisiert Mehrfach-Uploads zu einem Dict[str, list[UploadedFile]].
+    """
+    collected = {}
+    for field in FILE_UPLOAD_FIELDS:
+        file_list = files.getlist(field)
+        if file_list:
+            collected[field] = file_list
+    return collected
+
+
 def home(request):
     """Startseite mit Hero und 3-Schritte-Ablauf"""
     return render(request, 'quotes/home.html')
@@ -20,7 +40,8 @@ def precheck_wizard(request):
     if request.method == 'POST':
         form = PrecheckForm(request.POST, request.FILES)
         if form.is_valid():
-            precheck = form.save()
+            uploaded_files = _collect_uploaded_files(request.FILES)
+            precheck = form.save(uploaded_files=uploaded_files)
             
             # Automatische Angebotserstellung
             try:
@@ -133,25 +154,8 @@ def package_inquiry(request, package):
     if request.method == 'POST':
         form = ExpressPackageForm(request.POST, request.FILES)
         if form.is_valid():
-            precheck = form.save(package_choice=package)
-
-            # Mehrere Dateien pro Kategorie verarbeiten
-            from .models import PrecheckPhoto
-            file_categories = {
-                'meter_cabinet_photo': 'meter_cabinet',
-                'hak_photo': 'hak',
-                'location_photo': 'location',
-                'cable_route_photo': 'cable_route',
-            }
-
-            for field_name, category in file_categories.items():
-                files = request.FILES.getlist(field_name)
-                for file in files:
-                    PrecheckPhoto.objects.create(
-                        precheck=precheck,
-                        category=category,
-                        photo=file
-                    )
+            uploaded_files = _collect_uploaded_files(request.FILES)
+            precheck = form.save(package_choice=package, uploaded_files=uploaded_files)
 
             messages.success(request,
                 f'Ihre Anfrage für das {package_names[package]} wurde erfolgreich eingereicht. '

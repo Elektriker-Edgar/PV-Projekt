@@ -30,6 +30,7 @@ ALLOWED_PDF_MIME_TYPES = ['application/pdf']
 # Allowed file extensions
 ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 ALLOWED_PDF_EXTENSIONS = ['.pdf']
+ALLOWED_UPLOAD_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS + ALLOWED_PDF_EXTENSIONS
 
 
 def validate_file_size(file: UploadedFile) -> None:
@@ -226,3 +227,30 @@ def validate_upload_file(file: UploadedFile, file_type: str = 'image') -> None:
         validate_pdf_file(file)
     else:
         raise ValidationError(f'Unbekannter Dateityp: {file_type}')
+
+
+def validate_media_file(file: UploadedFile) -> None:
+    """
+    Validate uploads that may either be an image (JPG/PNG) or a PDF document.
+
+    Args:
+        file: Uploaded file object supplied by Django
+
+    Raises:
+        ValidationError: If the file uses an unsupported extension or fails
+        the underlying image/PDF validation.
+    """
+    file_name = (file.name or '').lower()
+
+    if any(file_name.endswith(ext) for ext in ALLOWED_IMAGE_EXTENSIONS):
+        validate_image_file(file)
+        return
+
+    if any(file_name.endswith(ext) for ext in ALLOWED_PDF_EXTENSIONS):
+        validate_pdf_file(file)
+        return
+
+    raise ValidationError(
+        'Ungültiges Dateiformat. Erlaubt sind: '
+        f'{", ".join(ALLOWED_UPLOAD_EXTENSIONS)}'
+    )

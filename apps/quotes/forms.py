@@ -1,7 +1,42 @@
 from django import forms
 from django.utils import timezone
 from apps.customers.models import Customer, Site
-from .models import Precheck
+from .models import Precheck, PrecheckPhoto
+
+
+FILE_CATEGORY_MAP = {
+    'meter_cabinet_photo': 'meter_cabinet',
+    'hak_photo': 'hak',
+    'location_photo': 'location',
+    'cable_route_photo': 'cable_route',
+}
+
+
+def _get_primary_file(cleaned_data, uploaded_files, field_name):
+    """
+    Pick the first uploaded file per Feld für die Legacy-Felder auf Site/Precheck.
+    """
+    uploaded_files = uploaded_files or {}
+    files = uploaded_files.get(field_name)
+    if files:
+        return files[0]
+    return cleaned_data.get(field_name)
+
+
+def _create_precheck_photos(precheck, uploaded_files):
+    """
+    Speichert alle hochgeladenen Dateien in PrecheckPhoto für Mehrfach-Uploads.
+    """
+    if not uploaded_files:
+        return
+
+    for field_name, category in FILE_CATEGORY_MAP.items():
+        for file in uploaded_files.get(field_name, []) or []:
+            PrecheckPhoto.objects.create(
+                precheck=precheck,
+                category=category,
+                photo=file
+            )
 
 
 class PrecheckForm(forms.Form):
@@ -61,26 +96,26 @@ class PrecheckForm(forms.Form):
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': '5.0'})
     )
     
-    # Fotos
-    meter_cabinet_photo = forms.ImageField(
+    # Dateien (Fotos/PDFs)
+    meter_cabinet_photo = forms.FileField(
         required=False,
-        label="Foto Zählerschrank",
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+        label="Datei Zählerschrank",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png,application/pdf'})
     )
-    hak_photo = forms.ImageField(
+    hak_photo = forms.FileField(
         required=False,
-        label="Foto Hausanschlusskasten",
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+        label="Datei Hausanschlusskasten",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png,application/pdf'})
     )
-    location_photo = forms.ImageField(
+    location_photo = forms.FileField(
         required=False,
-        label="Foto Montageorte",
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+        label="Datei Montageorte",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png,application/pdf'})
     )
-    cable_route_photo = forms.ImageField(
+    cable_route_photo = forms.FileField(
         required=False,
-        label="Foto Kabelwege",
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+        label="Datei Kabelwege",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png,application/pdf'})
     )
     
     # Precheck-Daten
@@ -160,10 +195,15 @@ class PrecheckForm(forms.Form):
                 self.add_error('wallbox_cable_length', "Bitte geben Sie die Kabellänge an oder markieren Sie, dass sie bereits verlegt ist.")
         return cleaned
 
-    def save(self):
+    def save(self, uploaded_files=None):
         """Erstelle Customer, Site und Precheck aus Formulardaten"""
         # IP-Adresse würde normalerweise aus request.META['REMOTE_ADDR'] kommen
         consent_ip = '127.0.0.1'  # Placeholder
+        uploaded_files = uploaded_files or {}
+        primary_files = {
+            field: _get_primary_file(self.cleaned_data, uploaded_files, field)
+            for field in FILE_CATEGORY_MAP.keys()
+        }
         
         # Customer erstellen
         customer_type = self.cleaned_data.get('customer_type') or Customer.CUSTOMER_TYPES[0][0]
@@ -186,8 +226,8 @@ class PrecheckForm(forms.Form):
             main_fuse_ampere=self.cleaned_data['main_fuse_ampere'],
             grid_type=self.cleaned_data.get('grid_type') or '',
             distance_meter_to_hak=self.cleaned_data['distance_meter_to_hak'],
-            meter_cabinet_photo=self.cleaned_data['meter_cabinet_photo'],
-            hak_photo=self.cleaned_data['hak_photo']
+            meter_cabinet_photo=primary_files['meter_cabinet_photo'],
+            hak_photo=primary_files['hak_photo']
         )
         
         has_wallbox = self.cleaned_data.get('has_wallbox', False)
@@ -220,12 +260,13 @@ class PrecheckForm(forms.Form):
             wallbox_pv_surplus=wallbox_pv_surplus,
             notes=self.cleaned_data['notes'],
             # File Uploads
-            meter_cabinet_photo=self.cleaned_data.get('meter_cabinet_photo'),
-            hak_photo=self.cleaned_data.get('hak_photo'),
-            location_photo=self.cleaned_data.get('location_photo'),
-            cable_route_photo=self.cleaned_data.get('cable_route_photo')
+            meter_cabinet_photo=primary_files['meter_cabinet_photo'],
+            hak_photo=primary_files['hak_photo'],
+            location_photo=primary_files['location_photo'],
+            cable_route_photo=primary_files['cable_route_photo']
         )
 
+        _create_precheck_photos(precheck, uploaded_files)
         return precheck
 
 
@@ -258,26 +299,26 @@ class ExpressPackageForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
-    # Fotos (gleich wie Precheck)
-    meter_cabinet_photo = forms.ImageField(
+    # Dateien (gleich wie Precheck)
+    meter_cabinet_photo = forms.FileField(
         required=False,
-        label="Foto Zählerschrank (optional)",
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+        label="Datei Zählerschrank (optional)",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png,application/pdf'})
     )
-    hak_photo = forms.ImageField(
+    hak_photo = forms.FileField(
         required=False,
-        label="Foto Hausanschlusskasten (optional)",
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+        label="Datei Hausanschlusskasten (optional)",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png,application/pdf'})
     )
-    location_photo = forms.ImageField(
+    location_photo = forms.FileField(
         required=False,
-        label="Foto Montageorte (optional)",
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+        label="Datei Montageorte (optional)",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png,application/pdf'})
     )
-    cable_route_photo = forms.ImageField(
+    cable_route_photo = forms.FileField(
         required=False,
-        label="Foto Kabelwege (optional)",
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+        label="Datei Kabelwege (optional)",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png,application/pdf'})
     )
 
     # Besonderheiten/Kundenwünsche
@@ -297,9 +338,14 @@ class ExpressPackageForm(forms.Form):
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
 
-    def save(self, package_choice):
+    def save(self, package_choice, uploaded_files=None):
         """Erstelle Customer, Site und Precheck aus Formulardaten (Express-Paket)"""
         consent_ip = '127.0.0.1'  # Placeholder
+        uploaded_files = uploaded_files or {}
+        primary_files = {
+            field: _get_primary_file(self.cleaned_data, uploaded_files, field)
+            for field in FILE_CATEGORY_MAP.keys()
+        }
 
         # Customer erstellen
         customer = Customer.objects.create(
@@ -334,12 +380,13 @@ class ExpressPackageForm(forms.Form):
             is_express_package=True,  # Markierung als Express-Paket
             notes=self.cleaned_data.get('special_requests', ''),
             # File Uploads
-            meter_cabinet_photo=self.cleaned_data.get('meter_cabinet_photo'),
-            hak_photo=self.cleaned_data.get('hak_photo'),
-            location_photo=self.cleaned_data.get('location_photo'),
-            cable_route_photo=self.cleaned_data.get('cable_route_photo')
+            meter_cabinet_photo=primary_files['meter_cabinet_photo'],
+            hak_photo=primary_files['hak_photo'],
+            location_photo=primary_files['location_photo'],
+            cable_route_photo=primary_files['cable_route_photo']
         )
 
+        _create_precheck_photos(precheck, uploaded_files)
         return precheck
 
 

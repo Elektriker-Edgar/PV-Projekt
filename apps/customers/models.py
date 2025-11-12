@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from apps.quotes.validators import validate_media_file
 
 
 class Customer(models.Model):
@@ -56,9 +57,21 @@ class Site(models.Model):
     distance_meter_to_hak = models.DecimalField(max_digits=5, decimal_places=2, 
                                                help_text="Entfernung Zählerschrank zu HAK in Metern")
     
-    # Fotos
-    meter_cabinet_photo = models.ImageField(upload_to='uploads/meter_cabinets/', null=True, blank=True)
-    hak_photo = models.ImageField(upload_to='uploads/hak/', null=True, blank=True)
+    # Fotos / Dokumente
+    meter_cabinet_photo = models.FileField(
+        upload_to='uploads/meter_cabinets/',
+        null=True,
+        blank=True,
+        validators=[validate_media_file],
+        help_text="Datei Zählerschrank (JPG, PNG oder PDF, max 5MB)"
+    )
+    hak_photo = models.FileField(
+        upload_to='uploads/hak/',
+        null=True,
+        blank=True,
+        validators=[validate_media_file],
+        help_text="Datei Hausanschlusskasten (JPG, PNG oder PDF, max 5MB)"
+    )
     
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

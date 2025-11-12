@@ -42,6 +42,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 .uploaded-file .file-info{flex:1;text-align:left}
 .uploaded-file .file-name{font-weight:600;color:var(--edgard-blue);margin-bottom:0.25rem}
 .uploaded-file .file-size{font-size:0.85rem;color:#6c757d}
+.file-error{color:#dc3545;font-size:0.85rem;margin-top:0.5rem;display:none;min-height:1.25rem}
 .price-display-card{background:linear-gradient(135deg,rgba(40,167,69,0.1),rgba(44,90,160,0.05));border:3px solid var(--edgard-green);border-radius:20px;padding:3rem 2rem;margin:2rem 0;text-align:center}
 .price-amount{font-size:4rem;font-weight:700;color:var(--edgard-green);margin:1rem 0}
 .price-breakdown{background:white;border-radius:12px;padding:1.5rem;margin-top:2rem;text-align:left}
@@ -120,7 +121,7 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <option value="commercial">Gewerbe</option>
 </select>
 <label>Gebäudetyp *</label>
-<div class="invalid-feedback"></div>
+<div class="invalid-feedback"></div><div class="text-danger small mt-2" id="consent_hint" style="display:none">Bitte bestaetigen Sie die Verarbeitung Ihrer Daten.</div>
 </div>
 </div>
 <div class="col-md-6">
@@ -352,20 +353,22 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <div class="file-upload-zone" data-target="meter_cabinet_photo">
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Foto hochladen</p>
-<small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="meter_cabinet_photo" name="meter_cabinet_photo" accept="image/*,.pdf" style="display:none">
+<small class="text-muted">JPG, PNG oder PDF bis 5MB (Mehrfachauswahl möglich)</small>
+<input type="file" id="meter_cabinet_photo" name="meter_cabinet_photo" accept=".jpg,.jpeg,.png,.pdf" multiple style="display:none">
 </div>
 <div id="meter_cabinet_preview"></div>
+<div class="file-error" id="meter_cabinet_photo_error"></div>
 </div>
 <div class="col-md-6">
 <h6 class="text-muted mb-3">Hausanschlusskasten</h6>
 <div class="file-upload-zone" data-target="hak_photo">
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Foto hochladen</p>
-<small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="hak_photo" name="hak_photo" accept="image/*,.pdf" style="display:none">
+<small class="text-muted">JPG, PNG oder PDF bis 5MB (Mehrfachauswahl möglich)</small>
+<input type="file" id="hak_photo" name="hak_photo" accept=".jpg,.jpeg,.png,.pdf" multiple style="display:none">
 </div>
 <div id="hak_preview"></div>
+<div class="file-error" id="hak_photo_error"></div>
 </div>
 </div>
 
@@ -375,20 +378,22 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <div class="file-upload-zone" data-target="location_photo">
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Foto hochladen</p>
-<small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="location_photo" name="location_photo" accept="image/*,.pdf" style="display:none">
+<small class="text-muted">JPG, PNG oder PDF bis 5MB (Mehrfachauswahl möglich)</small>
+<input type="file" id="location_photo" name="location_photo" accept=".jpg,.jpeg,.png,.pdf" multiple style="display:none">
 </div>
 <div id="location_preview"></div>
+<div class="file-error" id="location_photo_error"></div>
 </div>
 <div class="col-md-6">
 <h6 class="text-muted mb-3">Kabelwege</h6>
 <div class="file-upload-zone" data-target="cable_route_photo">
 <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
 <p class="mb-0">Foto hochladen</p>
-<small class="text-muted">JPG, PNG bis 5MB</small>
-<input type="file" id="cable_route_photo" name="cable_route_photo" accept="image/*,.pdf" style="display:none">
+<small class="text-muted">JPG, PNG oder PDF bis 5MB (Mehrfachauswahl möglich)</small>
+<input type="file" id="cable_route_photo" name="cable_route_photo" accept=".jpg,.jpeg,.png,.pdf" multiple style="display:none">
 </div>
 <div id="cable_route_preview"></div>
+<div class="file-error" id="cable_route_photo_error"></div>
 </div>
 </div>
 
@@ -559,6 +564,10 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 let currentStep=1,totalSteps=6,priceData=null;
+const MAX_FILE_SIZE=5*1024*1024;
+const ALLOWED_FILE_EXTENSIONS=['jpg','jpeg','png','pdf'];
+const precheckFileStorage={};
+window.precheckFileStorage=precheckFileStorage;
 
 function formatCurrency(value){
 const number=Number(value||0);
@@ -835,7 +844,7 @@ document.getElementById('sum_total_price').textContent=formatCurrency(priceData.
 }
 
 const photoLabels={
-'meter_cabinet_photo':'Zählerschrank',
+'meter_cabinet_photo':'Z??hlerschrank',
 'hak_photo':'Hausanschlusskasten',
 'location_photo':'Montageorte',
 'cable_route_photo':'Kabelwege'
@@ -844,12 +853,16 @@ const photosList=document.getElementById('sum_photos_list');
 const photosSection=document.getElementById('sum_photos_section');
 let photosHTML='';
 let hasPhotos=false;
+const storage=window.precheckFileStorage||{};
 
 Object.keys(photoLabels).forEach(photoId=>{
-const input=document.getElementById(photoId);
-if(input&&input.files&&input.files.length>0){
-const file=input.files[0];
+const storedFiles=(storage[photoId]&&storage[photoId].length>0)
+? storage[photoId]
+: Array.from((document.getElementById(photoId)&&document.getElementById(photoId).files)||[]);
+if(storedFiles.length>0){
+storedFiles.forEach(file=>{
 photosHTML+=`<div class="summary-item"><span><i class="fas fa-check-circle text-success me-2"></i>${photoLabels[photoId]}</span><strong>${file.name}</strong></div>`;
+});
 hasPhotos=true;
 }
 });
@@ -859,7 +872,9 @@ photosList.innerHTML=photosHTML;
 photosSection.style.display='block';
 }else{
 photosSection.style.display='none';
+photosList.innerHTML='';
 }
+
 }
 
 function validateCurrentStep(){
@@ -875,8 +890,36 @@ field.classList.remove('is-invalid');
 field.classList.add('is-valid');
 }
 });
-if(!isValid)alert('Bitte füllen Sie alle Pflichtfelder aus.');
+if(currentStep===6){
+const consentValid=validateConsentField();
+isValid=isValid&&consentValid;
+}
+if(!isValid){
+if(currentStep!==6){
+alert('Bitte fuellen Sie alle Pflichtfelder aus.');
+}else{
+const consentField=document.getElementById('consent');
+if(consentField)consentField.scrollIntoView({behavior:'smooth',block:'center'});
+}
+}
 return isValid;
+}
+
+
+function validateConsentField(){
+const checkbox=document.getElementById('consent');
+const hint=document.getElementById('consent_hint');
+if(!checkbox||!hint)return true;
+if(checkbox.checked){
+hint.style.display='none';
+checkbox.classList.remove('is-invalid');
+checkbox.classList.add('is-valid');
+return true;
+}
+hint.style.display='block';
+checkbox.classList.add('is-invalid');
+checkbox.classList.remove('is-valid');
+return false;
 }
 
 function setupValidation(){
@@ -921,11 +964,21 @@ if(addressField){
 addressField.addEventListener('input',syncSiteAddress);
 }
 syncSiteAddress();
+
+const consentCheckbox=document.getElementById('consent');
+
+if(consentCheckbox){
+
+consentCheckbox.addEventListener('change',validateConsentField);
+
 }
 
-function setupFileUploads(){
-const MAX_FILE_SIZE=5*1024*1024;
+validateConsentField();
 
+}
+
+
+function setupFileUploads(){
 document.querySelectorAll('.file-upload-zone').forEach(zone=>{
 const inputId=zone.dataset.target;
 const input=document.getElementById(inputId);
@@ -933,69 +986,110 @@ if(!input){
 console.error('Input not found:',inputId);
 return;
 }
-
-zone.addEventListener('click',()=>{
-console.log('Zone clicked, opening file picker for:',inputId);
-input.click();
-});
-
+precheckFileStorage[inputId]=precheckFileStorage[inputId]||[];
+const preview=document.getElementById(inputId.replace('_photo','_preview'));
+const errorEl=document.getElementById(`${inputId}_error`);
+if(preview)preview.innerHTML='';
+zone.addEventListener('click',()=>input.click());
 input.addEventListener('change',function(){
-console.log('File input changed:',inputId);
-const file=this.files[0];
-if(!file){
-console.log('No file selected');
+const newFiles=Array.from(this.files);
+if(newFiles.length===0)return;
+let errorMessage='';
+newFiles.forEach(file=>{
+const validationError=validateUploadFile(file);
+if(validationError){
+errorMessage=validationError.replace('%filename%',file.name);
 return;
 }
+const isDuplicate=precheckFileStorage[inputId].some(existing=>existing.name===file.name&&existing.lastModified===file.lastModified&&existing.size===file.size);
+if(isDuplicate){
+errorMessage=`Die Datei "${file.name}" wurde bereits hinzugefuegt.`;
+return;
+}
+precheckFileStorage[inputId].push(file);
+});
+if(errorMessage){
+showFileError(errorEl,errorMessage);
+}else{
+clearFileError(errorEl);
+}
+updateInputFiles(inputId);
+renderPreview(inputId);
+updateSummary();
+});
+});
+}
 
-console.log('File selected:',file.name,file.type,file.size);
-
+function validateUploadFile(file){
 if(file.size>MAX_FILE_SIZE){
-alert(`Die Datei ist zu groß. Maximal 5MB erlaubt.\nIhre Datei: ${(file.size/1024/1024).toFixed(2)}MB`);
-this.value='';
-return;
+return 'Die Datei "%filename%" ist zu gross. Maximal 5MB erlaubt.';
+}
+const extension=file.name.split('.').pop().toLowerCase();
+if(!ALLOWED_FILE_EXTENSIONS.includes(extension)){
+return 'Das Format der Datei "%filename%" wird nicht unterstuetzt. Erlaubt sind JPG, PNG oder PDF.';
+}
+return '';
 }
 
-const fileExt=file.name.split('.').pop().toLowerCase();
-if(!['jpg','jpeg','png','pdf'].includes(fileExt)){
-alert('Bitte nur JPG, PNG oder PDF Dateien hochladen.');
-this.value='';
-return;
+function updateInputFiles(inputId){
+const input=document.getElementById(inputId);
+if(!input)return;
+const dt=new DataTransfer();
+(precheckFileStorage[inputId]||[]).forEach(file=>dt.items.add(file));
+input.files=dt.files;
 }
 
-const previewId=inputId.replace('_photo','_preview');
-const preview=document.getElementById(previewId);
-if(!preview){
-console.error('Preview container not found:',previewId);
+function renderPreview(inputId){
+const preview=document.getElementById(inputId.replace('_photo','_preview'));
+if(!preview)return;
+preview.innerHTML='';
+const files=precheckFileStorage[inputId]||[];
+if(files.length===0){
 return;
 }
-const fileSize=(file.size/1024).toFixed(1);
-preview.innerHTML=`
-<div class="uploaded-file">
+files.forEach((file,index)=>{
+const wrapper=document.createElement('div');
+wrapper.className='uploaded-file';
+wrapper.innerHTML=`
 <div class="file-info">
 <div class="file-name">
 <i class="fas fa-check-circle text-success me-2"></i>
 <strong>${file.name}</strong>
 </div>
-<div class="file-size text-muted">${fileSize} KB</div>
-</div>
-<button type="button" class="btn btn-sm btn-danger" onclick="removeFile('${inputId}')">
-<i class="fas fa-times me-1"></i>Löschen
-</button>
-</div>
-`;
-console.log('Preview created for:',inputId);
+<div class="file-size text-muted">${(file.size/1024).toFixed(1)} KB</div>
+</div>`;
+const removeBtn=document.createElement('button');
+removeBtn.type='button';
+removeBtn.className='btn btn-sm btn-danger';
+removeBtn.innerHTML='<i class="fas fa-times me-1"></i>Loeschen';
+removeBtn.addEventListener('click',()=>removeFileFromList(inputId,index));
+wrapper.appendChild(removeBtn);
+preview.appendChild(wrapper);
 });
-});
-console.log('setupFileUploads() completed');
 }
 
-function removeFile(inputId){
-const input=document.getElementById(inputId);
-const previewId=inputId.replace('_photo','_preview');
-const preview=document.getElementById(previewId);
-if(input)input.value='';
-if(preview)preview.innerHTML='';
-console.log('File removed:',inputId);
+function removeFileFromList(inputId,fileIndex){
+if(!precheckFileStorage[inputId])return;
+precheckFileStorage[inputId].splice(fileIndex,1);
+updateInputFiles(inputId);
+renderPreview(inputId);
+const errorEl=document.getElementById(`${inputId}_error`);
+if(errorEl&&(precheckFileStorage[inputId]||[]).length===0){
+clearFileError(errorEl);
+}
+updateSummary();
+}
+
+function showFileError(element,message){
+if(!element)return;
+element.textContent=message;
+element.style.display='block';
+}
+
+function clearFileError(element){
+if(!element)return;
+element.textContent='';
+element.style.display='none';
 }
 
 function saveFormData(){

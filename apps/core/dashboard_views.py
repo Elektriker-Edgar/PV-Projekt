@@ -277,22 +277,38 @@ class PrecheckExportView(LoginRequiredMixin, View):
         # Daten-Zeilen (mit optimierter Query)
         prechecks = Precheck.objects.select_related(
             'site__customer'
-        ).order_by('-created_at')
+        ).prefetch_related('photos').order_by('-created_at')
 
         for precheck in prechecks:
             site = precheck.site
             customer = site.customer
 
             # Fotos zählen
-            photos = []
-            if precheck.meter_cabinet_photo:
-                photos.append('Zählerschrank')
-            if precheck.hak_photo:
-                photos.append('HAK')
-            if precheck.location_photo:
-                photos.append('Montageort')
-            if precheck.cable_route_photo:
-                photos.append('Kabelweg')
+            photo_labels = {
+                'meter_cabinet': 'Zählerschrank',
+                'hak': 'HAK',
+                'location': 'Montageort',
+                'cable_route': 'Kabelweg',
+            }
+            photo_categories = set()
+
+            legacy_files = {
+                'meter_cabinet': precheck.meter_cabinet_photo,
+                'hak': precheck.hak_photo,
+                'location': precheck.location_photo,
+                'cable_route': precheck.cable_route_photo,
+            }
+            for category, value in legacy_files.items():
+                if value:
+                    photo_categories.add(category)
+
+            for photo in precheck.photos.all():
+                photo_categories.add(photo.category)
+
+            photos = [
+                label for key, label in photo_labels.items()
+                if key in photo_categories
+            ]
             photos_str = ', '.join(photos) if photos else 'Keine'
 
             writer.writerow([
