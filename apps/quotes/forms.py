@@ -229,6 +229,120 @@ class PrecheckForm(forms.Form):
         return precheck
 
 
+class ExpressPackageForm(forms.Form):
+    """Vereinfachtes Express-Paket-Formular (ohne technische Details)"""
+
+    # Kundendaten (gleich wie Precheck)
+    customer_name = forms.CharField(
+        max_length=200,
+        label="Name",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Max Mustermann'})
+    )
+    customer_email = forms.EmailField(
+        label="E-Mail",
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'max@example.com'})
+    )
+    customer_phone = forms.CharField(
+        max_length=20,
+        required=False,
+        label="Telefon (optional)",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+49 40 12345678'})
+    )
+    customer_address = forms.CharField(
+        label="Installationsadresse",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Straße, PLZ Ort'})
+    )
+    building_type = forms.ChoiceField(
+        choices=Site._meta.get_field('building_type').choices,
+        label="Gebäudetyp",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    # Fotos (gleich wie Precheck)
+    meter_cabinet_photo = forms.ImageField(
+        required=False,
+        label="Foto Zählerschrank (optional)",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+    )
+    hak_photo = forms.ImageField(
+        required=False,
+        label="Foto Hausanschlusskasten (optional)",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+    )
+    location_photo = forms.ImageField(
+        required=False,
+        label="Foto Montageorte (optional)",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+    )
+    cable_route_photo = forms.ImageField(
+        required=False,
+        label="Foto Kabelwege (optional)",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png'})
+    )
+
+    # Besonderheiten/Kundenwünsche
+    special_requests = forms.CharField(
+        required=False,
+        label="Besonderheiten / Kundenwünsche",
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': 'Besondere Wünsche, Anmerkungen, oder technische Details...'
+        })
+    )
+
+    # DSGVO
+    consent = forms.BooleanField(
+        label="Ich stimme der Verarbeitung meiner Daten zu",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+    def save(self, package_choice):
+        """Erstelle Customer, Site und Precheck aus Formulardaten (Express-Paket)"""
+        consent_ip = '127.0.0.1'  # Placeholder
+
+        # Customer erstellen
+        customer = Customer.objects.create(
+            name=self.cleaned_data['customer_name'],
+            email=self.cleaned_data['customer_email'],
+            phone=self.cleaned_data.get('customer_phone', ''),
+            customer_type='private',  # Express-Pakete nur für Privatkunden
+            address=self.cleaned_data['customer_address'],
+            consent_timestamp=timezone.now(),
+            consent_ip=consent_ip
+        )
+
+        # Site erstellen (mit Minimal-Daten)
+        site = Site.objects.create(
+            customer=customer,
+            address=self.cleaned_data['customer_address'],
+            building_type=self.cleaned_data['building_type'],
+            construction_year=None,  # Nicht relevant für Express-Pakete
+            main_fuse_ampere=35,  # Default-Wert
+            grid_type='',
+            distance_meter_to_hak=0,  # Default-Wert
+        )
+
+        # Precheck erstellen (als Express-Paket)
+        precheck = Precheck.objects.create(
+            site=site,
+            desired_power_kw=0,  # Wird später von Techniker festgelegt
+            storage_kwh=None,
+            own_components=False,
+            wallbox=False,
+            package_choice=package_choice,
+            is_express_package=True,  # Markierung als Express-Paket
+            notes=self.cleaned_data.get('special_requests', ''),
+            # File Uploads
+            meter_cabinet_photo=self.cleaned_data.get('meter_cabinet_photo'),
+            hak_photo=self.cleaned_data.get('hak_photo'),
+            location_photo=self.cleaned_data.get('location_photo'),
+            cable_route_photo=self.cleaned_data.get('cable_route_photo')
+        )
+
+        return precheck
+
+
 
 
 

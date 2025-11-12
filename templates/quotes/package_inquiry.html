@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ package_name }} - Express-Anfrage | EDGARD -- Elektro</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+:root {
+    --edgard-blue: #2c5aa0;
+    --edgard-green: #28a745;
+    --edgard-gray: #6c757d;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+}
+
+/* Wizard Header - Same as Precheck */
+.wizard-header {
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.brand-logo {
+    color: var(--edgard-blue);
+    font-weight: 700;
+    font-size: 1.5rem;
+    text-decoration: none;
+}
+
+.brand-logo:hover {
+    color: var(--edgard-blue);
+}
+
+/* Progress Container - Simplified for single page */
+.progress-container {
+    background: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    color: var(--edgard-blue);
+    font-weight: 700;
+}
+
+/* Wizard Container - Same max-width as Precheck */
+.wizard-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem 3rem;
+}
+
+/* Form Card - Same glassmorphism style */
+.form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    padding: 3rem;
+    margin-bottom: 2rem;
+    animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Package Header - Same style as price display card */
+.package-header {
+    background: linear-gradient(135deg, rgba(40,167,69,0.1), rgba(44,90,160,0.05));
+    border: 3px solid var(--edgard-green);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+.package-name {
+    color: var(--edgard-blue);
+    font-weight: 700;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.package-subtitle {
+    color: var(--edgard-gray);
+    margin-bottom: 1rem;
+}
+
+.package-price {
+    color: var(--edgard-green);
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-top: 1rem;
+}
+
+/* Section Titles - Same as Precheck step titles */
+.section-title {
+    color: var(--edgard-blue);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+/* Form Floating - Same as Precheck */
+.form-floating {
+    margin-bottom: 1.5rem;
+}
+
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    transition: all 0.3s;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--edgard-green);
+    box-shadow: 0 0 0 0.2rem rgba(40,167,69,0.25);
+}
+
+/* Form Check - Same as Precheck */
+.form-check {
+    margin-bottom: 1.5rem;
+}
+
+.form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid #dee2e6;
+}
+
+.form-check-input:checked {
+    background-color: var(--edgard-green);
+    border-color: var(--edgard-green);
+}
+
+/* File Upload Zone - Same as Precheck */
+.file-upload-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    background: #f8f9fa;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    transition: all 0.3s;
+}
+
+.file-upload-zone:hover {
+    border-color: var(--edgard-green);
+    background: rgba(40,167,69,0.05);
+}
+
+.file-upload-zone input {
+    display: none;
+}
+
+.upload-icon {
+    font-size: 2.5rem;
+    color: var(--edgard-gray);
+    margin-bottom: 0.5rem;
+}
+
+.upload-text {
+    color: var(--edgard-gray);
+    font-weight: 600;
+}
+
+.upload-hint {
+    font-size: 0.85rem;
+    color: var(--edgard-gray);
+    margin-top: 0.5rem;
+}
+
+/* Uploaded File - Same as Precheck */
+.uploaded-file {
+    background: rgba(40,167,69,0.1);
+    border: 1px solid var(--edgard-green);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.uploaded-file .file-info {
+    flex: 1;
+    text-align: left;
+}
+
+.uploaded-file .file-name {
+    font-weight: 600;
+    color: var(--edgard-blue);
+    margin-bottom: 0.25rem;
+}
+
+.uploaded-file .file-size {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Submit Button - Same as Precheck primary button */
+.btn-submit {
+    background: linear-gradient(135deg, var(--edgard-green), #20754a);
+    color: white;
+    padding: 0.875rem 3rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.1rem;
+    transition: all 0.3s;
+    width: 100%;
+    box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, #218838, #1a5f35);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Info Box - Same as Precheck */
+.info-box {
+    background: rgba(44,90,160,0.05);
+    border-left: 4px solid var(--edgard-blue);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+/* Validation States */
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.is-valid {
+    border-color: var(--edgard-green);
+}
+
+.invalid-feedback {
+    display: none;
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
+/* Alert Messages */
+.alert {
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+/* Spinner for loading state */
+.spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--edgard-green);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Back Link */
+.back-link {
+    color: var(--edgard-gray);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.back-link:hover {
+    color: var(--edgard-blue);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .package-price {
+        font-size: 2rem;
+    }
+
+    .package-name {
+        font-size: 1.5rem;
+    }
+}
+</style>
+</head>
+<body>
+<!-- Wizard Header -->
+<header class="wizard-header">
+<div class="container">
+<div class="d-flex justify-content-between align-items-center py-3">
+<a href="{% url 'quotes:home' %}" class="brand-logo">
+<i class="fas fa-bolt me-2"></i>EDGARD -- Elektro
+</a>
+<a href="tel:040123456789" class="text-decoration-none">
+<i class="fas fa-phone text-success me-1"></i>040 123 456 789
+</a>
+</div>
+</div>
+</header>
+
+<!-- Progress Container -->
+<section class="progress-container">
+<div class="container">
+<div class="wizard-container">
+<div class="text-center">
+<h1 class="h2 page-title">
+<i class="fas fa-rocket me-2"></i>Express-Paket-Anfrage
+</h1>
+<p class="text-muted">Schnell und unkompliziert zu Ihrem Angebot</p>
+</div>
+</div>
+</div>
+</section>
+
+<div class="container">
+<div class="wizard-container">
+<div class="form-card">
+<!-- Package Header -->
+<div class="package-header">
+<div class="package-name">
+<i class="fas fa-box me-2"></i>{{ package_name|title }}
+</div>
+<p class="package-subtitle mb-0">Ihre Express-Anfrage</p>
+<div class="package-price">
+{{ package_price|floatformat:0 }}€ <small style="font-size:1rem">netto</small>
+</div>
+</div>
+
+<!-- Error Messages -->
+{% if messages %}
+<div class="alert alert-danger">
+{% for message in messages %}
+<p class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>{{ message }}</p>
+{% endfor %}
+</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" id="packageForm" novalidate>
+{% csrf_token %}
+
+<!-- KUNDENDATEN -->
+<h5 class="section-title">
+<i class="fas fa-user me-2"></i>Ihre Kontaktdaten
+</h5>
+
+<div class="row">
+<div class="col-md-6">
+<div class="form-floating">
+<input type="text" class="form-control" id="{{ form.customer_name.id_for_label }}" name="{{ form.customer_name.html_name }}" required>
+<label>{{ form.customer_name.label }}</label>
+<div class="invalid-feedback">Bitte geben Sie Ihren Namen ein.</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="form-floating">
+<input type="email" class="form-control" id="{{ form.customer_email.id_for_label }}" name="{{ form.customer_email.html_name }}" required>
+<label>{{ form.customer_email.label }}</label>
+<div class="invalid-feedback">Bitte geben Sie eine gültige E-Mail-Adresse ein.</div>
+</div>
+</div>
+</div>
+
+<div class="form-floating">
+<input type="tel" class="form-control" id="{{ form.customer_phone.id_for_label }}" name="{{ form.customer_phone.html_name }}">
+<label>{{ form.customer_phone.label }}</label>
+</div>
+
+<div class="form-floating">
+<textarea class="form-control" id="{{ form.customer_address.id_for_label }}" name="{{ form.customer_address.html_name }}" style="height:100px" required></textarea>
+<label>{{ form.customer_address.label }}</label>
+<div class="invalid-feedback">Bitte geben Sie die Installationsadresse ein.</div>
+<div class="form-text">Straße, Hausnummer, PLZ, Ort</div>
+</div>
+
+<div class="form-floating">
+<select class="form-select" id="{{ form.building_type.id_for_label }}" name="{{ form.building_type.html_name }}" required>
+<option value="">Bitte wählen...</option>
+<option value="efh">Einfamilienhaus</option>
+<option value="mfh">Mehrfamilienhaus</option>
+<option value="commercial">Gewerbe</option>
+</select>
+<label>{{ form.building_type.label }}</label>
+<div class="invalid-feedback">Bitte wählen Sie einen Gebäudetyp.</div>
+</div>
+
+<!-- BESONDERHEITEN -->
+<h5 class="section-title mt-4">
+<i class="fas fa-comment-dots me-2"></i>Besonderheiten & Wünsche
+</h5>
+
+<div class="form-floating">
+<textarea class="form-control" id="{{ form.special_requests.id_for_label }}" name="{{ form.special_requests.html_name }}" style="height:120px" placeholder="Z.B. gewünschte Komponenten, besondere Anforderungen..."></textarea>
+<label>{{ form.special_requests.label }}</label>
+<div class="form-text">Optional: Teilen Sie uns Ihre Wünsche oder technische Details mit</div>
+</div>
+
+<!-- BILDUPLOAD -->
+<h5 class="section-title mt-4">
+<i class="fas fa-camera me-2"></i>Fotos hochladen (optional)
+</h5>
+
+<div class="info-box">
+<i class="fas fa-lightbulb me-2"></i>
+<strong>Tipp:</strong> Fotos von Zählerschrank, Hausanschlusskasten, Montageorten und Kabelwegen helfen uns bei der Vorbereitung. Sie können mehrere Fotos pro Kategorie hochladen.
+</div>
+
+<div class="row mb-4">
+<div class="col-md-6">
+<h6 class="text-muted mb-3">Zählerschrank</h6>
+<div class="file-upload-zone" data-target="meter_cabinet_photo">
+<i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
+<p class="mb-0">Fotos hochladen</p>
+<small class="text-muted">JPG, PNG bis 5MB</small>
+<input type="file" id="meter_cabinet_photo" name="meter_cabinet_photo" accept="image/*,.pdf" multiple style="display:none">
+</div>
+<div id="meter_cabinet_preview"></div>
+</div>
+<div class="col-md-6">
+<h6 class="text-muted mb-3">Hausanschlusskasten</h6>
+<div class="file-upload-zone" data-target="hak_photo">
+<i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
+<p class="mb-0">Fotos hochladen</p>
+<small class="text-muted">JPG, PNG bis 5MB</small>
+<input type="file" id="hak_photo" name="hak_photo" accept="image/*,.pdf" multiple style="display:none">
+</div>
+<div id="hak_preview"></div>
+</div>
+</div>
+
+<div class="row mb-4">
+<div class="col-md-6">
+<h6 class="text-muted mb-3">Montageorte</h6>
+<div class="file-upload-zone" data-target="location_photo">
+<i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
+<p class="mb-0">Fotos hochladen</p>
+<small class="text-muted">JPG, PNG bis 5MB</small>
+<input type="file" id="location_photo" name="location_photo" accept="image/*,.pdf" multiple style="display:none">
+</div>
+<div id="location_preview"></div>
+</div>
+<div class="col-md-6">
+<h6 class="text-muted mb-3">Kabelwege</h6>
+<div class="file-upload-zone" data-target="cable_route_photo">
+<i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
+<p class="mb-0">Fotos hochladen</p>
+<small class="text-muted">JPG, PNG bis 5MB</small>
+<input type="file" id="cable_route_photo" name="cable_route_photo" accept="image/*,.pdf" multiple style="display:none">
+</div>
+<div id="cable_route_preview"></div>
+</div>
+</div>
+
+<!-- DATENSCHUTZ -->
+<h5 class="section-title mt-4">
+<i class="fas fa-shield-alt me-2"></i>Datenschutz
+</h5>
+
+<div class="form-check">
+<input class="form-check-input" type="checkbox" id="{{ form.consent.id_for_label }}" name="{{ form.consent.html_name }}" required>
+<label class="form-check-label" for="{{ form.consent.id_for_label }}">
+{{ form.consent.label }} (siehe <a href="#" target="_blank">Datenschutzerklärung</a>)
+</label>
+<div class="invalid-feedback">Bitte bestätigen Sie die Datenschutzerklärung.</div>
+</div>
+
+<!-- SUBMIT -->
+<button type="submit" class="btn btn-submit mt-3" id="submitBtn">
+<i class="fas fa-paper-plane me-2"></i>Anfrage absenden
+</button>
+
+<div class="text-center mt-3">
+<a href="{% url 'quotes:packages' %}" class="back-link">
+<i class="fas fa-arrow-left me-1"></i>Zurück zur Paketauswahl
+</a>
+</div>
+</form>
+</div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Formular-Validierung
+document.getElementById('packageForm').addEventListener('submit', function(e) {
+    let isValid = true;
+    const form = this;
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Alle required Felder prüfen
+    form.querySelectorAll('[required]').forEach(field => {
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            field.classList.remove('is-invalid');
+            field.classList.add('is-valid');
+        }
+    });
+
+    // E-Mail-Validierung
+    const email = form.querySelector('[type="email"]');
+    if (email && email.value && !email.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        email.classList.add('is-invalid');
+        isValid = false;
+    }
+
+    if (!isValid) {
+        e.preventDefault();
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    } else {
+        // Submit-Button deaktivieren und Spinner anzeigen
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span>Wird übertragen...';
+    }
+});
+
+// File Upload Handler für Multiple Files
+function setupFileUploads() {
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+    document.querySelectorAll('.file-upload-zone').forEach(zone => {
+        const inputId = zone.dataset.target;
+        const input = document.getElementById(inputId);
+        if (!input) {
+            console.error('Input not found:', inputId);
+            return;
+        }
+
+        zone.addEventListener('click', () => {
+            input.click();
+        });
+
+        input.addEventListener('change', function() {
+            const files = Array.from(this.files);
+            if (files.length === 0) return;
+
+            const previewId = inputId.replace('_photo', '_preview');
+            const preview = document.getElementById(previewId);
+            if (!preview) {
+                console.error('Preview container not found:', previewId);
+                return;
+            }
+
+            // Vorhandene Previews löschen
+            preview.innerHTML = '';
+
+            files.forEach((file, index) => {
+                // Dateigröße prüfen
+                if (file.size > MAX_FILE_SIZE) {
+                    alert(`Die Datei "${file.name}" ist zu groß. Maximal 5MB erlaubt.\nIhre Datei: ${(file.size/1024/1024).toFixed(2)}MB`);
+                    return;
+                }
+
+                // Dateityp prüfen
+                const fileExt = file.name.split('.').pop().toLowerCase();
+                if (!['jpg', 'jpeg', 'png', 'pdf'].includes(fileExt)) {
+                    alert(`Die Datei "${file.name}" hat ein ungültiges Format. Bitte nur JPG, PNG oder PDF.`);
+                    return;
+                }
+
+                const fileSize = (file.size / 1024).toFixed(1);
+                const fileDiv = document.createElement('div');
+                fileDiv.className = 'uploaded-file mb-2';
+                fileDiv.innerHTML = `
+                    <div class="file-info">
+                        <div class="file-name">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>${file.name}</strong>
+                        </div>
+                        <div class="file-size text-muted">${fileSize} KB</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeFileFromList('${inputId}', ${index})">
+                        <i class="fas fa-times me-1"></i>Löschen
+                    </button>
+                `;
+                preview.appendChild(fileDiv);
+            });
+        });
+    });
+}
+
+// Einzelne Datei aus der Liste entfernen
+function removeFileFromList(inputId, fileIndex) {
+    const input = document.getElementById(inputId);
+    const previewId = inputId.replace('_photo', '_preview');
+    const preview = document.getElementById(previewId);
+
+    if (!input) return;
+
+    // FileList in Array konvertieren und File entfernen
+    const dt = new DataTransfer();
+    const files = Array.from(input.files);
+
+    files.forEach((file, index) => {
+        if (index !== fileIndex) {
+            dt.items.add(file);
+        }
+    });
+
+    input.files = dt.files;
+
+    // Preview neu aufbauen
+    if (preview) {
+        const previews = preview.querySelectorAll('.uploaded-file');
+        if (previews[fileIndex]) {
+            previews[fileIndex].remove();
+        }
+    }
+}
+
+// Alle Dateien eines Inputs entfernen
+function removeFile(inputId) {
+    const input = document.getElementById(inputId);
+    const previewId = inputId.replace('_photo', '_preview');
+    const preview = document.getElementById(previewId);
+    if (input) input.value = '';
+    if (preview) preview.innerHTML = '';
+}
+
+// Setup beim Laden der Seite
+setupFileUploads();
+
+// Echtzeit-Validierung für required Felder
+document.querySelectorAll('[required]').forEach(field => {
+    field.addEventListener('blur', function() {
+        if (!this.value.trim()) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        }
+    });
+
+    field.addEventListener('input', function() {
+        if (this.value.trim()) {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        }
+    });
+});
+
+// E-Mail-Echtzeit-Validierung
+const emailField = document.querySelector('[type="email"]');
+if (emailField) {
+    emailField.addEventListener('blur', function() {
+        if (this.value && !this.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+            this.classList.add('is-invalid');
+        } else if (this.value) {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        }
+    });
+}
+
+// Checkbox-Validierung
+const consentCheckbox = document.querySelector('[type="checkbox"][required]');
+if (consentCheckbox) {
+    consentCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        } else {
+            this.classList.add('is-invalid');
+        }
+    });
+}
+</script>
+</body>
+</html>

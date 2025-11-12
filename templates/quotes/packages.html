@@ -25,31 +25,123 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            padding-top: 76px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
         }
 
-        .navbar {
-            position: fixed;
+        /* Wizard Header Style */
+        .wizard-header {
+            background: white;
+            box-shadow: var(--shadow-light);
+            position: sticky;
             top: 0;
-            width: 100%;
-            z-index: 1050;
+            z-index: 1000;
             transition: var(--transition-smooth);
             backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95) !important;
-            box-shadow: var(--shadow-medium);
+        }
+
+        .brand-logo {
+            color: var(--edgard-blue);
+            font-weight: 700;
+            font-size: 1.5rem;
+            text-decoration: none;
+        }
+
+        .brand-logo:hover {
+            color: var(--edgard-blue);
+        }
+
+        /* Express Mode Banner */
+        .express-mode-banner {
+            background: linear-gradient(135deg, rgba(40,167,69,0.1), rgba(44,90,160,0.05));
+            border: 3px solid var(--edgard-green);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem auto 3rem;
+            max-width: 900px;
+            text-align: center;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .express-mode-banner h2 {
+            color: var(--edgard-blue);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .express-mode-banner p {
+            color: var(--edgard-gray);
+            margin-bottom: 1.5rem;
+        }
+
+        .mode-toggle-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-mode {
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            border-radius: 8px;
+            border: 2px solid var(--edgard-blue);
+            transition: var(--transition-smooth);
+            min-width: 200px;
+        }
+
+        .btn-mode-express {
+            background: linear-gradient(135deg, var(--edgard-green), #20754a);
+            color: white;
+            border-color: var(--edgard-green);
+            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        }
+
+        .btn-mode-express:hover {
+            background: linear-gradient(135deg, #218838, #1a5f35);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-mode-detail {
+            background: white;
+            color: var(--edgard-blue);
+        }
+
+        .btn-mode-detail:hover {
+            background: var(--edgard-blue);
+            color: white;
+            transform: translateY(-2px);
         }
 
         .page-header {
             background: linear-gradient(135deg, var(--edgard-blue) 0%, #1e3a6f 100%);
             color: white;
-            padding: 4rem 0 2rem;
-            margin-bottom: 4rem;
+            padding: 3rem 0 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .wizard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem 3rem;
         }
 
         .package-card {
             background: white;
             border-radius: 16px;
-            box-shadow: var(--shadow-light);
+            box-shadow: var(--shadow-medium);
             overflow: hidden;
             transition: var(--transition-smooth);
             height: 100%;
@@ -57,17 +149,17 @@
 
         .package-card:hover {
             transform: translateY(-8px);
-            box-shadow: var(--shadow-medium);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
         }
 
         .package-card.featured {
-            transform: scale(1.05);
-            box-shadow: 0 8px 30px rgba(44, 90, 160, 0.2);
-            border: 2px solid var(--edgard-green);
+            transform: scale(1.03);
+            box-shadow: 0 8px 30px rgba(40, 167, 69, 0.3);
+            border: 3px solid var(--edgard-green);
         }
 
         .package-card.featured:hover {
-            transform: scale(1.05) translateY(-8px);
+            transform: scale(1.03) translateY(-8px);
         }
 
         .package-header {
@@ -97,11 +189,12 @@
             right: 1rem;
             background: var(--edgard-green);
             color: white;
-            padding: 0.25rem 0.75rem;
+            padding: 0.35rem 0.85rem;
             border-radius: 12px;
             font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
+            box-shadow: 0 2px 8px rgba(40,167,69,0.4);
         }
 
         .package-title {
@@ -152,6 +245,7 @@
             margin-right: 0.75rem;
             margin-top: 0.125rem;
             font-size: 1rem;
+            flex-shrink: 0;
         }
 
         .package-cta {
@@ -160,37 +254,54 @@
             background: var(--edgard-light);
         }
 
-        .btn-package {
-            background: var(--edgard-blue);
+        /* Express Button Style (Green like Precheck Wizard) */
+        .btn-package-express {
+            background: linear-gradient(135deg, var(--edgard-green), #20754a);
             color: white;
             border: none;
-            padding: 0.75rem 2rem;
+            padding: 0.875rem 2rem;
             border-radius: 8px;
             font-weight: 600;
             transition: var(--transition-smooth);
             text-decoration: none;
             display: inline-block;
+            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+            min-width: 180px;
         }
 
-        .btn-package:hover {
-            background: #1e3a6f;
+        .btn-package-express:hover {
+            background: linear-gradient(135deg, #218838, #1a5f35);
             color: white;
             transform: translateY(-2px);
-            box-shadow: var(--shadow-medium);
+            box-shadow: 0 6px 20px rgba(40,167,69,0.4);
         }
 
-        .btn-package.featured {
-            background: var(--edgard-green);
+        /* Detail Button Style (Blue) */
+        .btn-package-detail {
+            background: white;
+            color: var(--edgard-blue);
+            border: 2px solid var(--edgard-blue);
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: var(--transition-smooth);
+            text-decoration: none;
+            display: inline-block;
+            min-width: 180px;
         }
 
-        .btn-package.featured:hover {
-            background: #1e7e34;
+        .btn-package-detail:hover {
+            background: var(--edgard-blue);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(44,90,160,0.3);
         }
 
         .info-section {
-            background: var(--edgard-light);
+            background: white;
             padding: 4rem 0;
-            margin: 4rem 0;
+            margin: 4rem 0 0 0;
+            border-radius: 20px 20px 0 0;
         }
 
         .info-card {
@@ -200,6 +311,14 @@
             box-shadow: var(--shadow-light);
             text-align: center;
             height: 100%;
+            border: 2px solid #f1f3f4;
+            transition: var(--transition-smooth);
+        }
+
+        .info-card:hover {
+            border-color: var(--edgard-green);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-medium);
         }
 
         .info-icon {
@@ -219,9 +338,10 @@
             background: white;
             color: var(--edgard-green);
             border: none;
-            padding: 0.75rem 2rem;
+            padding: 0.875rem 2rem;
             font-weight: 600;
             transition: var(--transition-smooth);
+            border-radius: 8px;
         }
 
         .contact-cta .btn:hover {
@@ -233,60 +353,75 @@
         .price-note {
             background: rgba(255, 193, 7, 0.1);
             border-left: 4px solid #ffc107;
-            padding: 1rem;
             border-radius: 8px;
+            padding: 1.5rem;
             margin: 2rem 0;
+        }
+
+        .not-included-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-light);
+        }
+
+        .not-included-card h4 {
+            color: var(--edgard-blue);
+        }
+
+        @media (max-width: 768px) {
+            .package-card.featured {
+                transform: scale(1);
+            }
+
+            .package-card.featured:hover {
+                transform: translateY(-8px);
+            }
+
+            .btn-mode {
+                width: 100%;
+            }
+
+            .express-mode-banner {
+                padding: 1.5rem;
+            }
+
+            .mode-toggle-container {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light">
+    <!-- Wizard Header -->
+    <header class="wizard-header">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'quotes:home' %}">
-                <span style="color: var(--edgard-blue);">EDGARD</span>
-                <span style="color: var(--edgard-gray);">-- Elektro</span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'quotes:home' %}">Startseite</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'quotes:packages' %}">Pakete & Preise</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'quotes:compatible_systems' %}">Kompatible Systeme</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'quotes:faq' %}">FAQ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'quotes:precheck_wizard' %}">Vorprüfung</a>
-                    </li>
-                </ul>
+            <div class="d-flex justify-content-between align-items-center py-3">
+                <a href="{% url 'quotes:home' %}" class="brand-logo">
+                    <i class="fas fa-bolt me-2"></i>EDGARD -- Elektro
+                </a>
+                <a href="tel:040123456789" class="text-decoration-none">
+                    <i class="fas fa-phone text-success me-1"></i>040 123 456 789
+                </a>
             </div>
         </div>
-    </nav>
+    </header>
 
     <!-- Page Header -->
     <section class="page-header">
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 mx-auto text-center">
-                    <h1 class="display-4 mb-3">Pakete & Preise</h1>
+                    <h1 class="display-4 mb-3"><i class="fas fa-box me-3"></i>Pakete & Preise</h1>
                     <p class="lead">Transparent kalkulierte Leistungspakete für Ihre steckerfertige PV-Anlage</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Package Cards -->
-    <div class="container">
-        <div class="row g-4 mb-5">
+    <div class="container wizard-container">
+        <!-- Package Cards -->
+        <div id="packages" class="row g-4 mb-5">
             <!-- Basis Package -->
             <div class="col-lg-4">
                 <div class="package-card">
@@ -325,8 +460,8 @@
                         </ul>
                     </div>
                     <div class="package-cta">
-                        <a href="{% url 'quotes:precheck_wizard' %}" class="btn-package">
-                            Basis wählen
+                        <a href="{% url 'quotes:package_inquiry' 'basis' %}" class="btn-package-express">
+                            <i class="fas fa-rocket me-2"></i>Anfrage starten
                         </a>
                     </div>
                 </div>
@@ -371,8 +506,8 @@
                         </ul>
                     </div>
                     <div class="package-cta">
-                        <a href="{% url 'quotes:precheck_wizard' %}" class="btn-package featured">
-                            Plus wählen
+                        <a href="{% url 'quotes:package_inquiry' 'plus' %}" class="btn-package-express">
+                            <i class="fas fa-rocket me-2"></i>Anfrage starten
                         </a>
                     </div>
                 </div>
@@ -416,8 +551,8 @@
                         </ul>
                     </div>
                     <div class="package-cta">
-                        <a href="{% url 'quotes:precheck_wizard' %}" class="btn-package">
-                            Pro wählen
+                        <a href="{% url 'quotes:package_inquiry' 'pro' %}" class="btn-package-express">
+                            <i class="fas fa-rocket me-2"></i>Anfrage starten
                         </a>
                     </div>
                 </div>
@@ -428,16 +563,16 @@
         <div class="price-note">
             <h5><i class="fas fa-info-circle me-2"></i>Preishinweise</h5>
             <p class="mb-2"><strong>Alle Preise sind Richtpreise und werden nach der technischen Vorprüfung individuell kalkuliert.</strong></p>
-            <p class="mb-2">• Anfahrtskosten: Hamburg 0€ | Umkreis bis 30km: 50€ | Umkreis bis 60km: 95€</p>
-            <p class="mb-2">• Materialkosten werden separat nach Aufwand berechnet</p>
-            <p class="mb-0">• Komplette Materialkits von EDGARD erhalten 15% Rabatt auf die Arbeitskosten</p>
+            <p class="mb-2">Anfahrtskosten: Hamburg 0€ | Umkreis bis 30km: 50€ | Umkreis bis 60km: 95€</p>
+            <p class="mb-2">Materialkosten werden separat nach Aufwand berechnet</p>
+            <p class="mb-0">Komplette Materialkits von EDGARD erhalten 15% Rabatt auf die Arbeitskosten</p>
         </div>
     </div>
 
     <!-- Additional Information -->
     <section class="info-section">
         <div class="container">
-            <div class="row g-4">
+            <div class="row g-4 mb-5">
                 <div class="col-md-4">
                     <div class="info-card">
                         <i class="fas fa-shield-alt info-icon"></i>
@@ -460,37 +595,35 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- What's NOT included -->
-    <div class="container mb-5">
-        <div class="row">
-            <div class="col-lg-8 mx-auto">
-                <div class="info-card">
-                    <h4 class="text-center mb-4" style="color: var(--edgard-blue);">
-                        <i class="fas fa-exclamation-triangle me-2"></i>Nicht enthalten
-                    </h4>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <ul class="list-unstyled">
-                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Mechanische Dachmontage</li>
-                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Statische Berechnungen</li>
-                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Gerüststellung</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <ul class="list-unstyled">
-                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Fördermittelberatung</li>
-                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Dacharbeiten jeder Art</li>
-                                <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Bauliche Veränderungen</li>
-                            </ul>
+            <!-- What's NOT included -->
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="not-included-card">
+                        <h4 class="text-center mb-4">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Nicht enthalten
+                        </h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Mechanische Dachmontage</li>
+                                    <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Statische Berechnungen</li>
+                                    <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Gerüststellung</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Fördermittelberatung</li>
+                                    <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Dacharbeiten jeder Art</li>
+                                    <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Bauliche Veränderungen</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
     <!-- Contact CTA -->
     <section class="contact-cta">
@@ -499,10 +632,10 @@
                 <div class="col-lg-8 mx-auto">
                     <h3 class="mb-3">Kostenlose Vorprüfung starten</h3>
                     <p class="mb-4">Lassen Sie uns Ihre Anlage planen und erhalten Sie ein individuelles Angebot</p>
-                    <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-lg me-3">
+                    <a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-lg me-3 mb-2">
                         <i class="fas fa-calculator me-2"></i>Jetzt Vorprüfung starten
                     </a>
-                    <a href="{% url 'quotes:faq' %}" class="btn btn-outline-light btn-lg">
+                    <a href="{% url 'quotes:faq' %}" class="btn btn-outline-light btn-lg mb-2">
                         <i class="fas fa-question-circle me-2"></i>Häufige Fragen
                     </a>
                 </div>
@@ -512,5 +645,20 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Smooth scroll to packages section
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>

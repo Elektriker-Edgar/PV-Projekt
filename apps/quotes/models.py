@@ -94,6 +94,10 @@ class Precheck(models.Model):
         default='',
         help_text="Vom Kunden gewünschtes Leistungspaket"
     )
+    is_express_package = models.BooleanField(
+        default=False,
+        help_text="Express-Paket ohne technische Precheck-Details"
+    )
     wallbox_pv_surplus = models.BooleanField(
         default=False,
         help_text="PV-Überschussladen für die Wallbox gewünscht"

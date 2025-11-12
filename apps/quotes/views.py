@@ -3,8 +3,8 @@ from django.http import HttpResponse, Http404, JsonResponse
 from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from .models import Quote, Precheck
-from .forms import PrecheckForm
+from .models import Quote, Precheck, PriceConfig
+from .forms import PrecheckForm, ExpressPackageForm
 from .utils import generate_quote_pdf
 from .calculation import create_quote_from_precheck
 from .pricing import pricing_input_from_precheck, calculate_pricing
@@ -108,3 +108,47 @@ def quote_review_list(request):
     return render(request, 'quotes/quote_review_list.html', {
         'quotes': quotes_to_review
     })
+
+
+def package_inquiry(request, package):
+    """Express-Paket-Formular"""
+    # Validiere Paket
+    valid_packages = ['basis', 'plus', 'pro']
+    if package not in valid_packages:
+        messages.error(request, 'Ungültiges Paket ausgewählt.')
+        return redirect('quotes:package_select')
+
+    # Paketinformationen laden
+    package_names = {
+        'basis': 'Basis-Paket',
+        'plus': 'Plus-Paket',
+        'pro': 'Pro-Paket'
+    }
+
+    try:
+        package_price = PriceConfig.objects.get(price_type=f'package_{package}').value
+    except PriceConfig.DoesNotExist:
+        package_price = {'basis': 890, 'plus': 1490, 'pro': 2290}.get(package, 0)
+
+    if request.method == 'POST':
+        form = ExpressPackageForm(request.POST, request.FILES)
+        if form.is_valid():
+            precheck = form.save(package_choice=package)
+            messages.success(request,
+                f'Ihre Anfrage für das {package_names[package]} wurde erfolgreich eingereicht. '
+                f'Wir melden uns binnen 24 Stunden bei Ihnen.')
+            return redirect('quotes:package_success')
+    else:
+        form = ExpressPackageForm()
+
+    return render(request, 'quotes/package_inquiry.html', {
+        'form': form,
+        'package': package,
+        'package_name': package_names[package],
+        'package_price': package_price
+    })
+
+
+def package_success(request):
+    """Success-Seite nach Express-Paket-Anfrage"""
+    return render(request, 'quotes/package_success.html')

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Express-Pakete | EDGARD -- Elektro</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{--edgard-blue:#2c5aa0;--edgard-green:#28a745;--edgard-gray:#6c757d}
+body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%);min-height:100vh}
+.wizard-header{background:white;box-shadow:0 2px 10px rgba(0,0,0,0.1);position:sticky;top:0;z-index:1000}
+.brand-logo{color:var(--edgard-blue);font-weight:700;font-size:1.5rem;text-decoration:none}
+.hero-section{padding:4rem 0 3rem;text-align:center}
+.hero-title{color:var(--edgard-blue);font-weight:700;font-size:2.5rem;margin-bottom:1rem}
+.hero-subtitle{color:var(--edgard-gray);font-size:1.2rem;margin-bottom:3rem}
+.package-container{max-width:1200px;margin:0 auto;padding:0 1rem 3rem}
+.package-card{background:white;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.12);padding:2.5rem;margin-bottom:2rem;transition:all 0.3s;border:3px solid transparent;position:relative;overflow:hidden}
+.package-card:hover{transform:translateY(-8px);box-shadow:0 15px 40px rgba(0,0,0,0.2)}
+.package-card.featured{border-color:var(--edgard-green)}
+.package-badge{position:absolute;top:20px;right:20px;background:var(--edgard-green);color:white;padding:0.5rem 1rem;border-radius:20px;font-weight:600;font-size:0.85rem}
+.package-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:2px solid #e9ecef}
+.package-name{color:var(--edgard-blue);font-weight:700;font-size:1.75rem;margin:0}
+.package-price{color:var(--edgard-green);font-size:2.5rem;font-weight:700}
+.package-price-label{color:var(--edgard-gray);font-size:0.9rem;display:block}
+.package-description{color:var(--edgard-gray);font-size:1.1rem;margin-bottom:2rem}
+.package-features{list-style:none;padding:0;margin-bottom:2rem}
+.package-features li{padding:0.75rem 0;display:flex;align-items:center;color:#333}
+.package-features li i{color:var(--edgard-green);margin-right:0.75rem;font-size:1.2rem}
+.btn-select-package{background:linear-gradient(135deg,var(--edgard-green),#20754a);color:white;padding:1rem 2.5rem;font-weight:600;border-radius:12px;border:none;font-size:1.1rem;transition:all 0.3s;width:100%;box-shadow:0 4px 15px rgba(40,167,69,0.3)}
+.btn-select-package:hover{background:linear-gradient(135deg,#218838,#1a5f35);transform:translateY(-2px);box-shadow:0 6px 20px rgba(40,167,69,0.4)}
+.info-banner{background:rgba(44,90,160,0.05);border:2px solid rgba(44,90,160,0.2);border-radius:16px;padding:2rem;margin-bottom:3rem;text-align:center}
+.info-banner h4{color:var(--edgard-blue);font-weight:600;margin-bottom:1rem}
+.info-banner p{color:var(--edgard-gray);margin:0}
+@media(max-width:768px){.hero-title{font-size:2rem}.package-price{font-size:2rem}.btn-select-package{padding:0.875rem 2rem}}
+</style>
+</head>
+<body>
+<header class="wizard-header">
+<div class="container">
+<div class="d-flex justify-content-between align-items-center py-3">
+<a href="{% url 'quotes:home' %}" class="brand-logo"><i class="fas fa-bolt me-2"></i>EDGARD -- Elektro</a>
+<a href="tel:040123456789" class="text-decoration-none"><i class="fas fa-phone text-success me-1"></i>040 123 456 789</a>
+</div>
+</div>
+</header>
+
+<section class="hero-section">
+<div class="container">
+<h1 class="hero-title"><i class="fas fa-box-open me-3"></i>Express-Pakete</h1>
+<p class="hero-subtitle">Einfach Paket wählen - Wir kümmern uns um die technischen Details</p>
+</div>
+</section>
+
+<div class="container">
+<div class="package-container">
+<div class="info-banner">
+<h4><i class="fas fa-info-circle me-2"></i>Wie funktioniert's?</h4>
+<p>Wählen Sie einfach Ihr gewünschtes Leistungspaket aus. Nach Ihrer Anfrage meldet sich unser Technik-Team binnen 24 Stunden und klärt alle Details mit Ihnen.</p>
+</div>
+
+<div class="row">
+{% for pkg in packages %}
+<div class="col-lg-4 col-md-6 mb-4">
+<div class="package-card {% if pkg.id == 'plus' %}featured{% endif %}">
+{% if pkg.id == 'plus' %}
+<div class="package-badge"><i class="fas fa-star me-1"></i>Beliebt</div>
+{% endif %}
+<div class="package-header">
+<h3 class="package-name">{{ pkg.name }}</h3>
+<div class="text-end">
+<span class="package-price">{{ pkg.price|floatformat:0 }}€</span>
+<span class="package-price-label">netto</span>
+</div>
+</div>
+<p class="package-description">{{ pkg.description }}</p>
+<ul class="package-features">
+{% for feature in pkg.features %}
+<li><i class="fas fa-check-circle"></i>{{ feature }}</li>
+{% endfor %}
+</ul>
+<a href="{% url 'quotes:package_inquiry' pkg.id %}" class="btn btn-select-package">
+<i class="fas fa-arrow-right me-2"></i>Paket auswählen
+</a>
+</div>
+</div>
+{% endfor %}
+</div>
+
+<div class="text-center mt-5">
+<a href="{% url 'quotes:precheck_wizard' %}" class="btn btn-outline-primary btn-lg">
+<i class="fas fa-calculator me-2"></i>Lieber selbst konfigurieren? Zum Preisrechner
+</a>
+</div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
