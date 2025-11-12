@@ -134,6 +134,25 @@ def package_inquiry(request, package):
         form = ExpressPackageForm(request.POST, request.FILES)
         if form.is_valid():
             precheck = form.save(package_choice=package)
+
+            # Mehrere Dateien pro Kategorie verarbeiten
+            from .models import PrecheckPhoto
+            file_categories = {
+                'meter_cabinet_photo': 'meter_cabinet',
+                'hak_photo': 'hak',
+                'location_photo': 'location',
+                'cable_route_photo': 'cable_route',
+            }
+
+            for field_name, category in file_categories.items():
+                files = request.FILES.getlist(field_name)
+                for file in files:
+                    PrecheckPhoto.objects.create(
+                        precheck=precheck,
+                        category=category,
+                        photo=file
+                    )
+
             messages.success(request,
                 f'Ihre Anfrage für das {package_names[package]} wurde erfolgreich eingereicht. '
                 f'Wir melden uns binnen 24 Stunden bei Ihnen.')

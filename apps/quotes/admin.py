@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Component, Precheck, Quote, QuoteItem, PriceConfig
+from .models import Component, Precheck, Quote, QuoteItem, PriceConfig, PrecheckPhoto
 
 
 @admin.register(Component)
@@ -11,6 +11,13 @@ class ComponentAdmin(admin.ModelAdmin):
     filter_horizontal = ('compatible_with',)
 
 
+class PrecheckPhotoInline(admin.TabularInline):
+    model = PrecheckPhoto
+    extra = 0
+    readonly_fields = ('uploaded_at',)
+    fields = ('category', 'photo', 'uploaded_at')
+
+
 @admin.register(Precheck)
 class PrecheckAdmin(admin.ModelAdmin):
     list_display = ('site', 'desired_power_kw', 'storage_kwh', 'package_choice', 'own_components', 'created_at')
@@ -19,6 +26,7 @@ class PrecheckAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
     raw_id_fields = ('site',)
     date_hierarchy = 'created_at'
+    inlines = [PrecheckPhotoInline]
 
 
 class QuoteItemInline(admin.TabularInline):
@@ -62,7 +70,17 @@ class PriceConfigAdmin(admin.ModelAdmin):
     list_filter = ('is_percentage', 'price_type')
     search_fields = ('price_type', 'description')
     readonly_fields = ('created_at', 'updated_at')
-    
+
     def get_price_type_display(self, obj):
         return obj.get_price_type_display()
     get_price_type_display.short_description = 'Preistyp'
+
+
+@admin.register(PrecheckPhoto)
+class PrecheckPhotoAdmin(admin.ModelAdmin):
+    list_display = ('precheck', 'category', 'photo', 'uploaded_at')
+    list_filter = ('category', 'uploaded_at')
+    search_fields = ('precheck__site__customer__name',)
+    readonly_fields = ('uploaded_at',)
+    raw_id_fields = ('precheck',)
+    date_hierarchy = 'uploaded_at'

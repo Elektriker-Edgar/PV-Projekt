@@ -164,7 +164,39 @@ class Precheck(models.Model):
             files.append(('Montageorte', self.location_photo))
         if self.cable_route_photo:
             files.append(('Kabelwege', self.cable_route_photo))
+
+        # Zusätzlich alle Fotos aus PrecheckPhoto holen
+        for photo in self.photos.all():
+            files.append((photo.get_category_display(), photo.photo))
+
         return files
+
+
+class PrecheckPhoto(models.Model):
+    """Mehrere Fotos pro Kategorie für Precheck"""
+    CATEGORY_CHOICES = [
+        ('meter_cabinet', 'Zählerschrank'),
+        ('hak', 'Hausanschlusskasten'),
+        ('location', 'Montageorte'),
+        ('cable_route', 'Kabelwege'),
+    ]
+
+    precheck = models.ForeignKey(Precheck, on_delete=models.CASCADE, related_name='photos')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    photo = models.ImageField(
+        upload_to='precheck/photos/%Y/%m/',
+        validators=[validate_image_file],
+        help_text="Foto (JPG/PNG, max 5MB)"
+    )
+    uploaded_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['category', 'uploaded_at']
+        verbose_name = 'Precheck Foto'
+        verbose_name_plural = 'Precheck Fotos'
+
+    def __str__(self):
+        return f"{self.get_category_display()} - {self.precheck.id}"
 
 
 class Quote(models.Model):
