@@ -551,9 +551,10 @@ document.getElementById('packageForm').addEventListener('submit', function(e) {
     }
 });
 
-// File Upload Handler für Multiple Files
+// File Upload Handler für Multiple Files mit kumulativer Auswahl
 function setupFileUploads() {
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    const fileStorage = {}; // Speicher für alle Dateien pro Input
 
     document.querySelectorAll('.file-upload-zone').forEach(zone => {
         const inputId = zone.dataset.target;
@@ -563,13 +564,16 @@ function setupFileUploads() {
             return;
         }
 
+        // Initialisiere Datei-Speicher für dieses Input
+        fileStorage[inputId] = [];
+
         zone.addEventListener('click', () => {
             input.click();
         });
 
         input.addEventListener('change', function() {
-            const files = Array.from(this.files);
-            if (files.length === 0) return;
+            const newFiles = Array.from(this.files);
+            if (newFiles.length === 0) return;
 
             const previewId = inputId.replace('_photo', '_preview');
             const preview = document.getElementById(previewId);
@@ -578,10 +582,8 @@ function setupFileUploads() {
                 return;
             }
 
-            // Vorhandene Previews löschen
-            preview.innerHTML = '';
-
-            files.forEach((file, index) => {
+            // Neue Dateien validieren und zu bestehenden hinzufügen
+            newFiles.forEach(file => {
                 // Dateigröße prüfen
                 if (file.size > MAX_FILE_SIZE) {
                     alert(`Die Datei "${file.name}" ist zu groß. Maximal 5MB erlaubt.\nIhre Datei: ${(file.size/1024/1024).toFixed(2)}MB`);
@@ -595,53 +597,78 @@ function setupFileUploads() {
                     return;
                 }
 
-                const fileSize = (file.size / 1024).toFixed(1);
-                const fileDiv = document.createElement('div');
-                fileDiv.className = 'uploaded-file mb-2';
-                fileDiv.innerHTML = `
-                    <div class="file-info">
-                        <div class="file-name">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <strong>${file.name}</strong>
-                        </div>
-                        <div class="file-size text-muted">${fileSize} KB</div>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="removeFileFromList('${inputId}', ${index})">
-                        <i class="fas fa-times me-1"></i>Löschen
-                    </button>
-                `;
-                preview.appendChild(fileDiv);
+                // Duplikate vermeiden (gleicher Name)
+                const isDuplicate = fileStorage[inputId].some(f => f.name === file.name);
+                if (isDuplicate) {
+                    alert(`Die Datei "${file.name}" wurde bereits hinzugefügt.`);
+                    return;
+                }
+
+                // Datei zum Speicher hinzufügen
+                fileStorage[inputId].push(file);
             });
+
+            // Input aktualisieren mit allen Dateien
+            updateInputFiles(inputId, fileStorage[inputId]);
+
+            // Preview neu aufbauen
+            renderPreview(inputId, fileStorage[inputId], preview);
         });
     });
+
+    // Hilfsfunktion: Input mit allen Dateien aktualisieren
+    function updateInputFiles(inputId, files) {
+        const input = document.getElementById(inputId);
+        const dt = new DataTransfer();
+        files.forEach(file => dt.items.add(file));
+        input.files = dt.files;
+    }
+
+    // Hilfsfunktion: Preview rendern
+    function renderPreview(inputId, files, preview) {
+        preview.innerHTML = '';
+        files.forEach((file, index) => {
+            const fileSize = (file.size / 1024).toFixed(1);
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'uploaded-file mb-2';
+            fileDiv.innerHTML = `
+                <div class="file-info">
+                    <div class="file-name">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <strong>${file.name}</strong>
+                    </div>
+                    <div class="file-size text-muted">${fileSize} KB</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeFileFromList('${inputId}', ${index})">
+                    <i class="fas fa-times me-1"></i>Löschen
+                </button>
+            `;
+            preview.appendChild(fileDiv);
+        });
+    }
+
+    // Global verfügbar machen für onclick-Handler
+    window.fileStorage = fileStorage;
+    window.updateInputFiles = updateInputFiles;
+    window.renderPreview = renderPreview;
 }
 
 // Einzelne Datei aus der Liste entfernen
 function removeFileFromList(inputId, fileIndex) {
-    const input = document.getElementById(inputId);
+    if (!window.fileStorage || !window.fileStorage[inputId]) return;
+
     const previewId = inputId.replace('_photo', '_preview');
     const preview = document.getElementById(previewId);
 
-    if (!input) return;
+    // Datei aus dem Speicher entfernen
+    window.fileStorage[inputId].splice(fileIndex, 1);
 
-    // FileList in Array konvertieren und File entfernen
-    const dt = new DataTransfer();
-    const files = Array.from(input.files);
+    // Input mit verbleibenden Dateien aktualisieren
+    window.updateInputFiles(inputId, window.fileStorage[inputId]);
 
-    files.forEach((file, index) => {
-        if (index !== fileIndex) {
-            dt.items.add(file);
-        }
-    });
-
-    input.files = dt.files;
-
-    // Preview neu aufbauen
+    // Preview neu rendern
     if (preview) {
-        const previews = preview.querySelectorAll('.uploaded-file');
-        if (previews[fileIndex]) {
-            previews[fileIndex].remove();
-        }
+        window.renderPreview(inputId, window.fileStorage[inputId], preview);
     }
 }
 
@@ -650,6 +677,12 @@ function removeFile(inputId) {
     const input = document.getElementById(inputId);
     const previewId = inputId.replace('_photo', '_preview');
     const preview = document.getElementById(previewId);
+
+    // Speicher leeren
+    if (window.fileStorage && window.fileStorage[inputId]) {
+        window.fileStorage[inputId] = [];
+    }
+
     if (input) input.value = '';
     if (preview) preview.innerHTML = '';
 }
