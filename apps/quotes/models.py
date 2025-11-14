@@ -48,11 +48,156 @@ class Precheck(models.Model):
         ('wall', 'Wandmontage'),
         ('stand', 'Ständermontage'),
     ]
-    
+    BUILDING_TYPE_CHOICES = [
+        ('efh', 'Einfamilienhaus'),
+        ('mfh', 'Mehrfamilienhaus'),
+        ('commercial', 'Gewerbe'),
+    ]
+    GROUNDING_CHOICES = [
+        ('yes', 'Ja, vorhanden'),
+        ('no', 'Nein'),
+        ('unknown', 'Unbekannt'),
+    ]
+    FEED_IN_MODE_CHOICES = [
+        ('surplus', 'Überschusseinspeisung'),
+        ('full', 'Volleinspeisung'),
+        ('mixed', 'Gemischt'),
+    ]
+
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
+
+    # === GEBÄUDE & BAUZUSTAND ===
+    building_type = models.CharField(
+        max_length=20,
+        choices=BUILDING_TYPE_CHOICES,
+        blank=True,
+        default='',
+        help_text="Gebäudetyp"
+    )
+    construction_year = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Baujahr des Gebäudes"
+    )
+    has_renovation = models.BooleanField(
+        default=False,
+        help_text="Wurde eine elektrische Sanierung durchgeführt?"
+    )
+    renovation_year = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Jahr der letzten elektrischen Sanierung"
+    )
+
+    # === ELEKTRISCHE INSTALLATION ===
+    has_sls_switch = models.BooleanField(
+        default=False,
+        help_text="SLS-Schalter (Selektiver Hauptleitungsschutzschalter) vorhanden?"
+    )
+    sls_switch_details = models.TextField(
+        blank=True,
+        default='',
+        help_text="Details zum SLS-Schalter"
+    )
+    has_surge_protection_ac = models.BooleanField(
+        default=False,
+        help_text="Überspannungsschutz AC-Seite vorhanden?"
+    )
+    surge_protection_ac_details = models.TextField(
+        blank=True,
+        default='',
+        help_text="Details zum AC-Überspannungsschutz"
+    )
+    has_surge_protection_dc = models.BooleanField(
+        default=False,
+        help_text="Überspannungsschutz DC-Seite gewünscht?"
+    )
+    has_grounding = models.CharField(
+        max_length=10,
+        choices=GROUNDING_CHOICES,
+        blank=True,
+        default='',
+        help_text="Erdung/Potentialausgleich vorhanden?"
+    )
+    has_deep_earth = models.CharField(
+        max_length=10,
+        choices=GROUNDING_CHOICES,
+        blank=True,
+        default='',
+        help_text="Tiefenerder vorhanden?"
+    )
+    grounding_details = models.TextField(
+        blank=True,
+        default='',
+        help_text="Details zu Erdung/Potentialausgleich"
+    )
+
+    # === MONTAGEORTE & KABELWEGE ===
+    inverter_location = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        help_text="Montageort für Wechselrichter"
+    )
+    storage_location = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        help_text="Montageort für Speicher"
+    )
+    distance_meter_to_inverter = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Entfernung Zählerplatz → Wechselrichter in Metern"
+    )
+    grid_operator = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text="Netzbetreiber"
+    )
+    # === PV-SYSTEM & KOMPONENTEN ===
     desired_power_kw = models.DecimalField(max_digits=5, decimal_places=2)
     storage_kwh = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    feed_in_mode = models.CharField(
+        max_length=20,
+        choices=FEED_IN_MODE_CHOICES,
+        blank=True,
+        default='',
+        help_text="Einspeise-Modus"
+    )
+    requires_backup_power = models.BooleanField(
+        default=False,
+        help_text="Inselbetr ieb/Notstrom gewünscht?"
+    )
+    backup_power_details = models.TextField(
+        blank=True,
+        default='',
+        help_text="Details zu Notstrom/Inselbetrieb"
+    )
     own_components = models.BooleanField(default=False, help_text="Kunde bringt eigene Komponenten mit")
+    own_material_description = models.TextField(
+        blank=True,
+        default='',
+        help_text="Beschreibung der eigenen Komponenten"
+    )
+
+    # === ZUSATZGERÄTE ===
+    has_heat_pump = models.BooleanField(
+        default=False,
+        help_text="Wärmepumpe vorhanden?"
+    )
+    heat_pump_cascade = models.BooleanField(
+        default=False,
+        help_text="Kaskadenschaltung für Wärmepumpe gewünscht?"
+    )
+    heat_pump_details = models.TextField(
+        blank=True,
+        default='',
+        help_text="Details zur Wärmepumpe"
+    )
     wallbox = models.BooleanField(default=False, help_text="Kunde wünscht eine Wallbox")
     wallbox_class = models.CharField(
         max_length=4,

@@ -24,7 +24,9 @@
       "Bash(timeout:*)",
       "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" create_test_products.py)",
       "Bash(del \"E:\\ANPR\\PV-Service\\templates\\quotes\\package_select.html\")",
-      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py check)"
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py check)",
+      "Bash(dir \"E:\\ANPR\\PV-Service\\TESTS\\Bilder\" /b)",
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" -m playwright install chromium)"
     ],
     "deny": [],
     "ask": []

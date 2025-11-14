@@ -69,16 +69,30 @@ class PrecheckForm(forms.Form):
         required=False,
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Straße, PLZ Ort'})
     )
+    # === GEBÄUDE & BAUZUSTAND ===
     building_type = forms.ChoiceField(
-        choices=Site._meta.get_field('building_type').choices,
+        choices=[('', 'Bitte wählen...')] + list(Precheck.BUILDING_TYPE_CHOICES),
         label="Gebäudetyp",
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=False
     )
     construction_year = forms.IntegerField(
         required=False,
         label="Baujahr",
         widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '1990'})
     )
+    has_renovation = forms.BooleanField(
+        required=False,
+        label="Letzte Sanierung durchgeführt",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    renovation_year = forms.IntegerField(
+        required=False,
+        label="Jahr der letzten Sanierung",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '2020'})
+    )
+
+    # === ELEKTRISCHE INSTALLATION ===
     main_fuse_ampere = forms.IntegerField(
         label="Hauptsicherung (A)",
         widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '63'})
@@ -89,11 +103,66 @@ class PrecheckForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'}),
         required=False
     )
-    distance_meter_to_hak = forms.DecimalField(
-        max_digits=5, 
+    has_sls_switch = forms.BooleanField(
+        required=False,
+        label="SLS-Schalter vorhanden",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    sls_switch_details = forms.CharField(
+        required=False,
+        label="Details zum SLS-Schalter",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
+    )
+    has_surge_protection_ac = forms.BooleanField(
+        required=False,
+        label="Überspannungsschutz AC vorhanden",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    surge_protection_ac_details = forms.CharField(
+        required=False,
+        label="Details zum Überspannungsschutz AC",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
+    )
+    has_grounding = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Bitte wählen...')] + list(Precheck.GROUNDING_CHOICES),
+        label="Erdung/Potentialausgleich",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    has_deep_earth = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Bitte wählen...')] + list(Precheck.GROUNDING_CHOICES),
+        label="Tiefenerder",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    grounding_details = forms.CharField(
+        required=False,
+        label="Details zu Erdung/Potentialausgleich",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
+    )
+
+    # === MONTAGEORTE & KABELWEGE ===
+    inverter_location = forms.CharField(
+        required=False,
+        label="Montageort Wechselrichter",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    storage_location = forms.CharField(
+        required=False,
+        label="Montageort Speicher",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    distance_meter_to_inverter = forms.DecimalField(
+        max_digits=6,
         decimal_places=2,
-        label="Entfernung Zählerschrank zu HAK (m)",
+        required=True,
+        label="Entfernung Zählerplatz → Wechselrichter (m)",
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': '5.0'})
+    )
+    grid_operator = forms.CharField(
+        required=False,
+        label="Netzbetreiber",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
     )
     
     # Dateien (Fotos/PDFs)
@@ -118,19 +187,50 @@ class PrecheckForm(forms.Form):
         widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/png,application/pdf'})
     )
     
-    # Precheck-Daten
+    # === PV-SYSTEM & KOMPONENTEN ===
     desired_power_kw = forms.DecimalField(
-        max_digits=5, 
+        max_digits=5,
         decimal_places=2,
         label="Gewünschte WR-Leistung (kW)",
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': '3.0'})
     )
     storage_kwh = forms.DecimalField(
-        max_digits=5, 
+        max_digits=5,
         decimal_places=2,
         required=False,
         label="Gewünschte Speicherkapazität (kWh)",
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': '10.0'})
+    )
+    feed_in_mode = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Bitte wählen...')] + list(Precheck.FEED_IN_MODE_CHOICES),
+        label="Einspeise-Modus",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    requires_backup_power = forms.BooleanField(
+        required=False,
+        label="Inselbetrieb/Notstrom gewünscht",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    backup_power_details = forms.CharField(
+        required=False,
+        label="Details zu Notstrom/Inselbetrieb",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
+    )
+    has_surge_protection_dc = forms.BooleanField(
+        required=False,
+        label="Überspannungsschutz DC-Seite gewünscht",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    own_components = forms.BooleanField(
+        required=False,
+        label="Ich bringe eigene Komponenten mit",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    own_material_description = forms.CharField(
+        required=False,
+        label="Beschreibung eigener Komponenten",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
     )
     has_wallbox = forms.BooleanField(
         required=False,
@@ -167,11 +267,24 @@ class PrecheckForm(forms.Form):
         label="Kabellänge Zählerplatz zu Wallbox (m)",
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': '10'})
     )
-    own_components = forms.BooleanField(
+
+    # === WÄRMEPUMPE ===
+    has_heat_pump = forms.BooleanField(
         required=False,
-        label="Ich bringe eigene Komponenten mit",
+        label="Wärmepumpe vorhanden",
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
+    heat_pump_cascade = forms.BooleanField(
+        required=False,
+        label="Kaskadenschaltung für Wärmepumpe gewünscht",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    heat_pump_details = forms.CharField(
+        required=False,
+        label="Details zur Wärmepumpe",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
+    )
+
     notes = forms.CharField(
         required=False,
         label="Anmerkungen",
@@ -218,14 +331,17 @@ class PrecheckForm(forms.Form):
         )
         
         # Site erstellen
+        # Legacy-Feld distance_meter_to_hak wird mit distance_meter_to_inverter befüllt
+        distance_value = self.cleaned_data.get('distance_meter_to_inverter') or 0
+
         site = Site.objects.create(
             customer=customer,
             address=self.cleaned_data.get('customer_address', ''),
-            building_type=self.cleaned_data['building_type'],
-            construction_year=self.cleaned_data['construction_year'],
+            building_type=self.cleaned_data.get('building_type', ''),
+            construction_year=self.cleaned_data.get('construction_year'),
             main_fuse_ampere=self.cleaned_data['main_fuse_ampere'],
             grid_type=self.cleaned_data.get('grid_type') or '',
-            distance_meter_to_hak=self.cleaned_data['distance_meter_to_hak'],
+            distance_meter_to_hak=distance_value,
             meter_cabinet_photo=primary_files['meter_cabinet_photo'],
             hak_photo=primary_files['hak_photo']
         )
@@ -249,16 +365,46 @@ class PrecheckForm(forms.Form):
         # Precheck erstellen mit File-Uploads
         precheck = Precheck.objects.create(
             site=site,
+            # Gebäude & Bauzustand
+            building_type=self.cleaned_data.get('building_type') or '',
+            construction_year=self.cleaned_data.get('construction_year'),
+            has_renovation=self.cleaned_data.get('has_renovation', False),
+            renovation_year=self.cleaned_data.get('renovation_year'),
+            # Elektrische Installation
+            has_sls_switch=self.cleaned_data.get('has_sls_switch', False),
+            sls_switch_details=self.cleaned_data.get('sls_switch_details', ''),
+            has_surge_protection_ac=self.cleaned_data.get('has_surge_protection_ac', False),
+            surge_protection_ac_details=self.cleaned_data.get('surge_protection_ac_details', ''),
+            has_grounding=self.cleaned_data.get('has_grounding', ''),
+            has_deep_earth=self.cleaned_data.get('has_deep_earth', ''),
+            grounding_details=self.cleaned_data.get('grounding_details', ''),
+            # Montageorte & Kabelwege
+            inverter_location=self.cleaned_data.get('inverter_location', ''),
+            storage_location=self.cleaned_data.get('storage_location', ''),
+            distance_meter_to_inverter=self.cleaned_data.get('distance_meter_to_inverter'),
+            grid_operator=self.cleaned_data.get('grid_operator', ''),
+            # PV-System
             desired_power_kw=self.cleaned_data['desired_power_kw'],
-            storage_kwh=self.cleaned_data['storage_kwh'],
-            own_components=self.cleaned_data['own_components'],
+            storage_kwh=self.cleaned_data.get('storage_kwh'),
+            feed_in_mode=self.cleaned_data.get('feed_in_mode', ''),
+            requires_backup_power=self.cleaned_data.get('requires_backup_power', False),
+            backup_power_details=self.cleaned_data.get('backup_power_details', ''),
+            has_surge_protection_dc=self.cleaned_data.get('has_surge_protection_dc', False),
+            own_components=self.cleaned_data.get('own_components', False),
+            own_material_description=self.cleaned_data.get('own_material_description', ''),
+            # Wallbox
             wallbox=has_wallbox,
             wallbox_class=wallbox_power,
             wallbox_mount=wallbox_mount,
             wallbox_cable_prepared=wallbox_cable_prepared,
             wallbox_cable_length_m=wallbox_cable_length,
             wallbox_pv_surplus=wallbox_pv_surplus,
-            notes=self.cleaned_data['notes'],
+            # Wärmepumpe
+            has_heat_pump=self.cleaned_data.get('has_heat_pump', False),
+            heat_pump_cascade=self.cleaned_data.get('heat_pump_cascade', False),
+            heat_pump_details=self.cleaned_data.get('heat_pump_details', ''),
+            # Notizen
+            notes=self.cleaned_data.get('notes', ''),
             # File Uploads
             meter_cabinet_photo=primary_files['meter_cabinet_photo'],
             hak_photo=primary_files['hak_photo'],

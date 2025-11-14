@@ -111,24 +111,34 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <h3 class="step-title"><i class="fas fa-home me-2"></i>Standort & Elektroinstallation</h3>
 <p class="step-subtitle">Technische Daten für die Preisberechnung</p>
 
+<div class="accordion" id="step1Accordion">
+
+<!-- ACCORDION 1: Gebäude & Bauzustand -->
+<div class="accordion-item">
+<h2 class="accordion-header" id="headingBuilding">
+<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBuilding" aria-expanded="true" aria-controls="collapseBuilding">
+<i class="fas fa-building me-2"></i>Gebäude & Bauzustand
+</button>
+</h2>
+<div id="collapseBuilding" class="accordion-collapse collapse show" aria-labelledby="headingBuilding" data-bs-parent="#step1Accordion">
+<div class="accordion-body">
+
 <div class="row">
 <div class="col-md-6">
 <div class="form-floating">
-<select class="form-select" id="building_type" name="building_type" required>
+<select class="form-select" id="building_type" name="building_type">
 <option value="">Wählen Sie...</option>
 <option value="efh">Einfamilienhaus</option>
 <option value="mfh">Mehrfamilienhaus</option>
 <option value="commercial">Gewerbe</option>
 </select>
-<label>Gebäudetyp *</label>
-<div class="invalid-feedback"></div><div class="text-danger small mt-2" id="consent_hint" style="display:none">Bitte bestaetigen Sie die Verarbeitung Ihrer Daten.</div>
+<label>Gebäudetyp</label>
 </div>
 </div>
 <div class="col-md-6">
 <div class="form-floating">
-<input type="number" class="form-control" id="construction_year" name="construction_year" min="1900" max="2025" required>
-<label>Baujahr *</label>
-<div class="invalid-feedback"></div>
+<input type="number" class="form-control" id="construction_year" name="construction_year" min="1900" max="2025">
+<label>Baujahr</label>
 </div>
 </div>
 </div>
@@ -143,6 +153,20 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <label>Jahr der letzten Sanierung</label>
 <div class="form-text">Elektrische Sanierung (z.B. Zählerschrank-Erneuerung)</div>
 </div>
+
+</div>
+</div>
+</div>
+
+<!-- ACCORDION 2: Elektrische Installation -->
+<div class="accordion-item">
+<h2 class="accordion-header" id="headingElectrical">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseElectrical" aria-expanded="false" aria-controls="collapseElectrical">
+<i class="fas fa-bolt me-2"></i>Elektrische Installation
+</button>
+</h2>
+<div id="collapseElectrical" class="accordion-collapse collapse" aria-labelledby="headingElectrical" data-bs-parent="#step1Accordion">
+<div class="accordion-body">
 
 <div class="row">
 <div class="col-md-6">
@@ -161,17 +185,75 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <option value="3p">3-Polig</option>
 <option value="unknown">Unbekannt</option>
 </select>
-<label>Hausanschluss (optional)</label>
+<label>Hausanschluss</label>
 </div>
 </div>
 </div>
 
-<div class="form-floating">
-<input type="number" class="form-control" id="distance_meter_to_hak" name="distance_meter_to_hak" min="0" max="200" required>
-<label>Entfernung Zählerplatz → Montageort Wechselrichter (Meter) *</label>
-<div class="invalid-feedback"></div>
-<div class="form-text">Kabelweg für Wechselrichter-Anschluss</div>
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="has_sls_switch" name="has_sls_switch" onchange="toggleSlsDetails()">
+<label class="form-check-label">SLS-Schalter vorhanden</label>
+<div class="form-text">Selektiver Hauptleitungsschutzschalter</div>
 </div>
+
+<div class="form-floating" id="slsDetailsField" style="display:none">
+<textarea class="form-control" id="sls_switch_details" name="sls_switch_details" style="height:80px"></textarea>
+<label>Details zum SLS-Schalter</label>
+</div>
+
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="has_surge_protection_ac" name="has_surge_protection_ac" onchange="toggleSurgeProtectionAcDetails()">
+<label class="form-check-label">Überspannungsschutz AC vorhanden</label>
+</div>
+
+<div class="form-floating" id="surgeProtectionAcDetailsField" style="display:none">
+<textarea class="form-control" id="surge_protection_ac_details" name="surge_protection_ac_details" style="height:80px"></textarea>
+<label>Details zum Überspannungsschutz AC</label>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="form-floating">
+<select class="form-select" id="has_grounding" name="has_grounding" onchange="toggleGroundingDetails()">
+<option value="">Bitte wählen...</option>
+<option value="yes">Ja, vorhanden</option>
+<option value="no">Nein</option>
+<option value="unknown">Unbekannt</option>
+</select>
+<label>Erdung/Potentialausgleich</label>
+</div>
+</div>
+<div class="col-md-6">
+<div class="form-floating">
+<select class="form-select" id="has_deep_earth" name="has_deep_earth">
+<option value="">Bitte wählen...</option>
+<option value="yes">Ja, vorhanden</option>
+<option value="no">Nein</option>
+<option value="unknown">Unbekannt</option>
+</select>
+<label>Tiefenerder</label>
+</div>
+</div>
+</div>
+
+<div class="form-floating" id="groundingDetailsField" style="display:none">
+<textarea class="form-control" id="grounding_details" name="grounding_details" style="height:80px"></textarea>
+<label>Details zu Erdung/Potentialausgleich</label>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- ACCORDION 3: Montageorte & Kabelwege -->
+<div class="accordion-item">
+<h2 class="accordion-header" id="headingMounting">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMounting" aria-expanded="false" aria-controls="collapseMounting">
+<i class="fas fa-map-marker-alt me-2"></i>Montageorte & Kabelwege
+</button>
+</h2>
+<div id="collapseMounting" class="accordion-collapse collapse" aria-labelledby="headingMounting" data-bs-parent="#step1Accordion">
+<div class="accordion-body">
 
 <div class="row">
 <div class="col-md-6">
@@ -200,9 +282,16 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <option value="utility_room">Hauswirtschaftsraum</option>
 <option value="other">Anderer Ort</option>
 </select>
-<label>Montageort Speicher (optional)</label>
+<label>Montageort Speicher</label>
 </div>
 </div>
+</div>
+
+<div class="form-floating">
+<input type="number" class="form-control" id="distance_meter_to_inverter" name="distance_meter_to_inverter" min="0" max="200" step="0.1" required>
+<label>Entfernung Zählerplatz → Montageort Wechselrichter (Meter) *</label>
+<div class="invalid-feedback"></div>
+<div class="form-text">Kabelweg für Wechselrichter-Anschluss</div>
 </div>
 
 <div class="form-floating">
@@ -213,13 +302,13 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <option value="vattenfall">Vattenfall</option>
 <option value="other">Anderer Netzbetreiber</option>
 </select>
-<label>Netzbetreiber (optional)</label>
+<label>Netzbetreiber</label>
 </div>
 
-<div class="form-check">
-<input class="form-check-input" type="checkbox" id="has_wallbox" name="has_wallbox" onchange="toggleWallboxVisibility()">
-<label class="form-check-label"><strong>Wallbox gewünscht</strong></label>
-<div class="form-text">Ladestation für Elektrofahrzeuge</div>
+</div>
+</div>
+</div>
+
 </div>
 
 <div class="btn-navigation">
@@ -233,6 +322,18 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <h3 class="step-title"><i class="fas fa-solar-panel me-2"></i>Ihre PV-Wünsche</h3>
 <p class="step-subtitle">Welche Leistung und Ausstattung wünschen Sie sich?</p>
 
+<div class="accordion" id="step2Accordion">
+
+<!-- ACCORDION 1: PV-Konfiguration -->
+<div class="accordion-item">
+<h2 class="accordion-header" id="headingPvConfig">
+<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePvConfig" aria-expanded="true" aria-controls="collapsePvConfig">
+<i class="fas fa-solar-panel me-2"></i>PV-Konfiguration
+</button>
+</h2>
+<div id="collapsePvConfig" class="accordion-collapse collapse show" aria-labelledby="headingPvConfig" data-bs-parent="#step2Accordion">
+<div class="accordion-body">
+
 <div class="form-floating">
 <input type="number" class="form-control" id="desired_power_kw" name="desired_power_kw" min="0.6" max="30" step="0.1" required>
 <label>Wechselrichter-Leistung (kW) *</label>
@@ -242,14 +343,73 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 
 <div class="form-floating">
 <input type="number" class="form-control" id="storage_kwh" name="storage_kwh" min="0" max="100" step="0.1">
-<label>Gewünschte Speicherkapazität (kWh, optional)</label>
+<label>Gewünschte Speicherkapazität (kWh)</label>
 <div class="form-text">Batteriespeicher. Typisch: 5-15 kWh</div>
 </div>
 
+<div class="form-floating">
+<select class="form-select" id="feed_in_mode" name="feed_in_mode">
+<option value="">Bitte wählen...</option>
+<option value="surplus">Überschusseinspeisung</option>
+<option value="full">Volleinspeisung</option>
+<option value="mixed">Gemischt</option>
+</select>
+<label>Einspeise-Modus</label>
+<div class="form-text">Wie möchten Sie den erzeugten Strom nutzen?</div>
+</div>
 
-<div id="wallboxFields">
-<h6 class="text-success mb-3"><i class="fas fa-charging-station me-2"></i>Wallbox-Konfiguration</h6>
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="requires_backup_power" name="requires_backup_power" onchange="toggleBackupPowerDetails()">
+<label class="form-check-label">Inselbetrieb/Notstrom gewünscht</label>
+<div class="form-text">Stromversorgung bei Netzausfall</div>
+</div>
 
+<div class="form-floating" id="backupPowerDetailsField" style="display:none">
+<textarea class="form-control" id="backup_power_details" name="backup_power_details" style="height:80px"></textarea>
+<label>Details zu Notstrom/Inselbetrieb</label>
+<div class="form-text">Welche Verbraucher sollen bei Stromausfall versorgt werden?</div>
+</div>
+
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="has_surge_protection_dc" name="has_surge_protection_dc">
+<label class="form-check-label">Überspannungsschutz DC-Seite gewünscht</label>
+<div class="form-text">Schutz für PV-Module und DC-Verkabelung</div>
+</div>
+
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="own_components" name="own_components">
+<label class="form-check-label">Ich bringe eigene Komponenten mit</label>
+<div class="form-text">Wechselrichter, Speicher oder Module bereits vorhanden</div>
+</div>
+
+<div class="form-floating" id="ownMaterialField" style="display:none">
+<textarea class="form-control" id="own_material_description" name="own_material_description" style="height:100px"></textarea>
+<label>Eigenes Material beschreiben</label>
+<div class="form-text">Welche Komponenten bringen Sie mit? (z.B. Wechselrichter, Module, Speicher)</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- ACCORDION 2: Zusatzgeräte -->
+<div class="accordion-item">
+<h2 class="accordion-header" id="headingExtras">
+<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExtras" aria-expanded="false" aria-controls="collapseExtras">
+<i class="fas fa-plug me-2"></i>Zusatzgeräte
+</button>
+</h2>
+<div id="collapseExtras" class="accordion-collapse collapse" aria-labelledby="headingExtras" data-bs-parent="#step2Accordion">
+<div class="accordion-body">
+
+<!-- Wallbox -->
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="has_wallbox" name="has_wallbox" onchange="toggleWallboxVisibility()">
+<label class="form-check-label"><strong>Wallbox gewünscht</strong></label>
+<div class="form-text">Ladestation für Elektrofahrzeuge</div>
+</div>
+
+<div id="wallboxFields" style="display:none">
 <div class="form-floating mb-3">
 <select class="form-select" id="wallbox_power" name="wallbox_power">
 <option value="">Wählen Sie...</option>
@@ -289,7 +449,33 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 </div>
 </div>
 
-<div class="info-card">
+<!-- Wärmepumpe -->
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="has_heat_pump" name="has_heat_pump" onchange="toggleHeatPumpDetails()">
+<label class="form-check-label"><strong>Wärmepumpe vorhanden</strong></label>
+</div>
+
+<div id="heatPumpFields" style="display:none">
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="heat_pump_cascade" name="heat_pump_cascade">
+<label class="form-check-label">Kaskadenschaltung für Wärmepumpe gewünscht</label>
+<div class="form-text">Optimierte Steuerung der Wärmepumpe mit PV-Überschuss</div>
+</div>
+
+<div class="form-floating">
+<textarea class="form-control" id="heat_pump_details" name="heat_pump_details" style="height:80px"></textarea>
+<label>Details zur Wärmepumpe</label>
+<div class="form-text">Typ, Leistung, Hersteller (falls bekannt)</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+
+<div class="info-card mt-3">
 <h6><i class="fas fa-lightbulb me-2"></i>Hinweis</h6>
 <p class="mb-0">Im nächsten Schritt sehen Sie eine detaillierte Preisberechnung basierend auf Ihren Angaben.</p>
 </div>
@@ -479,21 +665,37 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 
 <div class="summary-card">
 <div class="summary-section">
-<h6><i class="fas fa-home me-2"></i>Standort & Elektro</h6>
-<div class="summary-item"><span>Gebäudetyp</span><strong id="sum_building_type">-</strong></div>
-<div class="summary-item"><span>Baujahr</span><strong id="sum_construction_year">-</strong></div>
+<h6><i class="fas fa-home me-2"></i>Gebäude & Bauzustand</h6>
+<div class="summary-item" id="sum_building_type_row" style="display:none"><span>Gebäudetyp</span><strong id="sum_building_type">-</strong></div>
+<div class="summary-item" id="sum_construction_year_row" style="display:none"><span>Baujahr</span><strong id="sum_construction_year">-</strong></div>
 <div class="summary-item" id="sum_renovation_row" style="display:none"><span>Sanierung</span><strong id="sum_renovation_year">-</strong></div>
+</div>
+
+<div class="summary-section">
+<h6><i class="fas fa-bolt me-2"></i>Elektrische Installation</h6>
 <div class="summary-item"><span>Hauptsicherung</span><strong id="sum_main_fuse">-</strong></div>
-<div class="summary-item"><span>Hausanschluss</span><strong id="sum_grid_type">-</strong></div>
-<div class="summary-item"><span>Kabelweg WR</span><strong id="sum_distance">-</strong></div>
+<div class="summary-item" id="sum_grid_type_row" style="display:none"><span>Hausanschluss</span><strong id="sum_grid_type">-</strong></div>
+<div class="summary-item" id="sum_sls_row" style="display:none"><span>SLS-Schalter</span><strong>Vorhanden</strong></div>
+<div class="summary-item" id="sum_surge_ac_row" style="display:none"><span>Überspannungsschutz AC</span><strong>Vorhanden</strong></div>
+<div class="summary-item" id="sum_grounding_row" style="display:none"><span>Erdung/Potentialausgleich</span><strong id="sum_grounding">-</strong></div>
+<div class="summary-item" id="sum_deep_earth_row" style="display:none"><span>Tiefenerder</span><strong id="sum_deep_earth">-</strong></div>
+</div>
+
+<div class="summary-section">
+<h6><i class="fas fa-map-marker-alt me-2"></i>Montageorte & Kabelwege</h6>
 <div class="summary-item"><span>Montageort WR</span><strong id="sum_inverter_loc">-</strong></div>
 <div class="summary-item" id="sum_storage_loc_row" style="display:none"><span>Montageort Speicher</span><strong id="sum_storage_loc">-</strong></div>
+<div class="summary-item"><span>Kabelweg WR</span><strong id="sum_distance">-</strong></div>
+<div class="summary-item" id="sum_grid_operator_row" style="display:none"><span>Netzbetreiber</span><strong id="sum_grid_operator">-</strong></div>
 </div>
 
 <div class="summary-section">
 <h6><i class="fas fa-solar-panel me-2"></i>PV-System</h6>
 <div class="summary-item"><span>Wechselrichter</span><strong id="sum_wr_power">-</strong></div>
 <div class="summary-item" id="sum_storage_row" style="display:none"><span>Speicher</span><strong id="sum_storage">-</strong></div>
+<div class="summary-item" id="sum_feed_in_mode_row" style="display:none"><span>Einspeise-Modus</span><strong id="sum_feed_in_mode">-</strong></div>
+<div class="summary-item" id="sum_backup_power_row" style="display:none"><span>Notstrom</span><strong>Gewünscht</strong></div>
+<div class="summary-item" id="sum_surge_dc_row" style="display:none"><span>Überspannungsschutz DC</span><strong>Gewünscht</strong></div>
 <div class="summary-item" id="sum_own_comp_row" style="display:none"><span>Eigene Komponenten</span><strong id="sum_own_comp">Ja</strong></div>
 <div class="summary-item" id="sum_material_desc_row" style="display:none"><span>Material-Beschreibung</span><strong id="sum_material_desc" style="white-space:pre-wrap;text-align:right;max-width:60%">-</strong></div>
 </div>
@@ -504,6 +706,12 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <div class="summary-item"><span>Montage</span><strong id="sum_wb_mount">-</strong></div>
 <div class="summary-item" id="sum_wb_pv_row" style="display:none"><span>PV-Überschussladen</span><strong>Ja</strong></div>
 <div class="summary-item" id="sum_wb_cable_row"><span>Kabelverlegung</span><strong id="sum_wb_cable">-</strong></div>
+</div>
+
+<div class="summary-section" id="sum_heat_pump_section" style="display:none">
+<h6><i class="fas fa-fire me-2"></i>Wärmepumpe</h6>
+<div class="summary-item"><span>Vorhanden</span><strong>Ja</strong></div>
+<div class="summary-item" id="sum_hp_cascade_row" style="display:none"><span>Kaskadenschaltung</span><strong>Gewünscht</strong></div>
 </div>
 
 <div class="summary-section" id="sum_photos_section" style="display:none">
@@ -580,15 +788,14 @@ updateProgress();setupFileUploads();setupValidation();loadFormData();setupOwnCom
 
 function setupOwnComponentsToggle(){
 const checkbox=document.getElementById('own_components');
-const textarea=document.getElementById('own_material_description');
+const field=document.getElementById('ownMaterialField');
 
 checkbox.addEventListener('change',function(){
 if(this.checked){
-textarea.disabled=false;
-textarea.focus();
+field.style.display='block';
 }else{
-textarea.disabled=true;
-textarea.value='';
+field.style.display='none';
+document.getElementById('own_material_description').value='';
 }
 });
 }
@@ -651,6 +858,28 @@ function toggleRenovationYear(){
 document.getElementById('renovationYearField').style.display=document.getElementById('has_renovation').checked?'block':'none';
 }
 
+function toggleSlsDetails(){
+document.getElementById('slsDetailsField').style.display=document.getElementById('has_sls_switch').checked?'block':'none';
+}
+
+function toggleSurgeProtectionAcDetails(){
+document.getElementById('surgeProtectionAcDetailsField').style.display=document.getElementById('has_surge_protection_ac').checked?'block':'none';
+}
+
+function toggleGroundingDetails(){
+const groundingValue=document.getElementById('has_grounding').value;
+document.getElementById('groundingDetailsField').style.display=(groundingValue==='yes'||groundingValue==='unknown')?'block':'none';
+}
+
+function toggleBackupPowerDetails(){
+document.getElementById('backupPowerDetailsField').style.display=document.getElementById('requires_backup_power').checked?'block':'none';
+}
+
+function toggleHeatPumpDetails(){
+const isChecked=document.getElementById('has_heat_pump').checked;
+document.getElementById('heatPumpFields').style.display=isChecked?'block':'none';
+}
+
 function syncSiteAddress(){
 const addressField=document.getElementById('customer_address');
 const target=document.getElementById('site_address');
@@ -658,6 +887,8 @@ if(target)target.value=addressField?addressField.value:'';
 }
 
 function toggleWallboxVisibility(){
+const isChecked=document.getElementById('has_wallbox').checked;
+document.getElementById('wallboxFields').style.display=isChecked?'block':'none';
 saveFormData();
 }
 
@@ -756,9 +987,26 @@ function updateSummary(){
 const buildingTypes={'efh':'Einfamilienhaus','mfh':'Mehrfamilienhaus','commercial':'Gewerbe'};
 const gridTypes={'1p':'1-Polig','3p':'3-Polig','unknown':'Unbekannt'};
 const locations={'basement':'Keller','garage':'Garage','attic':'Dachboden','utility_room':'Hauswirtschaftsraum','outdoor':'Außenbereich','other':'Anderer Ort'};
+const groundingTypes={'yes':'Ja, vorhanden','no':'Nein','unknown':'Unbekannt'};
+const feedInModes={'surplus':'Überschusseinspeisung','full':'Volleinspeisung','mixed':'Gemischt'};
 
-document.getElementById('sum_building_type').textContent=buildingTypes[document.getElementById('building_type').value]||'-';
-document.getElementById('sum_construction_year').textContent=document.getElementById('construction_year').value||'-';
+const buildingType=document.getElementById('building_type').value;
+const buildingTypeRow=document.getElementById('sum_building_type_row');
+if(buildingType){
+buildingTypeRow.style.display='flex';
+document.getElementById('sum_building_type').textContent=buildingTypes[buildingType]||'-';
+}else{
+buildingTypeRow.style.display='none';
+}
+
+const constructionYear=document.getElementById('construction_year').value;
+const constructionYearRow=document.getElementById('sum_construction_year_row');
+if(constructionYear){
+constructionYearRow.style.display='flex';
+document.getElementById('sum_construction_year').textContent=constructionYear;
+}else{
+constructionYearRow.style.display='none';
+}
 
 const renovationCheckbox=document.getElementById('has_renovation');
 const renovationRow=document.getElementById('sum_renovation_row');
@@ -770,9 +1018,52 @@ renovationRow.style.display='none';
 }
 
 document.getElementById('sum_main_fuse').textContent=(document.getElementById('main_fuse_ampere').value||'-')+' A';
-document.getElementById('sum_grid_type').textContent=gridTypes[document.getElementById('grid_type').value]||'-';
-document.getElementById('sum_distance').textContent=(document.getElementById('distance_meter_to_hak').value||'0')+' m';
+
+const gridType=document.getElementById('grid_type').value;
+const gridTypeRow=document.getElementById('sum_grid_type_row');
+if(gridType){
+gridTypeRow.style.display='flex';
+document.getElementById('sum_grid_type').textContent=gridTypes[gridType]||'-';
+}else{
+gridTypeRow.style.display='none';
+}
+
+const slsRow=document.getElementById('sum_sls_row');
+slsRow.style.display=document.getElementById('has_sls_switch').checked?'flex':'none';
+
+const surgeAcRow=document.getElementById('sum_surge_ac_row');
+surgeAcRow.style.display=document.getElementById('has_surge_protection_ac').checked?'flex':'none';
+
+const grounding=document.getElementById('has_grounding').value;
+const groundingRow=document.getElementById('sum_grounding_row');
+if(grounding){
+groundingRow.style.display='flex';
+document.getElementById('sum_grounding').textContent=groundingTypes[grounding]||'-';
+}else{
+groundingRow.style.display='none';
+}
+
+const deepEarth=document.getElementById('has_deep_earth').value;
+const deepEarthRow=document.getElementById('sum_deep_earth_row');
+if(deepEarth){
+deepEarthRow.style.display='flex';
+document.getElementById('sum_deep_earth').textContent=groundingTypes[deepEarth]||'-';
+}else{
+deepEarthRow.style.display='none';
+}
+
 document.getElementById('sum_inverter_loc').textContent=locations[document.getElementById('inverter_location').value]||'-';
+document.getElementById('sum_distance').textContent=(document.getElementById('distance_meter_to_inverter').value||'0')+' m';
+
+const gridOperator=document.getElementById('grid_operator').value;
+const gridOperatorRow=document.getElementById('sum_grid_operator_row');
+if(gridOperator){
+gridOperatorRow.style.display='flex';
+const operatorMap={'hamburgnetze':'Hamburg Netz GmbH','eon':'E.ON Hanse AG','vattenfall':'Vattenfall','other':'Anderer'};
+document.getElementById('sum_grid_operator').textContent=operatorMap[gridOperator]||gridOperator;
+}else{
+gridOperatorRow.style.display='none';
+}
 
 const storageLoc=document.getElementById('storage_location').value;
 const storageLocRow=document.getElementById('sum_storage_loc_row');
@@ -785,7 +1076,6 @@ storageLocRow.style.display='none';
 
 document.getElementById('sum_wr_power').textContent=(document.getElementById('desired_power_kw').value||'0')+' kW';
 
-
 const storageKwh=document.getElementById('storage_kwh').value;
 const storageRow=document.getElementById('sum_storage_row');
 if(storageKwh&&Number(storageKwh)>0){
@@ -794,6 +1084,21 @@ document.getElementById('sum_storage').textContent=storageKwh+' kWh';
 }else{
 storageRow.style.display='none';
 }
+
+const feedInMode=document.getElementById('feed_in_mode').value;
+const feedInModeRow=document.getElementById('sum_feed_in_mode_row');
+if(feedInMode){
+feedInModeRow.style.display='flex';
+document.getElementById('sum_feed_in_mode').textContent=feedInModes[feedInMode]||'-';
+}else{
+feedInModeRow.style.display='none';
+}
+
+const backupPowerRow=document.getElementById('sum_backup_power_row');
+backupPowerRow.style.display=document.getElementById('requires_backup_power').checked?'flex':'none';
+
+const surgeDcRow=document.getElementById('sum_surge_dc_row');
+surgeDcRow.style.display=document.getElementById('has_surge_protection_dc').checked?'flex':'none';
 
 const ownComponents=document.getElementById('own_components').checked;
 const ownCompRow=document.getElementById('sum_own_comp_row');
@@ -837,6 +1142,16 @@ document.getElementById('sum_wb_cable').textContent=cableLen?cableLen+' m verleg
 }
 }else{
 wallboxSection.style.display='none';
+}
+
+const heatPumpSection=document.getElementById('sum_heat_pump_section');
+const hasHeatPump=document.getElementById('has_heat_pump').checked;
+if(hasHeatPump){
+heatPumpSection.style.display='block';
+const hpCascadeRow=document.getElementById('sum_hp_cascade_row');
+hpCascadeRow.style.display=document.getElementById('heat_pump_cascade').checked?'flex':'none';
+}else{
+heatPumpSection.style.display='none';
 }
 
 if(priceData){
@@ -1117,16 +1432,18 @@ if(field&&field.type!=='file'){
 if(field.type==='checkbox'){
 field.checked=data[key]==='on';
 if(key==='has_renovation')toggleRenovationYear();
-if(key==='has_wallbox'){
-document.getElementById('wallboxFields').style.display=field.checked?'block':'none';
-}
+if(key==='has_sls_switch')toggleSlsDetails();
+if(key==='has_surge_protection_ac')toggleSurgeProtectionAcDetails();
+if(key==='requires_backup_power')toggleBackupPowerDetails();
+if(key==='has_heat_pump')toggleHeatPumpDetails();
+if(key==='has_wallbox')toggleWallboxVisibility();
 if(key==='wallbox_cable_installed')toggleWallboxCableLength();
 if(key==='own_components'){
-const textarea=document.getElementById('own_material_description');
-textarea.disabled=!field.checked;
+document.getElementById('ownMaterialField').style.display=field.checked?'block':'none';
 }
 }else{
 field.value=data[key];
+if(key==='has_grounding')toggleGroundingDetails();
 }
 }
 });
