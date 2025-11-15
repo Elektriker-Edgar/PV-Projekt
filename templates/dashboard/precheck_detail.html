@@ -325,7 +325,11 @@
                         <div class="col-md-6">
                             <div class="data-field">
                                 <span class="data-label">Wechselrichter-Standort</span>
-                                <span class="data-value">{{ precheck.inverter_location }}</span>
+                                <span class="data-value">
+                                    <span class="badge badge-info">
+                                        {{ precheck.get_inverter_location_display }}
+                                    </span>
+                                </span>
                             </div>
                         </div>
                         {% endif %}
@@ -333,7 +337,11 @@
                         <div class="col-md-6">
                             <div class="data-field">
                                 <span class="data-label">Speicher-Standort</span>
-                                <span class="data-value">{{ precheck.storage_location }}</span>
+                                <span class="data-value">
+                                    <span class="badge badge-secondary">
+                                        {{ precheck.get_storage_location_display }}
+                                    </span>
+                                </span>
                             </div>
                         </div>
                         {% endif %}

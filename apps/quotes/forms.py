@@ -142,15 +142,17 @@ class PrecheckForm(forms.Form):
     )
 
     # === MONTAGEORTE & KABELWEGE ===
-    inverter_location = forms.CharField(
-        required=False,
+    inverter_location = forms.ChoiceField(
+        required=True,
         label="Montageort Wechselrichter",
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        choices=[('', 'Wählen Sie...')] + list(Precheck.INVERTER_LOCATION_CHOICES),
+        widget=forms.Select(attrs={'class': 'form-control'})
     )
-    storage_location = forms.CharField(
+    storage_location = forms.ChoiceField(
         required=False,
         label="Montageort Speicher",
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        choices=[('', 'Kein Speicher geplant')] + list(Precheck.STORAGE_LOCATION_CHOICES),
+        widget=forms.Select(attrs={'class': 'form-control'})
     )
     distance_meter_to_inverter = forms.DecimalField(
         max_digits=6,

@@ -35,7 +35,8 @@
       "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py makemigrations quotes --name remove_priceconfig)",
       "Bash(del \"E:\\ANPR\\PV-Service\\templates\\dashboard\\price_list.html\")",
       "Bash(del /F \"E:\\ANPR\\PV-Service\\templates\\dashboard\\price_list.html\")",
-      "Bash(cmd /c del /F \"E:\\ANPR\\PV-Service\\templates\\dashboard\\price_list.html\")"
+      "Bash(cmd /c del /F \"E:\\ANPR\\PV-Service\\templates\\dashboard\\price_list.html\")",
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py makemigrations quotes --name add_location_choices)"
     ],
     "deny": [],
     "ask": []

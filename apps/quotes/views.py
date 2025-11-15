@@ -42,14 +42,14 @@ def precheck_wizard(request):
         if form.is_valid():
             uploaded_files = _collect_uploaded_files(request.FILES)
             precheck = form.save(uploaded_files=uploaded_files)
-            
+
             # Automatische Angebotserstellung
             try:
                 quote, pricing = create_quote_from_precheck(precheck.id)
                 customer = precheck.site.customer
                 customer.last_quote_number = quote.quote_number
                 customer.save(update_fields=['last_quote_number'])
-                messages.success(request, 
+                messages.success(request,
                     f'Ihre Vorprüfung wurde erfolgreich eingereicht. '
                     f'Angebot {quote.quote_number} wurde erstellt und wird geprüft. '
                     f'Wir melden uns binnen 24 Stunden bei Ihnen.')
@@ -62,6 +62,10 @@ def precheck_wizard(request):
                 pricing = calculate_pricing(pricing_input_from_precheck(precheck))
                 messages.success(request, 'Ihre Vorprüfung wurde erfolgreich eingereicht. Wir melden uns binnen 24 Stunden bei Ihnen.')
                 return render(request, 'quotes/precheck_success.html', {'precheck': precheck, 'pricing': pricing, 'quote': None})
+        else:
+            # Validierungsfehler: Formular mit Fehlern zurückgeben
+            messages.error(request, 'Bitte überprüfen Sie Ihre Eingaben. Einige Felder sind ungültig oder erforderlich.')
+            return render(request, 'quotes/precheck_wizard.html', {'form': form})
     else:
         form = PrecheckForm()
     

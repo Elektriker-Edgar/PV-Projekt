@@ -63,6 +63,23 @@ class Precheck(models.Model):
         ('full', 'Volleinspeisung'),
         ('mixed', 'Gemischt'),
     ]
+    INVERTER_LOCATION_CHOICES = [
+        ('basement', 'Keller'),
+        ('garage', 'Garage'),
+        ('attic', 'Dachboden'),
+        ('utility_room', 'Hauswirtschaftsraum'),
+        ('outdoor', 'Außenbereich (wettergeschützt)'),
+        ('other', 'Anderer Ort'),
+    ]
+    STORAGE_LOCATION_CHOICES = [
+        ('same_as_inverter', 'Gleicher Ort wie Wechselrichter'),
+        ('basement', 'Keller'),
+        ('garage', 'Garage'),
+        ('attic', 'Dachboden'),
+        ('utility_room', 'Hauswirtschaftsraum'),
+        ('outdoor', 'Außenbereich (wettergeschützt)'),
+        ('other', 'Anderer Ort'),
+    ]
 
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
 
@@ -135,12 +152,14 @@ class Precheck(models.Model):
     # === MONTAGEORTE & KABELWEGE ===
     inverter_location = models.CharField(
         max_length=50,
+        choices=INVERTER_LOCATION_CHOICES,
         blank=True,
         default='',
         help_text="Montageort für Wechselrichter"
     )
     storage_location = models.CharField(
         max_length=50,
+        choices=STORAGE_LOCATION_CHOICES,
         blank=True,
         default='',
         help_text="Montageort für Speicher"
