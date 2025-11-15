@@ -6,12 +6,6 @@
     <li class="breadcrumb-item active">Angebote</li>
 {% endblock %}
 
-{% block header_actions %}
-    <a href="{% url 'dashboard:quote_export' %}" class="btn btn-sm btn-outline-primary">
-        <i class="fas fa-download"></i> CSV Export
-    </a>
-{% endblock %}
-
 {% block content %}
 <div class="fade-in">
     <!-- Page Header -->
@@ -190,7 +184,7 @@
                                        title="Details anzeigen">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{% url 'dashboard:quote_pdf' quote.id %}"
+                                    <a href="{% url 'quotes:quote_pdf' quote.quote_number %}"
                                        class="btn btn-sm btn-success"
                                        title="PDF herunterladen">
                                         <i class="fas fa-file-pdf"></i>
