@@ -26,8 +26,8 @@ from django.views.generic import (
 )
 
 from apps.customers.models import Customer, Site
-from apps.quotes.models import Precheck, Quote, PriceConfig, QuoteItem, ProductCategory, Product
-from .forms import PriceConfigForm, ProductCategoryForm, ProductForm
+from apps.quotes.models import Precheck, Quote, QuoteItem, ProductCategory, Product
+from .forms import ProductCategoryForm, ProductForm
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
@@ -607,103 +607,6 @@ class PrecheckPDFExportView(LoginRequiredMixin, View):
         doc.build(story)
 
         return response
-
-
-class PriceConfigListView(LoginRequiredMixin, ListView):
-    """
-    Liste aller Preiskonfigurationen
-
-    Gruppiert nach Kategorien:
-    - Anfahrt & Zonen
-    - Zuschläge
-    - Pakete
-    - Material
-    - Wallbox
-    - Kabel
-    """
-    model = PriceConfig
-    template_name = 'dashboard/price_list.html'
-    context_object_name = 'prices'
-    login_url = '/admin/login/'
-
-    def get_queryset(self):
-        """
-        Alle Preiskonfigurationen sortiert nach Typ
-        """
-        return PriceConfig.objects.all().order_by('price_type')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Gruppiere Preise nach Kategorien
-        prices = self.get_queryset()
-
-        grouped_prices = {
-            'Anfahrt & Zonen': [],
-            'Zuschläge': [],
-            'Pakete': [],
-            'Material': [],
-            'Wallbox': [],
-            'Kabel': [],
-        }
-
-        for price in prices:
-            price_type = price.price_type
-
-            if price_type.startswith('travel_'):
-                grouped_prices['Anfahrt & Zonen'].append(price)
-            elif price_type.startswith('surcharge_') or price_type.startswith('discount_'):
-                grouped_prices['Zuschläge'].append(price)
-            elif price_type.startswith('package_'):
-                grouped_prices['Pakete'].append(price)
-            elif price_type.startswith('material_'):
-                grouped_prices['Material'].append(price)
-            elif price_type.startswith('wallbox_'):
-                grouped_prices['Wallbox'].append(price)
-            elif price_type.startswith('cable_'):
-                grouped_prices['Kabel'].append(price)
-
-        context['grouped_prices'] = grouped_prices
-
-        return context
-
-
-class PriceConfigUpdateView(LoginRequiredMixin, UpdateView):
-    """
-    Bearbeiten einer Preiskonfiguration
-
-    Erlaubt Änderung von:
-    - Wert (value)
-    - Beschreibung
-
-    Typ kann nicht geändert werden (unique constraint)
-    """
-    model = PriceConfig
-    form_class = PriceConfigForm
-    template_name = 'dashboard/price_update.html'
-    context_object_name = 'price'
-    success_url = reverse_lazy('dashboard:price_list')
-    login_url = '/admin/login/'
-
-    def form_valid(self, form):
-        """
-        Bei erfolgreicher Validierung: Success-Message
-        """
-        messages.success(
-            self.request,
-            f'Preiskonfiguration "{self.object.get_price_type_display()}" wurde aktualisiert.'
-        )
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        """
-        Bei Validierungsfehlern: Error-Message
-        """
-        messages.error(
-            self.request,
-            'Fehler beim Speichern der Preiskonfiguration. Bitte prüfen Sie Ihre Eingaben.'
-        )
-        return super().form_invalid(form)
 
 
 class CustomerListView(LoginRequiredMixin, ListView):

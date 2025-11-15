@@ -31,7 +31,11 @@
       "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\pip.exe\" install reportlab)",
       "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" -c \"import sys; print(f''Python Version: {sys.version}'')\")",
       "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\pip.exe\" uninstall -y reportlab)",
-      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\pip.exe\" install \"reportlab<4.0\")"
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\pip.exe\" install \"reportlab<4.0\")",
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py makemigrations quotes --name remove_priceconfig)",
+      "Bash(del \"E:\\ANPR\\PV-Service\\templates\\dashboard\\price_list.html\")",
+      "Bash(del /F \"E:\\ANPR\\PV-Service\\templates\\dashboard\\price_list.html\")",
+      "Bash(cmd /c del /F \"E:\\ANPR\\PV-Service\\templates\\dashboard\\price_list.html\")"
     ],
     "deny": [],
     "ask": []

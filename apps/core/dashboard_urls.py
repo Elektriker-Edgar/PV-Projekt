@@ -20,10 +20,6 @@ urlpatterns = [
     path('prechecks/<int:pk>/pdf/', dashboard_views.PrecheckPDFExportView.as_view(), name='precheck_pdf'),
     path('prechecks/export/', dashboard_views.PrecheckExportView.as_view(), name='precheck_export'),
 
-    # Price Configuration Management
-    path('prices/', dashboard_views.PriceConfigListView.as_view(), name='price_list'),
-    path('prices/<int:pk>/edit/', dashboard_views.PriceConfigUpdateView.as_view(), name='price_update'),
-
     # Customer Management
     path('customers/', dashboard_views.CustomerListView.as_view(), name='customer_list'),
     path('customers/<int:pk>/', dashboard_views.CustomerDetailView.as_view(), name='customer_detail'),

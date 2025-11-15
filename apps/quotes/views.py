@@ -3,7 +3,7 @@ from django.http import HttpResponse, Http404, JsonResponse
 from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from .models import Quote, Precheck, PriceConfig
+from .models import Quote, Precheck
 from .forms import PrecheckForm, ExpressPackageForm
 from .utils import generate_quote_pdf
 from .calculation import create_quote_from_precheck
@@ -146,10 +146,8 @@ def package_inquiry(request, package):
         'pro': 'Pro-Paket'
     }
 
-    try:
-        package_price = PriceConfig.objects.get(price_type=f'package_{package}').value
-    except PriceConfig.DoesNotExist:
-        package_price = {'basis': 890, 'plus': 1490, 'pro': 2290}.get(package, 0)
+    # Legacy: Package prices are now handled via Product catalog
+    package_price = {'basis': 890, 'plus': 1490, 'pro': 2290}.get(package, 0)
 
     if request.method == 'POST':
         form = ExpressPackageForm(request.POST, request.FILES)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Component, Precheck, Quote, QuoteItem, PriceConfig, PrecheckPhoto
+from .models import Component, Precheck, Quote, QuoteItem, PrecheckPhoto
 
 
 @admin.register(Component)
@@ -62,18 +62,6 @@ class QuoteItemAdmin(admin.ModelAdmin):
     search_fields = ('quote__quote_number', 'text')
     readonly_fields = ('line_total',)
     raw_id_fields = ('quote', 'component')
-
-
-@admin.register(PriceConfig)
-class PriceConfigAdmin(admin.ModelAdmin):
-    list_display = ('get_price_type_display', 'value', 'is_percentage', 'description', 'updated_at')
-    list_filter = ('is_percentage', 'price_type')
-    search_fields = ('price_type', 'description')
-    readonly_fields = ('created_at', 'updated_at')
-
-    def get_price_type_display(self, obj):
-        return obj.get_price_type_display()
-    get_price_type_display.short_description = 'Preistyp'
 
 
 @admin.register(PrecheckPhoto)

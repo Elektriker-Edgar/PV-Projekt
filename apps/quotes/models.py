@@ -428,54 +428,6 @@ class QuoteItem(models.Model):
         return f"{self.text} - {self.quantity} x {self.unit_price}€"
 
 
-class PriceConfig(models.Model):
-    """Konfiguration für Preisberechnungen"""
-    PRICE_TYPES = [
-        ('travel_zone_0', 'Anfahrt Zone 0 (Hamburg)'),
-        ('travel_zone_30', 'Anfahrt Zone 30 (bis 30km)'),
-        ('travel_zone_60', 'Anfahrt Zone 60 (bis 60km)'),
-        ('surcharge_tt_grid', 'TT-Netz Zuschlag'),
-        ('surcharge_selective_fuse', 'Selektive Vorsicherung'),
-        ('surcharge_cable_meter', 'Kabel pro Meter (über 15m)'),
-        ('discount_complete_kit', 'Komplett-Kit Rabatt %'),
-        ('package_basis', 'Basis-Paket'),
-        ('package_plus', 'Plus-Paket'),
-        ('package_pro', 'Pro-Paket'),
-        ('material_ac_wiring', 'AC-Verkabelung'),
-        ('material_spd', 'Überspannungsschutz'),
-        ('material_meter_upgrade', 'Zählerplatz-Ertüchtigung'),
-        ('material_storage_kwh', 'Speicher pro kWh'),
-        ('wallbox_base_4kw', 'Wallbox Installation <4kW'),
-        ('wallbox_base_11kw', 'Wallbox Installation 11kW'),
-        ('wallbox_base_22kw', 'Wallbox Installation 22kW'),
-        ('wallbox_stand_mount', 'Wallbox Ständer-Montage Zuschlag'),
-        ('wallbox_pv_surplus', 'PV-Überschussladen'),
-        ('cable_wr_up_to_5kw', 'WR-Kabel bis 5kW pro Meter'),
-        ('cable_wr_5_to_10kw', 'WR-Kabel 5-10kW pro Meter'),
-        ('cable_wr_above_10kw', 'WR-Kabel über 10kW pro Meter'),
-        ('cable_wb_4kw', 'Wallbox-Kabel <4kW pro Meter'),
-        ('cable_wb_11kw', 'Wallbox-Kabel 11kW pro Meter'),
-        ('cable_wb_22kw', 'Wallbox-Kabel 22kW pro Meter'),
-    ]
-    
-    price_type = models.CharField(max_length=50, choices=PRICE_TYPES, unique=True)
-    value = models.DecimalField(max_digits=10, decimal_places=2)
-    is_percentage = models.BooleanField(default=False, help_text="Ist der Wert ein Prozentsatz?")
-    description = models.CharField(max_length=200, blank=True)
-    
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['price_type']
-        verbose_name = 'Preiskonfiguration'
-        verbose_name_plural = 'Preiskonfigurationen'
-
-    def __str__(self):
-        suffix = "%" if self.is_percentage else "€"
-        return f"{self.get_price_type_display()}: {self.value}{suffix}"
-
-
 class ProductCategory(models.Model):
     """
     Produktkategorien für den Artikelkatalog
