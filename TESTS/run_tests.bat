@@ -11,6 +11,19 @@ echo   EDGARD ELEKTRO - PRECHECK TEST-SUITE
 echo ============================================================
 echo.
 
+REM Prüfe ob Playwright installiert ist
+echo Prüfe Playwright-Installation...
+..\venv\Scripts\python.exe -c "import playwright" 2>nul
+if errorlevel 1 (
+    echo.
+    echo Playwright nicht gefunden. Installiere...
+    ..\venv\Scripts\pip.exe install playwright
+    ..\venv\Scripts\python.exe -m playwright install chromium
+    echo.
+)
+
+echo.
+
 :MENU
 echo Wähle einen Test:
 echo.
@@ -35,14 +48,14 @@ goto MENU
 :BROWSER_SLOW
 echo.
 echo Starte Browser-Test (sichtbar, langsam)...
-python test_precheck_automated.py
+..\venv\Scripts\python.exe test_precheck_automated.py
 pause
 goto MENU
 
 :BROWSER_FAST
 echo.
 echo Starte Browser-Test (Hintergrund, schnell)...
-python test_precheck_automated.py --headless --fast
+..\venv\Scripts\python.exe test_precheck_automated.py --headless --fast
 pause
 goto MENU
 
@@ -50,7 +63,7 @@ goto MENU
 echo.
 echo Starte Django-Test...
 cd ..
-python manage.py test TESTS.test_precheck_django
+venv\Scripts\python.exe manage.py test TESTS.test_precheck_django
 pause
 cd TESTS
 goto MENU
@@ -64,12 +77,12 @@ echo.
 
 echo [1/2] Django-Test...
 cd ..
-python manage.py test TESTS.test_precheck_django
+venv\Scripts\python.exe manage.py test TESTS.test_precheck_django
 cd TESTS
 
 echo.
 echo [2/2] Browser-Test (schnell)...
-python test_precheck_automated.py --headless --fast
+..\venv\Scripts\python.exe test_precheck_automated.py --headless --fast
 
 echo.
 echo ============================================================

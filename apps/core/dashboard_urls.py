@@ -17,6 +17,7 @@ urlpatterns = [
     path('prechecks/', dashboard_views.PrecheckListView.as_view(), name='precheck_list'),
     path('prechecks/<int:pk>/', dashboard_views.PrecheckDetailView.as_view(), name='precheck_detail'),
     path('prechecks/<int:pk>/delete/', dashboard_views.PrecheckDeleteView.as_view(), name='precheck_delete'),
+    path('prechecks/<int:pk>/pdf/', dashboard_views.PrecheckPDFExportView.as_view(), name='precheck_pdf'),
     path('prechecks/export/', dashboard_views.PrecheckExportView.as_view(), name='precheck_export'),
 
     # Price Configuration Management

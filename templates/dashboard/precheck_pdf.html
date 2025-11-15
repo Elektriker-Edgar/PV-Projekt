@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Precheck #{{ precheck.id }}</title>
+    <style>
+        /* === GLOBAL STYLES === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #1f2937;
+        }
+
+        h1 {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            font-size: 14pt;
+            font-weight: 600;
+            color: #374151;
+            margin-top: 16px;
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        h3 {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #4b5563;
+            margin-top: 12px;
+            margin-bottom: 6px;
+        }
+
+        /* === HEADER === */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #2563eb;
+        }
+
+        .header-left h1 {
+            margin-bottom: 4px;
+        }
+
+        .header-left .subtitle {
+            font-size: 9pt;
+            color: #6b7280;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .logo {
+            font-size: 16pt;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 4px;
+        }
+
+        .company-info {
+            font-size: 8pt;
+            color: #6b7280;
+            line-height: 1.3;
+        }
+
+        /* === SECTIONS === */
+        .section {
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 11pt;
+            font-weight: 600;
+        }
+
+        /* === DATA TABLE === */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+
+        .data-table tr {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table tr:last-child {
+            border-bottom: none;
+        }
+
+        .data-table td {
+            padding: 6px 8px;
+            vertical-align: top;
+        }
+
+        .data-label {
+            width: 40%;
+            font-weight: 600;
+            color: #4b5563;
+            font-size: 9pt;
+        }
+
+        .data-value {
+            width: 60%;
+            color: #1f2937;
+        }
+
+        /* === TWO COLUMN LAYOUT === */
+        .two-columns {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .column {
+            flex: 1;
+        }
+
+        /* === BADGES === */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 8pt;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-secondary {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        /* === HIGHLIGHT VALUES === */
+        .highlight-value {
+            font-weight: 700;
+            font-size: 11pt;
+            color: #2563eb;
+        }
+
+        /* === FOOTER === */
+        .footer {
+            position: fixed;
+            bottom: 10mm;
+            left: 15mm;
+            right: 15mm;
+            text-align: center;
+            font-size: 8pt;
+            color: #9ca3af;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 6px;
+        }
+
+        /* === PHOTO LIST === */
+        .photo-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .photo-list li {
+            padding: 4px 0;
+            font-size: 9pt;
+        }
+
+        .photo-list li:before {
+            content: "📷 ";
+            margin-right: 4px;
+        }
+
+        /* === PAGE BREAK CONTROL === */
+        .no-break {
+            page-break-inside: avoid;
+        }
+
+        .page-break-before {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <h1>Precheck #{{ precheck.id }}</h1>
+            <div class="subtitle">Erstellt am {{ precheck.created_at|date:"d.m.Y, H:i" }} Uhr</div>
+        </div>
+        <div class="header-right">
+            <div class="logo">EDGARD Elektro</div>
+            <div class="company-info">
+                PV-Anlagen Installation<br>
+                Hamburg<br>
+                Exportiert: {{ export_date|date:"d.m.Y, H:i" }} Uhr
+            </div>
+        </div>
+    </div>
+
+    <!-- === KUNDENDATEN === -->
+    <div class="section no-break">
+        <div class="section-header">👤 Kundendaten</div>
+        <table class="data-table">
+            <tr>
+                <td class="data-label">Name:</td>
+                <td class="data-value">{{ precheck.site.customer.name }}</td>
+            </tr>
+            <tr>
+                <td class="data-label">E-Mail:</td>
+                <td class="data-value">{{ precheck.site.customer.email }}</td>
+            </tr>
+            <tr>
+                <td class="data-label">Telefon:</td>
+                <td class="data-value">{{ precheck.site.customer.phone|default:"–" }}</td>
+            </tr>
+            <tr>
+                <td class="data-label">Kundentyp:</td>
+                <td class="data-value">
+                    <span class="badge badge-info">{{ precheck.site.customer.get_customer_type_display }}</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- === GEBÄUDE & BAUZUSTAND === -->
+    <div class="section no-break">
+        <div class="section-header">🏢 Gebäude & Bauzustand</div>
+        <table class="data-table">
+            <tr>
+                <td class="data-label">Adresse:</td>
+                <td class="data-value">{{ precheck.site.address|linebreaksbr }}</td>
+            </tr>
+            {% if precheck.building_type %}
+            <tr>
+                <td class="data-label">Gebäudetyp:</td>
+                <td class="data-value">
+                    <span class="badge badge-secondary">{{ precheck.get_building_type_display }}</span>
+                </td>
+            </tr>
+            {% endif %}
+            {% if precheck.construction_year %}
+            <tr>
+                <td class="data-label">Baujahr:</td>
+                <td class="data-value">{{ precheck.construction_year }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="data-label">Elektrische Sanierung:</td>
+                <td class="data-value">
+                    {% if precheck.has_renovation %}
+                        <span class="badge badge-success">✓ Ja{% if precheck.renovation_year %} ({{ precheck.renovation_year }}){% endif %}</span>
+                    {% else %}
+                        <span class="badge badge-secondary">✗ Nein</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- === ELEKTRISCHE INSTALLATION === -->
+    <div class="section no-break">
+        <div class="section-header">⚡ Elektrische Installation</div>
+        <table class="data-table">
+            <tr>
+                <td class="data-label">Hauptsicherung:</td>
+                <td class="data-value"><span class="highlight-value">{{ precheck.site.main_fuse_ampere }} A</span></td>
+            </tr>
+            {% if precheck.site.grid_type %}
+            <tr>
+                <td class="data-label">Netztyp:</td>
+                <td class="data-value">
+                    <span class="badge badge-info">{{ precheck.site.get_grid_type_display }}</span>
+                </td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="data-label">SLS-Schalter:</td>
+                <td class="data-value">
+                    {% if precheck.has_sls_switch %}
+                        <span class="badge badge-success">✓ Ja</span>
+                    {% else %}
+                        <span class="badge badge-secondary">✗ Nein</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if precheck.sls_switch_details %}
+            <tr>
+                <td class="data-label">SLS-Schalter Details:</td>
+                <td class="data-value">{{ precheck.sls_switch_details }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="data-label">Überspannungsschutz AC:</td>
+                <td class="data-value">
+                    {% if precheck.has_surge_protection_ac %}
+                        <span class="badge badge-success">✓ Vorhanden</span>
+                    {% else %}
+                        <span class="badge badge-warning">✗ Nicht vorhanden</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if precheck.surge_protection_ac_details %}
+            <tr>
+                <td class="data-label">Überspannungsschutz AC Details:</td>
+                <td class="data-value">{{ precheck.surge_protection_ac_details }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="data-label">Überspannungsschutz DC:</td>
+                <td class="data-value">
+                    {% if precheck.has_surge_protection_dc %}
+                        <span class="badge badge-success">✓ Gewünscht</span>
+                    {% else %}
+                        <span class="badge badge-secondary">✗ Nicht gewünscht</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if precheck.has_grounding %}
+            <tr>
+                <td class="data-label">Erdung/Potentialausgleich:</td>
+                <td class="data-value">
+                    {% if precheck.has_grounding == 'yes' %}
+                        <span class="badge badge-success">✓ Ja, vorhanden</span>
+                    {% elif precheck.has_grounding == 'no' %}
+                        <span class="badge badge-danger">✗ Nein</span>
+                    {% elif precheck.has_grounding == 'unknown' %}
+                        <span class="badge badge-warning">? Unbekannt</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+            {% if precheck.has_deep_earth %}
+            <tr>
+                <td class="data-label">Tiefenerder:</td>
+                <td class="data-value">
+                    {% if precheck.has_deep_earth == 'yes' %}
+                        <span class="badge badge-success">✓ Ja, vorhanden</span>
+                    {% elif precheck.has_deep_earth == 'no' %}
+                        <span class="badge badge-danger">✗ Nein</span>
+                    {% elif precheck.has_deep_earth == 'unknown' %}
+                        <span class="badge badge-warning">? Unbekannt</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+            {% if precheck.grounding_details %}
+            <tr>
+                <td class="data-label">Erdung Details:</td>
+                <td class="data-value">{{ precheck.grounding_details }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+
+    <!-- === MONTAGEORTE & KABELWEGE === -->
+    <div class="section no-break">
+        <div class="section-header">📍 Montageorte & Kabelwege</div>
+        <table class="data-table">
+            {% if precheck.inverter_location %}
+            <tr>
+                <td class="data-label">Wechselrichter-Standort:</td>
+                <td class="data-value">{{ precheck.inverter_location }}</td>
+            </tr>
+            {% endif %}
+            {% if precheck.storage_location %}
+            <tr>
+                <td class="data-label">Speicher-Standort:</td>
+                <td class="data-value">{{ precheck.storage_location }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="data-label">Entfernung Zähler → HAK:</td>
+                <td class="data-value">{{ precheck.site.distance_meter_to_hak }} m</td>
+            </tr>
+            {% if precheck.distance_meter_to_inverter %}
+            <tr>
+                <td class="data-label">Entfernung Zähler → Wechselrichter:</td>
+                <td class="data-value">{{ precheck.distance_meter_to_inverter }} m</td>
+            </tr>
+            {% endif %}
+            {% if precheck.grid_operator %}
+            <tr>
+                <td class="data-label">Netzbetreiber:</td>
+                <td class="data-value">{{ precheck.grid_operator }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+
+    <!-- === PV-SYSTEM & KOMPONENTEN === -->
+    <div class="section no-break">
+        <div class="section-header">☀️ PV-System & Komponenten</div>
+        <table class="data-table">
+            <tr>
+                <td class="data-label">Gewünschte Leistung:</td>
+                <td class="data-value"><span class="highlight-value">{{ precheck.desired_power_kw }} kW</span></td>
+            </tr>
+            <tr>
+                <td class="data-label">Wechselrichter-Klasse:</td>
+                <td class="data-value">
+                    <span class="badge badge-info" style="font-size: 10pt;">{{ precheck.inverter_label }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="data-label">Speicher:</td>
+                <td class="data-value">
+                    {% if precheck.storage_kwh %}
+                        <span class="highlight-value" style="color: #16a34a;">{{ precheck.storage_kwh }} kWh</span>
+                    {% else %}
+                        Kein Speicher
+                    {% endif %}
+                </td>
+            </tr>
+            {% if precheck.feed_in_mode %}
+            <tr>
+                <td class="data-label">Einspeise-Modus:</td>
+                <td class="data-value">
+                    <span class="badge badge-info">{{ precheck.get_feed_in_mode_display }}</span>
+                </td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="data-label">Notstrom/Inselbetrieb:</td>
+                <td class="data-value">
+                    {% if precheck.requires_backup_power %}
+                        <span class="badge badge-warning">✓ Gewünscht</span>
+                    {% else %}
+                        <span class="badge badge-secondary">✗ Nicht gewünscht</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if precheck.backup_power_details %}
+            <tr>
+                <td class="data-label">Notstrom Details:</td>
+                <td class="data-value">{{ precheck.backup_power_details }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="data-label">Eigene Komponenten:</td>
+                <td class="data-value">
+                    {% if precheck.own_components %}
+                        <span class="badge badge-warning">✓ Ja</span>
+                    {% else %}
+                        <span class="badge badge-success">✗ Nein</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if precheck.own_material_description %}
+            <tr>
+                <td class="data-label">Eigene Komponenten Details:</td>
+                <td class="data-value">{{ precheck.own_material_description }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+
+    <!-- === WALLBOX === -->
+    {% if precheck.wallbox %}
+    <div class="section no-break">
+        <div class="section-header">🔌 Wallbox-Konfiguration</div>
+        <table class="data-table">
+            <tr>
+                <td class="data-label">Wallbox-Klasse:</td>
+                <td class="data-value">
+                    <span class="badge badge-info" style="font-size: 10pt;">{{ precheck.get_wallbox_class_display }}</span>
+                </td>
+            </tr>
+            {% if precheck.wallbox_mount %}
+            <tr>
+                <td class="data-label">Montageart:</td>
+                <td class="data-value">
+                    <span class="badge badge-secondary">{{ precheck.get_wallbox_mount_display }}</span>
+                </td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="data-label">PV-Überschussladen:</td>
+                <td class="data-value">
+                    {% if precheck.wallbox_pv_surplus %}
+                        <span class="badge badge-success">✓ Ja</span>
+                    {% else %}
+                        <span class="badge badge-secondary">✗ Nein</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="data-label">Zuleitung vorbereitet:</td>
+                <td class="data-value">
+                    {% if precheck.wallbox_cable_prepared %}
+                        <span class="badge badge-success">✓ Ja</span>
+                    {% else %}
+                        <span class="badge badge-warning">✗ Nein</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if precheck.wallbox_cable_length_m %}
+            <tr>
+                <td class="data-label">Kabellänge:</td>
+                <td class="data-value">{{ precheck.wallbox_cable_length_m }} m</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- === WÄRMEPUMPE === -->
+    {% if precheck.has_heat_pump %}
+    <div class="section no-break">
+        <div class="section-header">🔥 Wärmepumpe</div>
+        <table class="data-table">
+            <tr>
+                <td class="data-label">Wärmepumpe vorhanden:</td>
+                <td class="data-value"><span class="badge badge-success">✓ Ja</span></td>
+            </tr>
+            <tr>
+                <td class="data-label">Kaskadenschaltung:</td>
+                <td class="data-value">
+                    {% if precheck.heat_pump_cascade %}
+                        <span class="badge badge-success">✓ Gewünscht</span>
+                    {% else %}
+                        <span class="badge badge-secondary">✗ Nicht gewünscht</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if precheck.heat_pump_details %}
+            <tr>
+                <td class="data-label">Wärmepumpe Details:</td>
+                <td class="data-value">{{ precheck.heat_pump_details }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- === HOCHGELADENE FOTOS === -->
+    {% if uploaded_files %}
+    <div class="section no-break">
+        <div class="section-header">📷 Hochgeladene Fotos</div>
+        <ul class="photo-list">
+            {% for label, photo in uploaded_files %}
+            <li>{{ label }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- === ANMERKUNGEN === -->
+    {% if precheck.notes %}
+    <div class="section no-break">
+        <div class="section-header">📝 Anmerkungen</div>
+        <p>{{ precheck.notes|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    <!-- === ZUGEHÖRIGES ANGEBOT === -->
+    {% if quote %}
+    <div class="section no-break page-break-before">
+        <div class="section-header">📄 Zugehöriges Angebot</div>
+        <table class="data-table">
+            <tr>
+                <td class="data-label">Angebots-Nr.:</td>
+                <td class="data-value"><strong>{{ quote.quote_number }}</strong></td>
+            </tr>
+            <tr>
+                <td class="data-label">Status:</td>
+                <td class="data-value">
+                    <span class="badge badge-info">{{ quote.get_status_display }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="data-label">Erstellt am:</td>
+                <td class="data-value">{{ quote.created_at|date:"d.m.Y, H:i" }} Uhr</td>
+            </tr>
+            {% if quote.valid_until %}
+            <tr>
+                <td class="data-label">Gültig bis:</td>
+                <td class="data-value">{{ quote.valid_until|date:"d.m.Y" }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="data-label">Gesamtpreis (brutto):</td>
+                <td class="data-value">
+                    <span class="highlight-value" style="font-size: 13pt;">{{ quote.total|floatformat:2 }} €</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="footer">
+        Precheck #{{ precheck.id }} | Exportiert am {{ export_date|date:"d.m.Y, H:i" }} Uhr | EDGARD Elektro – PV-Anlagen Installation Hamburg
+    </div>
+</body>
+</html>

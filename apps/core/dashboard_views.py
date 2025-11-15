@@ -28,6 +28,12 @@ from django.views.generic import (
 from apps.customers.models import Customer, Site
 from apps.quotes.models import Precheck, Quote, PriceConfig, QuoteItem, ProductCategory, Product
 from .forms import PriceConfigForm, ProductCategoryForm, ProductForm
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 
 
 class DashboardHomeView(LoginRequiredMixin, TemplateView):
@@ -335,6 +341,270 @@ class PrecheckExportView(LoginRequiredMixin, View):
                 photos_str,
                 precheck.notes,
             ])
+
+        return response
+
+
+class PrecheckPDFExportView(LoginRequiredMixin, View):
+    """
+    PDF-Export eines einzelnen Prechecks
+
+    Generiert professionelle PDF mit allen erfassten Daten
+    Verwendet ReportLab für PDF-Generierung
+    """
+    login_url = '/admin/login/'
+
+    def get(self, request, pk, *args, **kwargs):
+        """
+        Generiert PDF-Datei für einen Precheck
+        """
+        # Precheck mit allen Relations laden
+        precheck = get_object_or_404(
+            Precheck.objects.select_related(
+                'site__customer'
+            ).prefetch_related(
+                Prefetch(
+                    'quote',
+                    queryset=Quote.objects.select_related('created_by', 'approved_by')
+                )
+            ),
+            pk=pk
+        )
+
+        # Alle hochgeladenen Dateien
+        uploaded_files = precheck.get_all_uploads()
+
+        # Zugehöriges Angebot
+        try:
+            quote = precheck.quote
+        except Quote.DoesNotExist:
+            quote = None
+
+        # Response mit PDF
+        response = HttpResponse(content_type='application/pdf')
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        safe_name = ''.join(c if c.isalnum() or c in (' ', '_') else '_' for c in precheck.site.customer.name[:30])
+        filename = f'Precheck_{precheck.id}_{safe_name}_{timestamp}.pdf'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        # PDF erstellen
+        doc = SimpleDocTemplate(response, pagesize=A4,
+                                rightMargin=20*mm, leftMargin=20*mm,
+                                topMargin=20*mm, bottomMargin=20*mm)
+
+        # Styles
+        styles = getSampleStyleSheet()
+        story = []
+
+        # Custom Styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=colors.HexColor('#1e40af'),
+            spaceAfter=12,
+        )
+
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=13,
+            textColor=colors.HexColor('#1e40af'),
+            spaceAfter=8,
+            spaceBefore=12,
+            borderWidth=0,
+            borderPadding=6,
+            backColor=colors.HexColor('#dbeafe'),
+        )
+
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=9,
+            leading=12,
+        )
+
+        # Header
+        story.append(Paragraph(f'Precheck #{precheck.id}', title_style))
+        story.append(Paragraph(
+            f'Erstellt am {precheck.created_at.strftime("%d.%m.%Y, %H:%M")} Uhr | '
+            f'Exportiert am {datetime.now().strftime("%d.%m.%Y, %H:%M")} Uhr',
+            normal_style
+        ))
+        story.append(Spacer(1, 12))
+
+        # Helper function für Daten-Tabellen
+        def add_data_table(heading, data_rows):
+            if not data_rows:
+                return
+            story.append(Paragraph(heading, heading_style))
+            t = Table(data_rows, colWidths=[80*mm, 90*mm])
+            t.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f3f4f6')),
+                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+                ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+                ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ]))
+            story.append(t)
+            story.append(Spacer(1, 8))
+
+        # Kundendaten
+        customer_data = [
+            ['Name:', Paragraph(precheck.site.customer.name, normal_style)],
+            ['E-Mail:', Paragraph(precheck.site.customer.email, normal_style)],
+            ['Telefon:', Paragraph(precheck.site.customer.phone or '–', normal_style)],
+            ['Kundentyp:', Paragraph(precheck.site.customer.get_customer_type_display(), normal_style)],
+        ]
+        add_data_table('👤 Kundendaten', customer_data)
+
+        # Gebäude & Bauzustand
+        building_data = [
+            ['Adresse:', Paragraph(precheck.site.address.replace('\n', '<br/>'), normal_style)],
+        ]
+        if precheck.building_type:
+            building_data.append(['Gebäudetyp:', Paragraph(precheck.get_building_type_display(), normal_style)])
+        if precheck.construction_year:
+            building_data.append(['Baujahr:', Paragraph(str(precheck.construction_year), normal_style)])
+
+        renovation_text = 'Ja'
+        if precheck.renovation_year:
+            renovation_text += f' ({precheck.renovation_year})'
+        building_data.append(['Elektr. Sanierung:', Paragraph(
+            renovation_text if precheck.has_renovation else 'Nein', normal_style
+        )])
+        add_data_table('🏢 Gebäude & Bauzustand', building_data)
+
+        # Elektrische Installation
+        electrical_data = [
+            ['Hauptsicherung:', Paragraph(f'<b>{precheck.site.main_fuse_ampere} A</b>', normal_style)],
+        ]
+        if precheck.site.grid_type:
+            electrical_data.append(['Netztyp:', Paragraph(precheck.site.get_grid_type_display(), normal_style)])
+
+        electrical_data.append(['SLS-Schalter:', Paragraph('Ja' if precheck.has_sls_switch else 'Nein', normal_style)])
+        if precheck.sls_switch_details:
+            electrical_data.append(['SLS Details:', Paragraph(precheck.sls_switch_details, normal_style)])
+
+        electrical_data.append(['Überspannungsschutz AC:', Paragraph('Vorhanden' if precheck.has_surge_protection_ac else 'Nicht vorhanden', normal_style)])
+        if precheck.surge_protection_ac_details:
+            electrical_data.append(['ÜS AC Details:', Paragraph(precheck.surge_protection_ac_details, normal_style)])
+
+        electrical_data.append(['Überspannungsschutz DC:', Paragraph('Gewünscht' if precheck.has_surge_protection_dc else 'Nicht gewünscht', normal_style)])
+
+        if precheck.has_grounding:
+            grounding_map = {'yes': 'Ja, vorhanden', 'no': 'Nein', 'unknown': 'Unbekannt'}
+            electrical_data.append(['Erdung:', Paragraph(grounding_map.get(precheck.has_grounding, '–'), normal_style)])
+
+        if precheck.has_deep_earth:
+            deep_earth_map = {'yes': 'Ja, vorhanden', 'no': 'Nein', 'unknown': 'Unbekannt'}
+            electrical_data.append(['Tiefenerder:', Paragraph(deep_earth_map.get(precheck.has_deep_earth, '–'), normal_style)])
+
+        if precheck.grounding_details:
+            electrical_data.append(['Erdung Details:', Paragraph(precheck.grounding_details, normal_style)])
+
+        add_data_table('⚡ Elektrische Installation', electrical_data)
+
+        # Montageorte & Kabelwege
+        location_data = []
+        if precheck.inverter_location:
+            location_data.append(['WR-Standort:', Paragraph(precheck.inverter_location, normal_style)])
+        if precheck.storage_location:
+            location_data.append(['Speicher-Standort:', Paragraph(precheck.storage_location, normal_style)])
+
+        location_data.append(['Entfernung Zähler → HAK:', Paragraph(f'{precheck.site.distance_meter_to_hak} m', normal_style)])
+
+        if precheck.distance_meter_to_inverter:
+            location_data.append(['Entfernung Zähler → WR:', Paragraph(f'{precheck.distance_meter_to_inverter} m', normal_style)])
+
+        if precheck.grid_operator:
+            location_data.append(['Netzbetreiber:', Paragraph(precheck.grid_operator, normal_style)])
+
+        if location_data:
+            add_data_table('📍 Montageorte & Kabelwege', location_data)
+
+        # PV-System & Komponenten
+        pv_data = [
+            ['Gewünschte Leistung:', Paragraph(f'<b>{precheck.desired_power_kw} kW</b>', normal_style)],
+            ['WR-Klasse:', Paragraph(precheck.inverter_label, normal_style)],
+            ['Speicher:', Paragraph(f'{precheck.storage_kwh} kWh' if precheck.storage_kwh else 'Kein Speicher', normal_style)],
+        ]
+
+        if precheck.feed_in_mode:
+            pv_data.append(['Einspeise-Modus:', Paragraph(precheck.get_feed_in_mode_display(), normal_style)])
+
+        pv_data.append(['Notstrom:', Paragraph('Gewünscht' if precheck.requires_backup_power else 'Nicht gewünscht', normal_style)])
+        if precheck.backup_power_details:
+            pv_data.append(['Notstrom Details:', Paragraph(precheck.backup_power_details, normal_style)])
+
+        pv_data.append(['Eigene Komponenten:', Paragraph('Ja' if precheck.own_components else 'Nein', normal_style)])
+        if precheck.own_material_description:
+            pv_data.append(['Eigene Komp. Details:', Paragraph(precheck.own_material_description, normal_style)])
+
+        add_data_table('☀️ PV-System & Komponenten', pv_data)
+
+        # Wallbox
+        if precheck.wallbox:
+            wallbox_data = [
+                ['Wallbox-Klasse:', Paragraph(precheck.get_wallbox_class_display(), normal_style)],
+            ]
+            if precheck.wallbox_mount:
+                wallbox_data.append(['Montageart:', Paragraph(precheck.get_wallbox_mount_display(), normal_style)])
+
+            wallbox_data.append(['PV-Überschussladen:', Paragraph('Ja' if precheck.wallbox_pv_surplus else 'Nein', normal_style)])
+            wallbox_data.append(['Zuleitung vorbereitet:', Paragraph('Ja' if precheck.wallbox_cable_prepared else 'Nein', normal_style)])
+
+            if precheck.wallbox_cable_length_m:
+                wallbox_data.append(['Kabellänge:', Paragraph(f'{precheck.wallbox_cable_length_m} m', normal_style)])
+
+            add_data_table('🔌 Wallbox-Konfiguration', wallbox_data)
+
+        # Wärmepumpe
+        if precheck.has_heat_pump:
+            hp_data = [
+                ['Wärmepumpe vorhanden:', Paragraph('Ja', normal_style)],
+                ['Kaskadenschaltung:', Paragraph('Gewünscht' if precheck.heat_pump_cascade else 'Nicht gewünscht', normal_style)],
+            ]
+            if precheck.heat_pump_details:
+                hp_data.append(['WP Details:', Paragraph(precheck.heat_pump_details, normal_style)])
+
+            add_data_table('🔥 Wärmepumpe', hp_data)
+
+        # Hochgeladene Fotos
+        if uploaded_files:
+            story.append(Paragraph('📷 Hochgeladene Fotos', heading_style))
+            photo_list = '<br/>'.join([f'• {label}' for label, _ in uploaded_files])
+            story.append(Paragraph(photo_list, normal_style))
+            story.append(Spacer(1, 8))
+
+        # Anmerkungen
+        if precheck.notes:
+            story.append(Paragraph('📝 Anmerkungen', heading_style))
+            story.append(Paragraph(precheck.notes.replace('\n', '<br/>'), normal_style))
+            story.append(Spacer(1, 8))
+
+        # Zugehöriges Angebot
+        if quote:
+            story.append(PageBreak())
+            quote_data = [
+                ['Angebots-Nr.:', Paragraph(f'<b>{quote.quote_number}</b>', normal_style)],
+                ['Status:', Paragraph(quote.get_status_display(), normal_style)],
+                ['Erstellt am:', Paragraph(quote.created_at.strftime('%d.%m.%Y, %H:%M') + ' Uhr', normal_style)],
+            ]
+            if quote.valid_until:
+                quote_data.append(['Gültig bis:', Paragraph(quote.valid_until.strftime('%d.%m.%Y'), normal_style)])
+
+            quote_data.append(['Gesamtpreis (brutto):', Paragraph(f'<b>{quote.total:.2f} €</b>', normal_style)])
+            add_data_table('📄 Zugehöriges Angebot', quote_data)
+
+        # PDF bauen
+        doc.build(story)
 
         return response
 

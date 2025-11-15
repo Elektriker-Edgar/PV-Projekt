@@ -11,6 +11,9 @@
 
 {% block header_actions %}
     <div class="d-flex gap-2">
+        <a href="{% url 'dashboard:precheck_pdf' pk=precheck.id %}" class="btn btn-sm btn-danger">
+            <i class="fas fa-file-pdf"></i> PDF Export
+        </a>
         <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
             <i class="fas fa-print"></i> Drucken
         </button>
@@ -33,47 +36,50 @@
     </div>
 
     <div class="row g-4">
-        <!-- Left Column -->
+        <!-- Left Column - Main Content -->
         <div class="col-lg-8">
             <!-- Customer Information -->
-            <div class="card mb-4">
+            <div class="card mb-4 info-card">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-user"></i> Kundendaten
-                    </h3>
+                    <div class="d-flex align-items-center">
+                        <div class="category-icon category-icon-customer">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3 class="card-title mb-0">Kundendaten</h3>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="row g-4">
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Name</label>
-                                <div class="info-value">{{ precheck.site.customer.name }}</div>
+                            <div class="data-field">
+                                <span class="data-label">Name</span>
+                                <span class="data-value">{{ precheck.site.customer.name }}</span>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Kundentyp</label>
-                                <div class="info-value">
+                            <div class="data-field">
+                                <span class="data-label">Kundentyp</span>
+                                <span class="data-value">
                                     <span class="badge badge-info">
                                         {{ precheck.site.customer.get_customer_type_display }}
                                     </span>
-                                </div>
+                                </span>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">E-Mail</label>
-                                <div class="info-value">
+                            <div class="data-field">
+                                <span class="data-label">E-Mail</span>
+                                <span class="data-value">
                                     <a href="mailto:{{ precheck.site.customer.email }}" class="text-primary">
                                         <i class="far fa-envelope"></i> {{ precheck.site.customer.email }}
                                     </a>
-                                </div>
+                                </span>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Telefon</label>
-                                <div class="info-value">
+                            <div class="data-field">
+                                <span class="data-label">Telefon</span>
+                                <span class="data-value">
                                     {% if precheck.site.customer.phone %}
                                         <a href="tel:{{ precheck.site.customer.phone }}" class="text-primary">
                                             <i class="fas fa-phone"></i> {{ precheck.site.customer.phone }}
@@ -81,58 +87,98 @@
                                     {% else %}
                                         <span class="text-muted">-</span>
                                     {% endif %}
-                                </div>
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Site Information -->
-            <div class="card mb-4">
+            <!-- Building & Construction Status -->
+            <div class="card mb-4 info-card">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-building"></i> Standort-Informationen
-                    </h3>
+                    <div class="d-flex align-items-center">
+                        <div class="category-icon category-icon-building">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <h3 class="card-title mb-0">Gebäude & Bauzustand</h3>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="row g-4">
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Adresse</label>
-                                <div class="info-value">{{ precheck.site.address|linebreaks }}</div>
+                            <div class="data-field">
+                                <span class="data-label">Adresse</span>
+                                <span class="data-value">{{ precheck.site.address|linebreaksbr }}</span>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Gebäudetyp</label>
-                                <div class="info-value">
-                                    <span class="badge badge-secondary">
-                                        {{ precheck.site.get_building_type_display }}
-                                    </span>
-                                </div>
+                            <div class="data-field">
+                                <span class="data-label">Gebäudetyp</span>
+                                <span class="data-value">
+                                    {% if precheck.building_type %}
+                                        <span class="badge badge-secondary">
+                                            {{ precheck.get_building_type_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Baujahr</span>
+                                <span class="data-value">{{ precheck.construction_year|default:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Elektrische Sanierung</span>
+                                <span class="data-value">
+                                    {% if precheck.has_renovation %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Ja
+                                            {% if precheck.renovation_year %}
+                                                ({{ precheck.renovation_year }})
+                                            {% endif %}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-times"></i> Nein
+                                        </span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Electrical Installation -->
+            <div class="card mb-4 info-card">
+                <div class="card-header">
+                    <div class="d-flex align-items-center">
+                        <div class="category-icon category-icon-electrical">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3 class="card-title mb-0">Elektrische Installation</h3>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="data-field">
+                                <span class="data-label">Hauptsicherung</span>
+                                <span class="data-value">
+                                    <span class="highlight-value">{{ precheck.site.main_fuse_ampere }} A</span>
+                                </span>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="info-group">
-                                <label class="info-label">Baujahr</label>
-                                <div class="info-value">{{ precheck.site.construction_year|default:"-" }}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="info-group">
-                                <label class="info-label">Hauptsicherung</label>
-                                <div class="info-value">
-                                    <span style="font-weight: 600; color: var(--primary-blue);">
-                                        {{ precheck.site.main_fuse_ampere }} A
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="info-group">
-                                <label class="info-label">Netztyp</label>
-                                <div class="info-value">
+                            <div class="data-field">
+                                <span class="data-label">Netztyp</span>
+                                <span class="data-value">
                                     {% if precheck.site.grid_type %}
                                         <span class="badge badge-info">
                                             {{ precheck.site.get_grid_type_display }}
@@ -140,120 +186,346 @@
                                     {% else %}
                                         <span class="text-muted">-</span>
                                     {% endif %}
-                                </div>
+                                </span>
                             </div>
                         </div>
-                        <div class="col-md-12">
-                            <div class="info-group">
-                                <label class="info-label">Entfernung Zählerschrank zu HAK</label>
-                                <div class="info-value">{{ precheck.site.distance_meter_to_hak }} Meter</div>
+                        <div class="col-md-4">
+                            <div class="data-field">
+                                <span class="data-label">SLS-Schalter</span>
+                                <span class="data-value">
+                                    {% if precheck.has_sls_switch %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Ja
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-times"></i> Nein
+                                        </span>
+                                    {% endif %}
+                                </span>
                             </div>
                         </div>
+                        {% if precheck.sls_switch_details %}
+                        <div class="col-12">
+                            <div class="data-field">
+                                <span class="data-label">SLS-Schalter Details</span>
+                                <span class="data-value">{{ precheck.sls_switch_details }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Überspannungsschutz AC</span>
+                                <span class="data-value">
+                                    {% if precheck.has_surge_protection_ac %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Vorhanden
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-times"></i> Nicht vorhanden
+                                        </span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Überspannungsschutz DC</span>
+                                <span class="data-value">
+                                    {% if precheck.has_surge_protection_dc %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Gewünscht
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-times"></i> Nicht gewünscht
+                                        </span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% if precheck.surge_protection_ac_details %}
+                        <div class="col-12">
+                            <div class="data-field">
+                                <span class="data-label">Überspannungsschutz AC Details</span>
+                                <span class="data-value">{{ precheck.surge_protection_ac_details }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Erdung/Potentialausgleich</span>
+                                <span class="data-value">
+                                    {% if precheck.has_grounding == 'yes' %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Ja, vorhanden
+                                        </span>
+                                    {% elif precheck.has_grounding == 'no' %}
+                                        <span class="badge badge-danger">
+                                            <i class="fas fa-times"></i> Nein
+                                        </span>
+                                    {% elif precheck.has_grounding == 'unknown' %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-question"></i> Unbekannt
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Tiefenerder</span>
+                                <span class="data-value">
+                                    {% if precheck.has_deep_earth == 'yes' %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Ja, vorhanden
+                                        </span>
+                                    {% elif precheck.has_deep_earth == 'no' %}
+                                        <span class="badge badge-danger">
+                                            <i class="fas fa-times"></i> Nein
+                                        </span>
+                                    {% elif precheck.has_deep_earth == 'unknown' %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-question"></i> Unbekannt
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% if precheck.grounding_details %}
+                        <div class="col-12">
+                            <div class="data-field">
+                                <span class="data-label">Erdung Details</span>
+                                <span class="data-value">{{ precheck.grounding_details }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
-            <!-- PV System Details -->
-            <div class="card mb-4">
+            <!-- Mounting Locations & Cable Routes -->
+            <div class="card mb-4 info-card">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-solar-panel"></i> PV-System Details
-                    </h3>
+                    <div class="d-flex align-items-center">
+                        <div class="category-icon category-icon-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h3 class="card-title mb-0">Montageorte & Kabelwege</h3>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="row g-4">
+                    <div class="row g-3">
+                        {% if precheck.inverter_location %}
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Gewünschte Leistung</label>
-                                <div class="info-value">
-                                    <span style="font-weight: 700; font-size: 20px; color: var(--primary-blue);">
-                                        {{ precheck.desired_power_kw }} kW
-                                    </span>
-                                </div>
+                            <div class="data-field">
+                                <span class="data-label">Wechselrichter-Standort</span>
+                                <span class="data-value">{{ precheck.inverter_location }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if precheck.storage_location %}
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Speicher-Standort</span>
+                                <span class="data-value">{{ precheck.storage_location }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Entfernung Zähler → HAK</span>
+                                <span class="data-value">{{ precheck.site.distance_meter_to_hak }} m</span>
+                            </div>
+                        </div>
+                        {% if precheck.distance_meter_to_inverter %}
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Entfernung Zähler → Wechselrichter</span>
+                                <span class="data-value">{{ precheck.distance_meter_to_inverter }} m</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if precheck.grid_operator %}
+                        <div class="col-12">
+                            <div class="data-field">
+                                <span class="data-label">Netzbetreiber</span>
+                                <span class="data-value">{{ precheck.grid_operator }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- PV System & Components -->
+            <div class="card mb-4 info-card">
+                <div class="card-header">
+                    <div class="d-flex align-items-center">
+                        <div class="category-icon category-icon-solar">
+                            <i class="fas fa-solar-panel"></i>
+                        </div>
+                        <h3 class="card-title mb-0">PV-System & Komponenten</h3>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Gewünschte Leistung</span>
+                                <span class="data-value">
+                                    <span class="highlight-value highlight-primary">{{ precheck.desired_power_kw }} kW</span>
+                                </span>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Wechselrichter-Klasse</label>
-                                <div class="info-value">
+                            <div class="data-field">
+                                <span class="data-label">Wechselrichter-Klasse</span>
+                                <span class="data-value">
                                     <span class="badge badge-info" style="font-size: 14px;">
                                         {{ precheck.inverter_label }}
                                     </span>
-                                </div>
+                                </span>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Speicher</label>
-                                <div class="info-value">
+                            <div class="data-field">
+                                <span class="data-label">Speicher</span>
+                                <span class="data-value">
                                     {% if precheck.storage_kwh %}
-                                        <span style="font-weight: 600; color: var(--success); font-size: 18px;">
+                                        <span class="highlight-value highlight-success">
                                             <i class="fas fa-battery-full"></i> {{ precheck.storage_kwh }} kWh
                                         </span>
                                     {% else %}
                                         <span class="text-muted">Kein Speicher</span>
                                     {% endif %}
-                                </div>
+                                </span>
                             </div>
                         </div>
+                        {% if precheck.feed_in_mode %}
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Eigene Komponenten</label>
-                                <div class="info-value">
-                                    {% if precheck.own_components %}
-                                        <span class="badge badge-warning" style="font-size: 14px;">
-                                            <i class="fas fa-check"></i> Ja, Kunde bringt eigene Komponenten mit
+                            <div class="data-field">
+                                <span class="data-label">Einspeise-Modus</span>
+                                <span class="data-value">
+                                    <span class="badge badge-info">
+                                        {{ precheck.get_feed_in_mode_display }}
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Notstrom/Inselbetrieb</span>
+                                <span class="data-value">
+                                    {% if precheck.requires_backup_power %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-check"></i> Gewünscht
                                         </span>
                                     {% else %}
-                                        <span class="badge badge-success" style="font-size: 14px;">
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-times"></i> Nicht gewünscht
+                                        </span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% if precheck.backup_power_details %}
+                        <div class="col-12">
+                            <div class="data-field">
+                                <span class="data-label">Notstrom Details</span>
+                                <span class="data-value">{{ precheck.backup_power_details }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Eigene Komponenten</span>
+                                <span class="data-value">
+                                    {% if precheck.own_components %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-check"></i> Ja
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-success">
                                             <i class="fas fa-times"></i> Nein
                                         </span>
                                     {% endif %}
-                                </div>
+                                </span>
                             </div>
                         </div>
+                        {% if precheck.own_material_description %}
+                        <div class="col-12">
+                            <div class="data-field">
+                                <span class="data-label">Eigene Komponenten Details</span>
+                                <span class="data-value">{{ precheck.own_material_description }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
-            <!-- Wallbox Information -->
+            <!-- Wallbox Configuration -->
             {% if precheck.wallbox %}
-            <div class="card mb-4">
+            <div class="card mb-4 info-card">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-charging-station"></i> Wallbox-Konfiguration
-                    </h3>
+                    <div class="d-flex align-items-center">
+                        <div class="category-icon category-icon-wallbox">
+                            <i class="fas fa-charging-station"></i>
+                        </div>
+                        <h3 class="card-title mb-0">Wallbox-Konfiguration</h3>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="row g-4">
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Wallbox-Klasse</label>
-                                <div class="info-value">
+                            <div class="data-field">
+                                <span class="data-label">Wallbox-Klasse</span>
+                                <span class="data-value">
                                     <span class="badge badge-info" style="font-size: 14px;">
                                         {{ precheck.get_wallbox_class_display }}
                                     </span>
-                                </div>
+                                </span>
                             </div>
                         </div>
+                        {% if precheck.wallbox_mount %}
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Montageart</label>
-                                <div class="info-value">
-                                    {% if precheck.wallbox_mount %}
-                                        <span class="badge badge-secondary">
-                                            {{ precheck.get_wallbox_mount_display }}
+                            <div class="data-field">
+                                <span class="data-label">Montageart</span>
+                                <span class="data-value">
+                                    <span class="badge badge-secondary">
+                                        {{ precheck.get_wallbox_mount_display }}
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">PV-Überschussladen</span>
+                                <span class="data-value">
+                                    {% if precheck.wallbox_pv_surplus %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Ja
                                         </span>
                                     {% else %}
-                                        <span class="text-muted">-</span>
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-times"></i> Nein
+                                        </span>
                                     {% endif %}
-                                </div>
+                                </span>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Zuleitung vorbereitet</label>
-                                <div class="info-value">
+                            <div class="data-field">
+                                <span class="data-label">Zuleitung vorbereitet</span>
+                                <span class="data-value">
                                     {% if precheck.wallbox_cable_prepared %}
                                         <span class="badge badge-success">
                                             <i class="fas fa-check"></i> Ja
@@ -263,21 +535,69 @@
                                             <i class="fas fa-times"></i> Nein
                                         </span>
                                     {% endif %}
-                                </div>
+                                </span>
+                            </div>
+                        </div>
+                        {% if precheck.wallbox_cable_length_m %}
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Kabellänge</span>
+                                <span class="data-value">{{ precheck.wallbox_cable_length_m }} m</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Heat Pump -->
+            {% if precheck.has_heat_pump %}
+            <div class="card mb-4 info-card">
+                <div class="card-header">
+                    <div class="d-flex align-items-center">
+                        <div class="category-icon category-icon-heatpump">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <h3 class="card-title mb-0">Wärmepumpe</h3>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="data-field">
+                                <span class="data-label">Wärmepumpe vorhanden</span>
+                                <span class="data-value">
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-check"></i> Ja
+                                    </span>
+                                </span>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">Kabellänge</label>
-                                <div class="info-value">
-                                    {% if precheck.wallbox_cable_length_m %}
-                                        {{ precheck.wallbox_cable_length_m }} Meter
+                            <div class="data-field">
+                                <span class="data-label">Kaskadenschaltung</span>
+                                <span class="data-value">
+                                    {% if precheck.heat_pump_cascade %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Gewünscht
+                                        </span>
                                     {% else %}
-                                        <span class="text-muted">-</span>
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-times"></i> Nicht gewünscht
+                                        </span>
                                     {% endif %}
-                                </div>
+                                </span>
                             </div>
                         </div>
+                        {% if precheck.heat_pump_details %}
+                        <div class="col-12">
+                            <div class="data-field">
+                                <span class="data-label">Wärmepumpe Details</span>
+                                <span class="data-value">{{ precheck.heat_pump_details }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -285,12 +605,15 @@
 
             <!-- Uploaded Photos -->
             {% if uploaded_files %}
-            <div class="card mb-4">
+            <div class="card mb-4 info-card">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-images"></i> Hochgeladene Fotos
+                    <div class="d-flex align-items-center">
+                        <div class="category-icon category-icon-photos">
+                            <i class="fas fa-images"></i>
+                        </div>
+                        <h3 class="card-title mb-0">Hochgeladene Fotos</h3>
                         <span class="badge badge-secondary ms-2">{{ uploaded_files|length }}</span>
-                    </h3>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
@@ -316,20 +639,23 @@
 
             <!-- Notes -->
             {% if precheck.notes %}
-            <div class="card mb-4">
+            <div class="card mb-4 info-card">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-sticky-note"></i> Anmerkungen
-                    </h3>
+                    <div class="d-flex align-items-center">
+                        <div class="category-icon category-icon-notes">
+                            <i class="fas fa-sticky-note"></i>
+                        </div>
+                        <h3 class="card-title mb-0">Anmerkungen</h3>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <p class="mb-0">{{ precheck.notes|linebreaks }}</p>
+                    <p class="mb-0">{{ precheck.notes|linebreaksbr }}</p>
                 </div>
             </div>
             {% endif %}
         </div>
 
-        <!-- Right Column -->
+        <!-- Right Column - Sidebar -->
         <div class="col-lg-4">
             <!-- Quick Actions -->
             <div class="card mb-4">
@@ -340,6 +666,9 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
+                        <a href="{% url 'dashboard:precheck_pdf' pk=precheck.id %}" class="btn btn-danger">
+                            <i class="fas fa-file-pdf"></i> PDF exportieren
+                        </a>
                         <a href="mailto:{{ precheck.site.customer.email }}" class="btn btn-primary">
                             <i class="far fa-envelope"></i> E-Mail senden
                         </a>
@@ -452,23 +781,113 @@
 </div>
 
 <style>
-    .info-group {
-        margin-bottom: 0;
+    /* Info Cards with Icons */
+    .info-card {
+        transition: box-shadow 0.3s ease;
     }
 
-    .info-label {
+    .info-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .category-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+
+    .category-icon i {
+        font-size: 18px;
+        color: white;
+    }
+
+    .category-icon-customer {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .category-icon-building {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .category-icon-electrical {
+        background: linear-gradient(135deg, #ffa500 0%, #ff6347 100%);
+    }
+
+    .category-icon-location {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .category-icon-solar {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+
+    .category-icon-wallbox {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+
+    .category-icon-heatpump {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    }
+
+    .category-icon-photos {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    }
+
+    .category-icon-notes {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    }
+
+    /* Data Fields - Two Column Layout */
+    .data-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 12px;
+        background: var(--neutral-50);
+        border-radius: 6px;
+        border-left: 3px solid var(--neutral-200);
+        transition: border-color 0.2s;
+    }
+
+    .data-field:hover {
+        border-left-color: var(--primary-blue);
+    }
+
+    .data-label {
         font-size: 11px;
         font-weight: 600;
         color: var(--neutral-500);
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 6px;
     }
 
-    .info-value {
+    .data-value {
         font-size: 14px;
-        color: var(--neutral-800);
-        line-height: 1.5;
+        color: var(--neutral-900);
+        font-weight: 500;
+        line-height: 1.6;
+    }
+
+    /* Highlighted Values */
+    .highlight-value {
+        font-weight: 700;
+        font-size: 18px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .highlight-primary {
+        color: var(--primary-blue);
+    }
+
+    .highlight-success {
+        color: var(--success);
     }
 
     /* Photo Cards */
@@ -477,6 +896,12 @@
         border-radius: 8px;
         overflow: hidden;
         background: white;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .photo-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     }
 
     .photo-card a {
@@ -494,7 +919,7 @@
     }
 
     .photo-card:hover .photo-img {
-        transform: scale(1.1);
+        transform: scale(1.05);
     }
 
     .photo-overlay {
@@ -503,7 +928,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.6);
+        background: rgba(37, 99, 235, 0.9);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -526,6 +951,7 @@
         font-weight: 500;
         color: var(--neutral-700);
         background: var(--neutral-50);
+        border-top: 1px solid var(--neutral-200);
     }
 
     /* Timeline */
@@ -563,6 +989,7 @@
         justify-content: center;
         flex-shrink: 0;
         z-index: 1;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 
     .timeline-icon i {
@@ -610,6 +1037,7 @@
         color: var(--neutral-900);
     }
 
+    /* Print Styles */
     @media print {
         .sidebar,
         .top-header,
@@ -624,6 +1052,35 @@
 
         .page-content {
             padding: 0 !important;
+        }
+
+        .photo-overlay {
+            display: none !important;
+        }
+
+        .data-field {
+            break-inside: avoid;
+        }
+
+        .info-card {
+            page-break-inside: avoid;
+            box-shadow: none !important;
+        }
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .category-icon {
+            width: 36px;
+            height: 36px;
+        }
+
+        .category-icon i {
+            font-size: 16px;
+        }
+
+        .highlight-value {
+            font-size: 16px;
         }
     }
 </style>

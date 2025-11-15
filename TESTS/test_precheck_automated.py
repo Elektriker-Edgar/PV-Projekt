@@ -138,12 +138,19 @@ def fill_accordion_section(page, accordion_id, fields):
 
         field = page.locator(f"#{field_id}")
 
+        # Prüfe Feld-Typ
+        tag_name = field.evaluate("el => el.tagName.toLowerCase()")
+
         # Checkbox
         if isinstance(value, bool):
             if value and not field.is_checked():
                 field.click()
                 time.sleep(0.1)
-        # Select/Input
+        # Select-Feld
+        elif tag_name == "select":
+            field.select_option(str(value))
+            time.sleep(0.05)
+        # Input/Textarea
         else:
             field.fill(str(value))
             time.sleep(0.05)
@@ -175,6 +182,13 @@ def run_precheck_test(headless=False, slow_mo=500):
             locale="de-DE"
         )
         page = context.new_page()
+
+        # Console-Logs sammeln für Debugging
+        console_messages = []
+        page.on("console", lambda msg: console_messages.append(f"[{msg.type}] {msg.text}"))
+
+        # Error-Handler
+        page.on("pageerror", lambda exc: print(f"   ⚠️  JavaScript Error: {exc}"))
 
         try:
             # === SCHRITT 1: Standort & Elektro ===
@@ -230,7 +244,8 @@ def run_precheck_test(headless=False, slow_mo=500):
 
             # Weiter zu Schritt 2
             print("   ➡️  Weiter zu Schritt 2")
-            page.click("button:has-text('Weiter')")
+            # Klicke nur auf den sichtbaren "Weiter"-Button im aktiven Schritt
+            page.locator('.step-content.active button:has-text("Weiter")').click()
             time.sleep(0.5)
 
             # === SCHRITT 2: PV-Wünsche ===
@@ -291,7 +306,7 @@ def run_precheck_test(headless=False, slow_mo=500):
 
             # Weiter zu Schritt 4
             print("   ➡️  Weiter zu Schritt 4")
-            page.click("button:has-text('Weiter')")
+            page.locator('.step-content.active button:has-text("Weiter")').click()
             time.sleep(0.5)
 
             # === SCHRITT 4: Fotos hochladen ===
@@ -306,7 +321,7 @@ def run_precheck_test(headless=False, slow_mo=500):
 
             # Weiter zu Schritt 5
             print("   ➡️  Weiter zu Schritt 5")
-            page.click("button:has-text('Weiter')")
+            page.locator('.step-content.active button:has-text("Weiter")').click()
             time.sleep(0.5)
 
             # === SCHRITT 5: Kontaktdaten & Zusammenfassung ===
@@ -325,7 +340,7 @@ def run_precheck_test(headless=False, slow_mo=500):
 
             # Weiter zu Schritt 6
             print("   ➡️  Weiter zu Schritt 6")
-            page.click("button:has-text('Weiter')")
+            page.locator('.step-content.active button:has-text("Weiter")').click()
             time.sleep(0.5)
 
             # === SCHRITT 6: Datenschutz & Absenden ===
@@ -334,12 +349,68 @@ def run_precheck_test(headless=False, slow_mo=500):
             page.locator("#consent").click()
             time.sleep(0.3)
 
-            print("   📨 Formular absenden...")
-            page.click("button:has-text('Angebot anfordern')")
+            # Prüfe vor dem Submit alle required Felder
+            print("   🔍 Validiere Pflichtfelder...")
+            required_fields = page.locator("input[required], select[required], textarea[required]").all()
+            empty_fields = []
+            for field in required_fields:
+                field_id = field.get_attribute("id")
+                field_type = field.get_attribute("type")
+                field_value = field.input_value() if field_type != "checkbox" else field.is_checked()
 
-            # Warte auf Erfolgsseite
+                if not field_value:
+                    field_name = field.get_attribute("name") or field_id
+                    empty_fields.append(field_name)
+
+            if empty_fields:
+                print(f"   ⚠️  Leere Pflichtfelder gefunden: {', '.join(empty_fields)}")
+            else:
+                print(f"   ✅ Alle Pflichtfelder ausgefüllt")
+
+            print("   📨 Formular absenden...")
+
+            # Erstelle einen Screenshot vor dem Submit für Debugging
+            debug_screenshot = TEST_DIR / f"screenshot_before_submit_{time.strftime('%Y%m%d_%H%M%S')}.png"
+            page.screenshot(path=str(debug_screenshot))
+            print(f"   📸 Pre-Submit Screenshot: {debug_screenshot.name}")
+
+            # Warte auf die Response nach dem Submit
+            with page.expect_response(lambda response: "/precheck/" in response.url and response.request.method == "POST") as response_info:
+                page.click("button:has-text('Angebot anfordern')")
+
+            response = response_info.value
+            print(f"   📡 Server Response Status: {response.status}")
+
+            if response.status != 200:
+                print(f"   ⚠️  Server Fehler! Status: {response.status}")
+                # Zeige Fehlerdetails
+                error_text = page.inner_text("body")
+                print(f"   Fehler-Details: {error_text[:500]}...")
+                raise Exception(f"Server Error: {response.status}")
+
+            # Warte auf Erfolgsseite oder bleibe auf derselben Seite
             print("   ⏳ Warte auf Erfolgsseite...")
-            page.wait_for_url("**/precheck/success/**", timeout=15000)
+
+            # Warte kurz und prüfe dann die URL
+            time.sleep(2)
+            current_url = page.url
+
+            if "success" in current_url:
+                print(f"   ✅ Erfolgsseite erreicht: {current_url}")
+            elif current_url.endswith("/precheck/"):
+                # Formular wurde abgelehnt
+                print(f"   ❌ Formular abgelehnt, zurück zu: {current_url}")
+
+                # Suche nach Fehlermeldungen
+                error_messages = page.locator(".invalid-feedback:visible, .alert-danger:visible")
+                if error_messages.count() > 0:
+                    print(f"   ❌ Formular-Fehler gefunden:")
+                    for i in range(error_messages.count()):
+                        print(f"      - {error_messages.nth(i).inner_text()}")
+
+                raise Exception("Formular wurde vom Server abgelehnt")
+            else:
+                print(f"   ⚠️  Unerwartete URL: {current_url}")
 
             # === ERFOLGSSEITE ===
             print("\n✅ SUCCESS-SEITE ERREICHT!")
@@ -362,6 +433,12 @@ def run_precheck_test(headless=False, slow_mo=500):
 
         except Exception as e:
             print(f"\n❌ FEHLER: {e}")
+
+            # Console-Logs ausgeben
+            if console_messages:
+                print(f"\n📜 Browser Console Logs:")
+                for msg in console_messages[-20:]:  # Letzte 20 Nachrichten
+                    print(f"   {msg}")
 
             # Fehler-Screenshot
             try:
