@@ -180,29 +180,25 @@
 
         <div class="card-body p-0">
             <div class="table-container">
-                <table class="table mb-0" style="font-size: 13px;">
+                <table class="table mb-0" style="font-size: 13px; min-width: 900px;">
                     <thead>
                         <tr>
-                            <th style="width: 40px;">
+                            <th style="width: 40px; padding: 0.75rem 0.5rem;">
                                 <input type="checkbox" class="form-check-input" id="select-all-products">
                             </th>
-                            <th style="width: 100px;">SKU</th>
-                            <th>Bezeichnung</th>
-                            <th style="width: 140px;">Kategorie</th>
-                            <th style="width: 80px;">Einheit</th>
-                            <th style="width: 110px;">EK (netto)</th>
-                            <th style="width: 110px;">VK (netto)</th>
-                            <th style="width: 110px;">VK (brutto)</th>
-                            <th style="width: 80px;">MwSt.</th>
-                            <th style="width: 90px;">Marge</th>
-                            <th style="width: 80px;">Status</th>
-                            <th style="width: 160px;">Aktionen</th>
+                            <th style="min-width: 200px; padding: 0.75rem 0.5rem;">Produkt</th>
+                            <th style="width: 140px; padding: 0.75rem 0.5rem;">Kategorie</th>
+                            <th style="width: 80px; padding: 0.75rem 0.5rem;">Einheit</th>
+                            <th style="width: 110px; padding: 0.75rem 0.5rem;">VK (netto)</th>
+                            <th style="width: 110px; padding: 0.75rem 0.5rem;">VK (brutto)</th>
+                            <th style="width: 90px; padding: 0.75rem 0.5rem;">Marge</th>
+                            <th style="width: 140px; padding: 0.75rem 0.5rem;">Aktionen</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for product in products %}
                         <tr {% if not product.is_active %}style="opacity: 0.6;"{% endif %}>
-                            <td>
+                            <td style="padding: 0.75rem 0.5rem;">
                                 <input
                                     type="checkbox"
                                     class="form-check-input product-select"
@@ -211,78 +207,76 @@
                                     form="product-bulk-form"
                                 >
                             </td>
-                            <td>
-                                <code style="font-size: 12px; background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">
-                                    {{ product.sku }}
-                                </code>
-                            </td>
-                            <td>
-                                <div style="font-weight: 600; color: var(--neutral-900);">
-                                    {{ product.name|truncatechars:40 }}
+                            <td style="padding: 0.75rem 0.5rem;">
+                                <div style="font-weight: 600; color: var(--neutral-900); font-size: 13px; line-height: 1.4;">
+                                    {% if product.is_active %}
+                                        <i class="fas fa-circle" style="color: var(--success); font-size: 8px; margin-right: 6px;" title="Aktiv"></i>
+                                    {% else %}
+                                        <i class="far fa-circle" style="color: var(--neutral-400); font-size: 8px; margin-right: 6px;" title="Inaktiv"></i>
+                                    {% endif %}
+                                    {{ product.name|truncatechars:50 }}
                                     {% if product.is_featured %}
-                                        <i class="fas fa-star" style="color: var(--warning); font-size: 11px;" title="Hervorgehoben"></i>
+                                        <i class="fas fa-star" style="color: var(--warning); font-size: 11px; margin-left: 4px;" title="Hervorgehoben"></i>
                                     {% endif %}
                                 </div>
-                                {% if product.manufacturer %}
-                                <div class="text-muted" style="font-size: 11px;">
-                                    {{ product.manufacturer|truncatechars:30 }}
+                                <div style="margin-top: 4px;">
+                                    <code style="font-size: 11px; background: var(--neutral-100); padding: 2px 6px; border-radius: 3px; color: var(--neutral-700);">
+                                        {{ product.sku }}
+                                    </code>
+                                    {% if product.manufacturer %}
+                                    <span class="text-muted" style="font-size: 11px; margin-left: 8px;">
+                                        {{ product.manufacturer|truncatechars:25 }}
+                                    </span>
+                                    {% endif %}
                                 </div>
-                                {% endif %}
                             </td>
-                            <td>
-                                <span class="badge badge-info" style="font-size: 11px;">
+                            <td style="padding: 0.75rem 0.5rem;">
+                                <span class="badge badge-info" style="font-size: 11px; padding: 4px 8px;">
                                     {{ product.category.name|truncatechars:20 }}
                                 </span>
                             </td>
-                            <td>
-                                <span class="text-muted">
+                            <td style="padding: 0.75rem 0.5rem;">
+                                <span class="text-muted" style="font-size: 12px;">
                                     {{ product.get_unit_display_short }}
                                 </span>
                             </td>
-                            <td>
-                                <span style="font-weight: 500;">{{ product.purchase_price_net|floatformat:2 }}</span>
-                            </td>
-                            <td>
-                                <span style="font-weight: 600; color: var(--primary-blue);">
-                                    {{ product.sales_price_net|floatformat:2 }}
+                            <td style="padding: 0.75rem 0.5rem;">
+                                <span style="font-weight: 600; color: var(--primary-blue); font-size: 13px;">
+                                    {{ product.sales_price_net|floatformat:2 }} €
                                 </span>
                             </td>
-                            <td>
-                                <span style="font-weight: 600; color: var(--neutral-900);">
-                                    {{ product.sales_price_gross|floatformat:2 }}
+                            <td style="padding: 0.75rem 0.5rem;">
+                                <span style="font-weight: 600; color: var(--neutral-900); font-size: 13px;">
+                                    {{ product.sales_price_gross|floatformat:2 }} €
                                 </span>
                             </td>
-                            <td>
-                                <span class="text-muted">
-                                    {{ product.vat_rate_percent|floatformat:0 }}%
-                                </span>
-                            </td>
-                            <td>
+                            <td style="padding: 0.75rem 0.5rem;">
                                 {% with margin=product.margin_percentage %}
-                                <span {% if margin < 0 %}style="color: var(--danger);"{% elif margin < 20 %}style="color: var(--warning);"{% else %}style="color: var(--success);"{% endif %}>
-                                    {{ margin|floatformat:1 }}%
-                                </span>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if margin < 0 %}
+                                        <i class="fas fa-arrow-down" style="color: var(--danger); font-size: 10px;"></i>
+                                    {% elif margin < 20 %}
+                                        <i class="fas fa-minus" style="color: var(--warning); font-size: 10px;"></i>
+                                    {% else %}
+                                        <i class="fas fa-arrow-up" style="color: var(--success); font-size: 10px;"></i>
+                                    {% endif %}
+                                    <span style="font-size: 13px; font-weight: 600; {% if margin < 0 %}color: var(--danger);{% elif margin < 20 %}color: var(--warning);{% else %}color: var(--success);{% endif %}">
+                                        {{ margin|floatformat:1 }}%
+                                    </span>
+                                </div>
                                 {% endwith %}
                             </td>
-                            <td>
-                                {% if product.is_active %}
-                                    <span class="badge badge-success" style="font-size: 10px;">
-                                        <i class="fas fa-check"></i> Aktiv
-                                    </span>
-                                {% else %}
-                                    <span class="badge badge-secondary" style="font-size: 10px;">
-                                        <i class="fas fa-times"></i> Inaktiv
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="d-flex gap-2">
+                            <td style="padding: 0.75rem 0.5rem;">
+                                <div class="d-flex gap-1">
                                     <a href="{% url 'dashboard:product_update' product.id %}"
                                        class="btn btn-sm btn-primary"
+                                       style="padding: 0.35rem 0.6rem; font-size: 12px;"
                                        title="Bearbeiten">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-danger" title="Löschen"
+                                    <button type="button" class="btn btn-sm btn-danger"
+                                            style="padding: 0.35rem 0.6rem; font-size: 12px;"
+                                            title="Löschen"
                                             data-bs-toggle="modal"
                                             data-bs-target="#deleteProductModal{{ product.id }}">
                                         <i class="fas fa-trash"></i>
@@ -333,7 +327,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="12" class="text-center py-5">
+                            <td colspan="8" class="text-center py-5">
                                 <i class="fas fa-box-open" style="font-size: 48px; color: var(--neutral-300); margin-bottom: 16px;"></i>
                                 <p class="text-muted mb-0">Keine Produkte gefunden</p>
                                 <small class="text-muted">Erstellen Sie ein neues Produkt oder passen Sie Ihre Filter an</small>
@@ -463,13 +457,30 @@
         color: white;
     }
 
-    /* Komprimierte Tabelle */
+    /* Optimierte Tabelle */
     .table tbody td {
-        padding: 10px 12px;
+        padding: 0.75rem 0.5rem;
+        font-size: 13px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--neutral-200);
     }
 
     .table thead th {
-        padding: 10px 12px;
+        padding: 0.75rem 0.5rem;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--neutral-700);
+        background: var(--neutral-50);
+        border-bottom: 2px solid var(--neutral-300);
+    }
+
+    .table tbody tr:hover {
+        background: var(--neutral-50);
+        transition: background 0.15s ease;
+    }
+
+    .table-container {
+        overflow-x: auto;
     }
 
     .bulk-action-bar.disabled {

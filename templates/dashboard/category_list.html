@@ -116,65 +116,68 @@
 
         <div class="card-body p-0">
             <div class="table-container">
-                <table class="table mb-0">
+                <table class="table mb-0" style="font-size: 12px; min-width: 800px;">
                     <thead>
                         <tr>
-                            <th style="width: 60px;">ID</th>
-                            <th>Name</th>
-                            <th>Beschreibung</th>
-                            <th style="width: 120px;">Reihenfolge</th>
-                            <th style="width: 120px;">Produkte</th>
-                            <th style="width: 100px;">Status</th>
-                            <th style="width: 200px;">Aktionen</th>
+                            <th style="width: 50px; font-size: 12px; padding: 0.5rem 0.3rem;">ID</th>
+                            <th style="font-size: 12px; padding: 0.5rem 0.3rem;">Name</th>
+                            <th style="font-size: 12px; padding: 0.5rem 0.3rem;">Beschreibung</th>
+                            <th style="width: 100px; font-size: 12px; padding: 0.5rem 0.3rem;">Reihenfolge</th>
+                            <th style="width: 110px; font-size: 12px; padding: 0.5rem 0.3rem;">Produkte</th>
+                            <th style="width: 90px; font-size: 12px; padding: 0.5rem 0.3rem;">Status</th>
+                            <th style="width: 140px; font-size: 12px; padding: 0.5rem 0.3rem;">Aktionen</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for category in categories %}
                         <tr>
-                            <td>
-                                <span style="font-weight: 600; color: var(--neutral-900);">#{{ category.id }}</span>
+                            <td style="padding: 0.4rem 0.3rem;">
+                                <span style="font-weight: 600; color: var(--neutral-900); font-size: 12px;">#{{ category.id }}</span>
                             </td>
-                            <td>
-                                <div style="font-weight: 600; color: var(--neutral-900); font-size: 14px;">
+                            <td style="padding: 0.4rem 0.3rem;">
+                                <div style="font-weight: 600; color: var(--neutral-900); font-size: 12px;">
                                     {{ category.name }}
                                 </div>
                             </td>
-                            <td>
-                                <div class="text-muted" style="font-size: 13px;">
+                            <td style="padding: 0.4rem 0.3rem;">
+                                <div class="text-muted" style="font-size: 11px;">
                                     {{ category.description|truncatechars:60|default:"—" }}
                                 </div>
                             </td>
-                            <td>
-                                <span class="badge badge-secondary" style="font-size: 13px;">
+                            <td style="padding: 0.4rem 0.3rem;">
+                                <span class="badge badge-secondary" style="font-size: 10px; padding: 3px 6px;">
                                     {{ category.sort_order }}
                                 </span>
                             </td>
-                            <td>
+                            <td style="padding: 0.4rem 0.3rem;">
                                 <a href="{% url 'dashboard:product_list' %}?category={{ category.id }}"
-                                   style="font-weight: 600; color: var(--primary-blue); font-size: 15px; text-decoration: none;">
+                                   style="font-weight: 600; color: var(--primary-blue); font-size: 12px; text-decoration: none;">
                                     {{ category.active_product_count }}
                                 </a>
-                                <span class="text-muted" style="font-size: 11px;">Produkt{{ category.active_product_count|pluralize:"e" }}</span>
+                                <span class="text-muted" style="font-size: 10px;">Produkt{{ category.active_product_count|pluralize:"e" }}</span>
                             </td>
-                            <td>
+                            <td style="padding: 0.4rem 0.3rem;">
                                 {% if category.is_active %}
-                                    <span class="badge badge-success">
+                                    <span class="badge badge-success" style="font-size: 9px; padding: 3px 6px;">
                                         <i class="fas fa-check"></i> Aktiv
                                     </span>
                                 {% else %}
-                                    <span class="badge badge-secondary">
+                                    <span class="badge badge-secondary" style="font-size: 9px; padding: 3px 6px;">
                                         <i class="fas fa-times"></i> Inaktiv
                                     </span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <div class="d-flex gap-2">
+                            <td style="padding: 0.4rem 0.3rem;">
+                                <div class="d-flex gap-1">
                                     <a href="{% url 'dashboard:category_update' category.id %}"
                                        class="btn btn-sm btn-primary"
+                                       style="padding: 0.25rem 0.5rem; font-size: 11px;"
                                        title="Bearbeiten">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-danger" title="Löschen"
+                                    <button type="button" class="btn btn-sm btn-danger"
+                                            style="padding: 0.25rem 0.5rem; font-size: 11px;"
+                                            title="Löschen"
                                             data-bs-toggle="modal"
                                             data-bs-target="#deleteCategoryModal{{ category.id }}">
                                         <i class="fas fa-trash"></i>
@@ -280,6 +283,22 @@
 <style>
     .input-group-text {
         border-color: var(--neutral-300);
+    }
+
+    /* Komprimierte Tabelle */
+    .table tbody td {
+        padding: 0.4rem 0.3rem;
+        font-size: 12px;
+        vertical-align: middle;
+    }
+
+    .table thead th {
+        padding: 0.5rem 0.3rem;
+        font-size: 12px;
+    }
+
+    .table-container {
+        overflow-x: auto;
     }
 </style>
 {% endblock %}
