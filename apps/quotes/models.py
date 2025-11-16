@@ -399,7 +399,8 @@ class Quote(models.Model):
     approved_at = models.DateTimeField(null=True, blank=True)
     
     valid_until = models.DateField(null=True, blank=True)
-    
+    notes = models.TextField(blank=True, default='', help_text="Interne Notizen zum Angebot")
+
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -432,6 +433,7 @@ class QuoteItem(models.Model):
     text = models.CharField(max_length=200)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1.00'))
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('19.00'), help_text="MwSt.-Satz in Prozent")
     line_total = models.DecimalField(max_digits=10, decimal_places=2)
     
     created_at = models.DateTimeField(default=timezone.now)
@@ -574,6 +576,11 @@ class Product(models.Model):
         if self.purchase_price_net > 0:
             return ((self.sales_price_net - self.purchase_price_net) / self.purchase_price_net) * 100
         return Decimal('0.00')
+
+    @property
+    def vat_rate_percent(self):
+        """MwSt.-Satz als Prozentwert (z.B. 19.00 statt 0.19)"""
+        return self.vat_rate * 100
 
     @property
     def is_low_stock(self):

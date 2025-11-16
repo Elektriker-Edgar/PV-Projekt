@@ -12,7 +12,7 @@ from urllib.parse import urlencode
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.db.models import Count, Sum, Q, Prefetch
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
@@ -27,7 +27,7 @@ from django.views.generic import (
 
 from apps.customers.models import Customer, Site
 from apps.quotes.models import Precheck, Quote, QuoteItem, ProductCategory, Product
-from .forms import ProductCategoryForm, ProductForm
+from .forms import ProductCategoryForm, ProductForm, QuoteEditForm, QuoteItemFormSet
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
@@ -1378,3 +1378,88 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
         )
 
         return response
+
+
+class QuoteEditView(LoginRequiredMixin, View):
+    """
+    View zum Bearbeiten von Angeboten
+    
+    Ermöglicht:
+    - Bearbeitung von Quote-Metadaten (Status, MwSt, Notizen)
+    - Bearbeitung von QuoteItems (Positionen hinzufügen/ändern/löschen)
+    - Automatische Neuberechnung der Summen
+    """
+    login_url = '/admin/login/'
+    template_name = 'dashboard/quote_edit.html'
+
+    def get(self, request, pk):
+        quote = get_object_or_404(Quote.objects.select_related('precheck__site__customer'), pk=pk)
+        quote_form = QuoteEditForm(instance=quote)
+        items_formset = QuoteItemFormSet(instance=quote)
+        
+        return render(request, self.template_name, {
+            'quote': quote,
+            'quote_form': quote_form,
+            'items_formset': items_formset,
+        })
+
+    def post(self, request, pk):
+        quote = get_object_or_404(Quote.objects.select_related('precheck__site__customer'), pk=pk)
+        quote_form = QuoteEditForm(request.POST, instance=quote)
+        items_formset = QuoteItemFormSet(request.POST, instance=quote)
+
+        if quote_form.is_valid() and items_formset.is_valid():
+            # Speichere Quote-Metadaten
+            quote_form.save(commit=False)
+            
+            # Speichere QuoteItems
+            items_formset.save()
+            
+            # Neuberechnung der Summen
+            quote.subtotal = sum(item.line_total for item in quote.items.all())
+            quote.save()  # Triggert automatisch vat_amount und total Berechnung
+            
+            messages.success(request, f'Angebot {quote.quote_number} wurde erfolgreich aktualisiert.')
+            return redirect('dashboard:quote_detail', pk=quote.pk)
+        else:
+            # Fehlerbehandlung
+            messages.error(request, 'Bitte überprüfen Sie Ihre Eingaben.')
+            return render(request, self.template_name, {
+                'quote': quote,
+                'quote_form': quote_form,
+                'items_formset': items_formset,
+            })
+
+
+class ProductAutocompleteView(LoginRequiredMixin, View):
+    """
+    JSON API für Produkt-Autocomplete
+    Sucht Produkte basierend auf Name oder SKU
+    """
+    login_url = '/admin/login/'
+
+    def get(self, request):
+        query = request.GET.get('q', '').strip()
+        
+        if len(query) < 2:
+            return JsonResponse({'results': []})
+        
+        # Suche nach Name oder SKU
+        products = Product.objects.filter(
+            Q(name__icontains=query) | Q(sku__icontains=query),
+            is_active=True
+        ).select_related('category')[:10]
+        
+        results = []
+        for product in products:
+            results.append({
+                'id': product.id,
+                'text': product.name,
+                'sku': product.sku,
+                'price': float(product.sales_price_net),
+                'vat_rate': float(product.vat_rate_percent),
+                'unit': product.unit,
+                'category': product.category.name if product.category else '',
+            })
+        
+        return JsonResponse({'results': results})

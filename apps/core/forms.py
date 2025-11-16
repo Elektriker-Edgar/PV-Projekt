@@ -5,7 +5,7 @@ Forms für das Admin-Dashboard mit Validierung und Custom Widgets
 """
 from django import forms
 from decimal import Decimal, InvalidOperation
-from apps.quotes.models import ProductCategory, Product
+from apps.quotes.models import ProductCategory, Product, Quote, QuoteItem
 from apps.customers.models import Customer
 
 
@@ -362,3 +362,129 @@ class ProductForm(forms.ModelForm):
                 )
 
         return cleaned_data
+
+
+class QuoteItemForm(forms.ModelForm):
+    """
+    Form für Bearbeitung einzelner Angebotspositionen
+    """
+
+    class Meta:
+        model = QuoteItem
+        fields = ['text', 'quantity', 'unit_price', 'vat_rate']
+        widgets = {
+            'text': forms.TextInput(attrs={
+                'class': 'form-control form-control-sm autocomplete-product',
+                'placeholder': 'Bezeichnung eingeben oder aus Katalog wählen...',
+                'autocomplete': 'off',
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm',
+                'step': '0.01',
+                'min': '0.01',
+                'placeholder': '1.00',
+            }),
+            'unit_price': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00',
+            }),
+            'vat_rate': forms.NumberInput(attrs={
+                'class': 'form-control form-control-sm',
+                'step': '1',
+                'min': '0',
+                'max': '100',
+                'placeholder': '19',
+            }),
+        }
+        labels = {
+            'text': 'Bezeichnung',
+            'quantity': 'Menge',
+            'unit_price': 'Einzelpreis (€)',
+            'vat_rate': 'MwSt. %',
+        }
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data.get('quantity')
+        if quantity is not None and quantity <= 0:
+            raise forms.ValidationError('Die Menge muss größer als 0 sein.')
+        return quantity
+
+    def clean_unit_price(self):
+        price = self.cleaned_data.get('unit_price')
+        if price is not None and price < 0:
+            raise forms.ValidationError('Der Preis darf nicht negativ sein.')
+        return price
+
+
+# Django Formsets für dynamisches Hinzufügen/Entfernen von QuoteItems
+QuoteItemFormSet = forms.inlineformset_factory(
+    Quote,
+    QuoteItem,
+    form=QuoteItemForm,
+    extra=0,  # Keine automatisch leere Zeile - wird per JavaScript hinzugefügt
+    can_delete=True,  # Positionen können gelöscht werden
+    min_num=0,  # Keine Mindestanzahl (erlaubt leere Angebote während Bearbeitung)
+    validate_min=False,
+)
+
+
+class QuoteEditForm(forms.ModelForm):
+    """
+    Form für Bearbeitung von Angeboten
+
+    Ermöglicht das Anpassen von:
+    - Status
+    - Gültigkeitsdauer
+    - MwSt-Satz
+    - Notizen/Anmerkungen
+    """
+
+    notes = forms.CharField(
+        required=False,
+        label='Interne Notizen / Anmerkungen',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': 'Z.B. Kundenwünsche, Sonderkonditionen, eigenes Material des Kunden...',
+        }),
+        help_text='Werden nicht auf dem PDF angezeigt, nur intern sichtbar'
+    )
+
+    class Meta:
+        model = Quote
+        fields = ['status', 'vat_rate', 'valid_until', 'notes']
+        widgets = {
+            'status': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'vat_rate': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '1',
+                'min': '0',
+                'max': '100',
+                'placeholder': '19',
+            }),
+            'valid_until': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+            }),
+        }
+        labels = {
+            'status': 'Status',
+            'vat_rate': 'MwSt.-Satz (%)',
+            'valid_until': 'Gültig bis',
+        }
+        help_texts = {
+            'status': 'Aktueller Bearbeitungsstatus des Angebots',
+            'vat_rate': 'Mehrwertsteuersatz in Prozent (Standard: 19%)',
+            'valid_until': 'Datum bis wann das Angebot gültig ist',
+        }
+
+    def clean_vat_rate(self):
+        vat_rate = self.cleaned_data.get('vat_rate')
+        if vat_rate is not None:
+            if vat_rate < 0 or vat_rate > 100:
+                raise forms.ValidationError('Der MwSt.-Satz muss zwischen 0% und 100% liegen.')
+        return vat_rate

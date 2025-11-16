@@ -4,8 +4,8 @@
 
 **EDGARD Elektro** - Professionelle Django-Website für PV-Anlagen Elektroinstallationsservice in Hamburg mit automatisierter Angebotserstellung und Live-Preisberechnung.
 
-**Status:** ✅ VOLL FUNKTIONSFÄHIG + WALLBOX + PRODUKTKATALOG
-**Version:** 1.2.0 (2025-11-11)
+**Status:** ✅ VOLL FUNKTIONSFÄHIG + WALLBOX + PRODUKTKATALOG + ANGEBOTS-BEARBEITUNG
+**Version:** 1.3.0 (2025-01-16)
 **Live-URL (Dev):** http://192.168.178.30:8025/precheck/
 
 ---
@@ -35,7 +35,8 @@ E:\ANPR\PV-Service\
 │   ├── CLAUDE_FRONTEND.md              # Frontend & JavaScript
 │   ├── CLAUDE_DATABASE.md              # Datenbank & Migrationen
 │   ├── CLAUDE_ADMIN.md                 # Admin-Dashboard
-│   ├── CLAUDE_PRODUKTKATALOG.md        # ⭐ NEU: Produktkatalog-System
+│   ├── CLAUDE_PRODUKTKATALOG.md        # Produktkatalog-System
+│   ├── CLAUDE_QUOTE_EDITING.md         # ⭐ NEU: Angebots-Bearbeitung
 │   └── CLAUDE_DEPLOYMENT.md            # Deployment & Testing
 │
 ├── manage.py
@@ -48,25 +49,32 @@ E:\ANPR\PV-Service\
 │   │   ├── api_views.py                # pricing_preview API
 │   │   └── migrations/
 │   │       ├── 0006_seed_wallbox_pricing.py
-│   │       └── 0010_productcategory_product.py  # ⭐ NEU
+│   │       ├── 0010_productcategory_product.py
+│   │       ├── 0020_add_location_choices.py     # ⭐ NEU: Precheck Choices
+│   │       ├── 0021_alter_precheck_storage_location.py
+│   │       ├── 0022_add_quote_notes.py          # ⭐ NEU: Quote.notes
+│   │       └── 0023_add_quoteitem_vat_rate.py   # ⭐ NEU: QuoteItem.vat_rate
 │   ├── core/                           # User, Customer, Site, Dashboard
-│   │   ├── dashboard_views.py          # ⭐ +8 Views für Produktkatalog
-│   │   ├── dashboard_urls.py           # ⭐ +8 URLs
-│   │   └── forms.py                    # ⭐ ProductCategoryForm, ProductForm
+│   │   ├── dashboard_views.py          # +8 Produktkatalog + ⭐ NEU: QuoteEditView, ProductAutocompleteView
+│   │   ├── dashboard_urls.py           # ⭐ NEU: /quotes/<pk>/edit/, /api/products/autocomplete/
+│   │   └── forms.py                    # ⭐ NEU: QuoteEditForm, QuoteItemForm, QuoteItemFormSet
 │   ├── customers/
 │   ├── inventory/
 │   └── ...
 ├── templates/
 │   ├── quotes/
 │   │   └── precheck_wizard.html        # 6-Schritte Preisrechner
-│   └── dashboard/                      # ⭐ Admin-Dashboard
+│   └── dashboard/                      # Admin-Dashboard
 │       ├── base.html                   # Mit Produktkatalog-Navigation
-│       ├── category_list.html          # ⭐ NEU: Kategorienliste
-│       ├── category_form.html          # ⭐ NEU
-│       ├── product_list.html           # ⭐ NEU: Produktliste
-│       ├── product_form.html           # ⭐ NEU
-│       ├── precheck_list.html          # ⭐ Mit Bootstrap Delete-Modal
-│       ├── customer_list.html          # ⭐ Mit Bootstrap Delete-Modal
+│       ├── category_list.html          # Kategorienliste
+│       ├── category_form.html
+│       ├── product_list.html           # Produktliste
+│       ├── product_form.html
+│       ├── quote_edit.html             # ⭐ NEU: Angebots-Bearbeitung (720 Zeilen)
+│       ├── quote_detail.html           # ⭐ NEU: "Bearbeiten" Button
+│       ├── precheck_list.html          # Mit Bootstrap Delete-Modal
+│       ├── precheck_detail.html        # ⭐ NEU: get_FOO_display() für Locations
+│       ├── customer_list.html          # Mit Bootstrap Delete-Modal
 │       └── ...
 └── static/
 ```
@@ -80,12 +88,23 @@ E:\ANPR\PV-Service\
 - **Wallbox-Integration** (3 Leistungsklassen: 4kW, 11kW, 22kW)
 - **Variable Kabelpreise** abhängig von WR/Wallbox-Leistung
 - **Database-Driven Pricing** (25 PriceConfig-Einträge)
-- **Produktkatalog-System** (⭐ NEU v1.2.0)
+- **Produktkatalog-System** (v1.2.0)
   - 7 Kategorien (Precheck, Wechselrichter, Speicher, etc.)
   - 30+ Produkte mit EK/VK-Preisen
   - Automatische Brutto-Berechnung & Margen
   - Filter, Suche, Pagination
   - Bootstrap Delete-Modals mit CASCADE-Warnungen
+- **Angebots-Bearbeitungssystem** (⭐ NEU v1.3.0)
+  - Positionen hinzufügen/bearbeiten/löschen
+  - Produktkatalog-Autocomplete mit Tastatursteuerung
+  - Individuelle MwSt.-Sätze pro Position
+  - Echtzeit-Berechnung & Split-MwSt.-Anzeige
+  - Automatische Positionsnummerierung
+  - Django Inline-Formsets
+- **Precheck-Formular Optimierungen** (⭐ NEU v1.3.0)
+  - Location-Felder mit CHOICES validiert
+  - Automatische Label-Anzeige (get_FOO_display)
+  - Validierungsfehler-Handling verbessert
 - **Enter-Taste Navigation** (springt zum nächsten Feld)
 - **3-Punkte Progress-Bar** (Standort → PV-System → Preis) mit zentrierten Labels dank gemeinsamer Flex-Spalten
 - **LocalStorage Persistierung** (Daten überleben Page-Reload)
@@ -146,7 +165,8 @@ Für tiefere Einblicke in spezifische Bereiche, siehe:
 - **[CLAUDE_FRONTEND.md](CLAUDE_FRONTEND.md)** - HTML-Struktur, JavaScript-Funktionen, CSS
 - **[CLAUDE_DATABASE.md](CLAUDE_DATABASE.md)** - Models, Migrationen, Schema
 - **[CLAUDE_ADMIN.md](CLAUDE_ADMIN.md)** - Admin-Dashboard Views & Templates
-- **[CLAUDE_PRODUKTKATALOG.md](CLAUDE_PRODUKTKATALOG.md)** - ⭐ NEU: Produktkatalog-System & Delete-Modals
+- **[CLAUDE_PRODUKTKATALOG.md](CLAUDE_PRODUKTKATALOG.md)** - Produktkatalog-System & Delete-Modals
+- **[CLAUDE_QUOTE_EDITING.md](CLAUDE_QUOTE_EDITING.md)** - ⭐ NEU: Angebots-Bearbeitung mit Autocomplete
 - **[CLAUDE_DEPLOYMENT.md](CLAUDE_DEPLOYMENT.md)** - Deployment, Testing, Known Issues
 
 ---
@@ -264,9 +284,41 @@ python-decouple==3.8
 
 ## 📝 Letzte Änderungen
 
-### Version 1.2.0 (2025-11-11)
+### Version 1.3.0 (2025-01-16)
 
-✅ **Produktkatalog-System (NEU):**
+✅ **Angebots-Bearbeitungssystem (NEU):**
+- 2 neue Views: QuoteEditView, ProductAutocompleteView
+- 3 neue Forms: QuoteEditForm, QuoteItemForm, QuoteItemFormSet
+- Template quote_edit.html (720 Zeilen mit JavaScript)
+- Produktkatalog-Autocomplete mit Debouncing (300ms)
+- Tastatursteuerung (↑↓ Enter Escape)
+- Echtzeit-Berechnung aller Summen
+- Split-MwSt.-Anzeige bei unterschiedlichen Sätzen
+- Automatische Positionsnummerierung
+- Dynamische Zeilen hinzufügen/löschen
+
+✅ **Model-Erweiterungen:**
+- Migration 0022: Quote.notes TextField
+- Migration 0023: QuoteItem.vat_rate DecimalField
+- Individuelle MwSt.-Sätze pro Position (19%, 7%, 0%)
+- Interne Notizen für Kundenwünsche
+
+✅ **Precheck-Formular Fixes:**
+- Migration 0020: INVERTER_LOCATION_CHOICES hinzugefügt
+- Migration 0021: 'same_as_inverter' zu STORAGE_LOCATION_CHOICES
+- CharField → ChoiceField für inverter_location/storage_location
+- get_FOO_display() in Templates für deutsche Labels
+- Verbesserte Validierungsfehler-Behandlung
+
+✅ **UI-Optimierungen:**
+- Quote Detail: "Bearbeiten" Button hinzugefügt
+- Kompakte rechte Spalte (col-lg-3 statt col-lg-4)
+- Reduzierte Textgrößen (Labels: 12px, Hilfetext: 10px)
+- .compact-form CSS-Klasse für platzsparende Formulare
+
+### Version 1.2.0 (2025-01-11)
+
+✅ **Produktkatalog-System:**
 - 2 neue Models: ProductCategory, Product
 - Migration 0010 erstellt & angewendet
 - 8 neue Views (Category & Product CRUD)

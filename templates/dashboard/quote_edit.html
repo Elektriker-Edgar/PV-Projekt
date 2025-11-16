@@ -1,0 +1,761 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Angebot {{ quote.quote_number }} bearbeiten{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'dashboard:quote_list' %}">Angebote</a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{% url 'dashboard:quote_detail' pk=quote.id %}">{{ quote.quote_number }}</a>
+    </li>
+    <li class="breadcrumb-item active">Bearbeiten</li>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">Angebot {{ quote.quote_number }} bearbeiten</h1>
+        <p class="page-subtitle">Kunde: {{ quote.precheck.site.customer.name }}</p>
+    </div>
+
+    <form method="post" id="quoteEditForm">
+        {% csrf_token %}
+
+        <div class="row g-4">
+            <!-- Left Column - Quote Items -->
+            <div class="col-lg-9">
+                <!-- Quote Items Card -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title mb-0" style="font-size: 16px;">
+                                <i class="fas fa-list"></i> Angebotspositionen
+                            </h3>
+                            <small class="text-muted" style="font-size: 12px;">Positionen bearbeiten oder hinzufügen</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-success" id="addItemBtn">
+                            <i class="fas fa-plus"></i> Position hinzufügen
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        {{ items_formset.management_form }}
+
+                        <div class="table-responsive" style="overflow-x: auto;">
+                            <table class="table table-sm table-hover mb-0" id="itemsTable" style="min-width: 900px;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 45px; font-size: 12px;">Pos.</th>
+                                        <th style="width: 28%; font-size: 12px;">Bezeichnung</th>
+                                        <th style="width: 11%; font-size: 12px;">Menge</th>
+                                        <th style="width: 14%; font-size: 12px;">Einzelpreis</th>
+                                        <th style="width: 11%; font-size: 12px;">MwSt. %</th>
+                                        <th style="width: 13%; font-size: 12px;">Gesamt</th>
+                                        <th style="width: 45px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemsTableBody">
+                                    {% for form in items_formset %}
+                                    <tr class="item-row" data-form-index="{{ forloop.counter0 }}">
+                                        <td class="text-center align-middle">
+                                            <span class="position-number badge bg-secondary">{{ forloop.counter }}</span>
+                                            {{ form.id }}
+                                        </td>
+                                        <td>
+                                            {{ form.text }}
+                                            <div class="autocomplete-dropdown" style="display: none;"></div>
+                                            {{ form.text.errors }}
+                                        </td>
+                                        <td>
+                                            {{ form.quantity }}
+                                            {{ form.quantity.errors }}
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                {{ form.unit_price }}
+                                                <span class="input-group-text">€</span>
+                                            </div>
+                                            {{ form.unit_price.errors }}
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                {{ form.vat_rate }}
+                                                <span class="input-group-text" style="padding: 0.25rem 0.4rem;">%</span>
+                                            </div>
+                                            {{ form.vat_rate.errors }}
+                                        </td>
+                                        <td class="align-middle">
+                                            <div class="line-total fw-bold text-primary">
+                                                0,00 €
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            {% if form.instance.pk %}
+                                            <div class="form-check d-inline-block">
+                                                {{ form.DELETE }}
+                                                <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}" title="Löschen">
+                                                    <i class="fas fa-trash"></i>
+                                                </label>
+                                            </div>
+                                            {% else %}
+                                            <button type="button" class="btn btn-sm btn-link text-danger delete-new-row" title="Zeile entfernen">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="5" class="text-end fw-bold">Zwischensumme (netto):</td>
+                                        <td colspan="2" id="subtotalDisplay" class="fw-bold">0,00 €</td>
+                                    </tr>
+                                    <tbody id="vatBreakdownBody"></tbody>
+                                    <tr>
+                                        <td colspan="5" class="text-end fw-bold fs-6">Gesamtsumme (brutto):</td>
+                                        <td colspan="2" id="totalDisplay" class="fw-bold fs-6 text-primary">0,00 €</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div class="alert alert-info m-3 mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Hinweis:</strong> Änderungen werden erst nach dem Speichern wirksam.
+                            Die Summen werden automatisch neu berechnet.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Precheck Reference -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title" style="font-size: 16px;">
+                            <i class="fas fa-clipboard-check"></i> Verknüpfte Vorprüfung
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <div class="info-label">Kunde</div>
+                                    <div class="info-value">{{ quote.precheck.site.customer.name }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <div class="info-label">E-Mail</div>
+                                    <div class="info-value">{{ quote.precheck.site.customer.email }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <div class="info-label">Gewünschte Leistung</div>
+                                    <div class="info-value">{{ quote.precheck.desired_power_kw }} kW</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <div class="info-label">Speicher</div>
+                                    <div class="info-value">
+                                        {% if quote.precheck.storage_kwh %}
+                                            {{ quote.precheck.storage_kwh }} kWh
+                                        {% else %}
+                                            Kein Speicher
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if quote.precheck.own_components %}
+                            <div class="col-12">
+                                <div class="alert alert-warning mb-0">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Eigenes Material:</strong> {{ quote.precheck.own_material_description }}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if quote.precheck.notes %}
+                            <div class="col-12">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-sticky-note"></i>
+                                    <strong>Kundenwunsch:</strong> {{ quote.precheck.notes }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Quote Settings -->
+            <div class="col-lg-3">
+                <!-- Quote Metadata Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="card-title" style="font-size: 16px;">
+                            <i class="fas fa-cog"></i> Angebotseinstellungen
+                        </h3>
+                    </div>
+                    <div class="card-body compact-form">
+                        <div class="mb-2">
+                            <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">{{ quote_form.status.label }}</label>
+                            {{ quote_form.status }}
+                            <div class="form-text" style="font-size: 10px;">{{ quote_form.status.help_text }}</div>
+                            {{ quote_form.status.errors }}
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">{{ quote_form.vat_rate.label }}</label>
+                            <div class="input-group input-group-sm">
+                                {{ quote_form.vat_rate }}
+                                <span class="input-group-text" style="font-size: 11px;">%</span>
+                            </div>
+                            <div class="form-text" style="font-size: 10px;">Standard-MwSt. für neue Positionen</div>
+                            {{ quote_form.vat_rate.errors }}
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">{{ quote_form.valid_until.label }}</label>
+                            {{ quote_form.valid_until }}
+                            <div class="form-text" style="font-size: 10px;">{{ quote_form.valid_until.help_text }}</div>
+                            {{ quote_form.valid_until.errors }}
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">{{ quote_form.notes.label }}</label>
+                            {{ quote_form.notes }}
+                            <div class="form-text" style="font-size: 10px;">{{ quote_form.notes.help_text }}</div>
+                            {{ quote_form.notes.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="card-title" style="font-size: 16px;">
+                            <i class="fas fa-tasks"></i> Aktionen
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Änderungen speichern
+                            </button>
+                            <a href="{% url 'dashboard:quote_detail' pk=quote.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Abbrechen
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title" style="font-size: 16px;">
+                            <i class="fas fa-info-circle"></i> Information
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-item">
+                            <div class="info-label">Angebotsnummer</div>
+                            <div class="info-value">{{ quote.quote_number }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Erstellt am</div>
+                            <div class="info-value">{{ quote.created_at|date:"d.m.Y H:i" }} Uhr</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Erstellt von</div>
+                            <div class="info-value">{{ quote.created_by.get_full_name|default:"System" }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Letzte Änderung</div>
+                            <div class="info-value">{{ quote.updated_at|date:"d.m.Y H:i" }} Uhr</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Template for new rows (hidden) -->
+<template id="newRowTemplate">
+    <tr class="item-row new-row">
+        <td class="text-center align-middle">
+            <span class="position-number badge bg-secondary"></span>
+        </td>
+        <td>
+            <input type="text" class="form-control form-control-sm autocomplete-product"
+                   placeholder="Bezeichnung eingeben oder aus Katalog wählen..." autocomplete="off">
+            <div class="autocomplete-dropdown" style="display: none;"></div>
+        </td>
+        <td>
+            <input type="number" class="form-control form-control-sm quantity-input"
+                   step="0.01" min="0.01" placeholder="1.00" value="1.00">
+        </td>
+        <td>
+            <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm price-input"
+                       step="0.01" min="0" placeholder="0.00" value="0.00">
+                <span class="input-group-text">€</span>
+            </div>
+        </td>
+        <td>
+            <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm vat-input"
+                       step="1" min="0" max="100" placeholder="19" value="19">
+                <span class="input-group-text" style="padding: 0.25rem 0.4rem;">%</span>
+            </div>
+        </td>
+        <td class="align-middle">
+            <div class="line-total fw-bold text-primary">0,00 €</div>
+        </td>
+        <td class="text-center align-middle">
+            <button type="button" class="btn btn-sm btn-link text-danger delete-new-row" title="Zeile entfernen">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+<style>
+    .item-row input {
+        font-size: 12px;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .item-row .form-control-sm {
+        padding: 0.25rem 0.4rem;
+        font-size: 12px;
+        min-width: 0;
+    }
+
+    .item-row .input-group-text {
+        padding: 0.25rem 0.4rem;
+        font-size: 11px;
+    }
+
+    .line-total {
+        padding: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .table-responsive {
+        width: 100%;
+    }
+
+    #itemsTable td {
+        padding: 0.4rem 0.3rem;
+        vertical-align: middle;
+    }
+
+    #itemsTable th {
+        padding: 0.5rem 0.3rem;
+    }
+
+    .info-box {
+        background: var(--neutral-50);
+        padding: 12px;
+        border-radius: 6px;
+        border-left: 3px solid var(--primary-blue);
+    }
+
+    .info-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--neutral-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--neutral-900);
+    }
+
+    .info-item {
+        padding: 10px 0;
+        border-bottom: 1px solid var(--neutral-200);
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-item .info-label {
+        font-size: 12px;
+        color: var(--neutral-600);
+        margin-bottom: 4px;
+    }
+
+    .info-item .info-value {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--neutral-900);
+    }
+
+    #itemsTable tbody tr {
+        transition: background-color 0.2s;
+    }
+
+    #itemsTable tbody tr:hover {
+        background-color: var(--neutral-50);
+    }
+
+    .autocomplete-dropdown {
+        position: absolute;
+        z-index: 1000;
+        background: white;
+        border: 1px solid var(--neutral-300);
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        max-height: 300px;
+        overflow-y: auto;
+        width: calc(100% - 30px);
+        margin-top: 2px;
+    }
+
+    .autocomplete-item {
+        padding: 10px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--neutral-100);
+        transition: background-color 0.15s;
+    }
+
+    .autocomplete-item:last-child {
+        border-bottom: none;
+    }
+
+    .autocomplete-item:hover {
+        background-color: var(--neutral-50);
+    }
+
+    .autocomplete-item.selected {
+        background-color: var(--primary-blue);
+        color: white;
+    }
+
+    .autocomplete-item-name {
+        font-weight: 500;
+        font-size: 13px;
+    }
+
+    .autocomplete-item-details {
+        font-size: 11px;
+        color: var(--neutral-500);
+        margin-top: 2px;
+    }
+
+    .autocomplete-item.selected .autocomplete-item-details {
+        color: rgba(255,255,255,0.8);
+    }
+
+    .position-number {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+
+    /* Optimierte Badge-Größe */
+    .badge {
+        font-size: 11px;
+    }
+
+    .compact-form .form-select,
+    .compact-form .form-control,
+    .compact-form textarea {
+        font-size: 12px;
+        padding: 0.375rem 0.5rem;
+    }
+
+    .compact-form textarea {
+        font-size: 11px;
+    }
+
+    .compact-form .input-group-sm .form-control {
+        font-size: 11px;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('quoteEditForm');
+    const vatRateInput = document.querySelector('input[name="vat_rate"]');
+    const itemsTable = document.getElementById('itemsTable');
+    const itemsTableBody = document.getElementById('itemsTableBody');
+    const addItemBtn = document.getElementById('addItemBtn');
+    const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+
+    let formIndex = parseInt(totalFormsInput.value);
+    let autocompleteTimeout = null;
+
+    // Position hinzufügen
+    addItemBtn.addEventListener('click', function() {
+        const template = document.getElementById('newRowTemplate');
+        const newRow = template.content.cloneNode(true).querySelector('tr');
+
+        // Aktualisiere Formset-Namen
+        const textInput = newRow.querySelector('.autocomplete-product');
+        const quantityInput = newRow.querySelector('.quantity-input');
+        const priceInput = newRow.querySelector('.price-input');
+        const vatInput = newRow.querySelector('.vat-input');
+
+        textInput.name = `items-${formIndex}-text`;
+        textInput.id = `id_items-${formIndex}-text`;
+        quantityInput.name = `items-${formIndex}-quantity`;
+        quantityInput.id = `id_items-${formIndex}-quantity`;
+        priceInput.name = `items-${formIndex}-unit_price`;
+        priceInput.id = `id_items-${formIndex}-unit_price`;
+        vatInput.name = `items-${formIndex}-vat_rate`;
+        vatInput.id = `id_items-${formIndex}-vat_rate`;
+
+        // Standard-MwSt übernehmen
+        const defaultVat = Math.round(parseFloat(vatRateInput.value) || 19);
+        vatInput.value = defaultVat;
+
+        newRow.dataset.formIndex = formIndex;
+        itemsTableBody.appendChild(newRow);
+
+        formIndex++;
+        totalFormsInput.value = formIndex;
+
+        updatePositionNumbers();
+        recalculateAll();
+        initializeAutocomplete(textInput);
+
+        // Fokus auf Textfeld
+        textInput.focus();
+    });
+
+    // Zeile löschen (neue Zeilen)
+    itemsTableBody.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-new-row')) {
+            const row = e.target.closest('tr');
+            row.remove();
+            updatePositionNumbers();
+            recalculateAll();
+        }
+    });
+
+    // Positionsnummern aktualisieren
+    function updatePositionNumbers() {
+        const rows = itemsTableBody.querySelectorAll('tr.item-row');
+        rows.forEach((row, index) => {
+            const posNumber = row.querySelector('.position-number');
+            if (posNumber) {
+                posNumber.textContent = index + 1;
+            }
+        });
+    }
+
+    // Funktion zur Berechnung einer Zeile
+    function calculateLineTotal(row) {
+        const quantityInput = row.querySelector('input[name*="quantity"]');
+        const unitPriceInput = row.querySelector('input[name*="unit_price"]');
+        const lineTotalDisplay = row.querySelector('.line-total');
+
+        if (!quantityInput || !unitPriceInput || !lineTotalDisplay) return {total: 0, vatRate: 19};
+
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const unitPrice = parseFloat(unitPriceInput.value) || 0;
+        const lineTotal = quantity * unitPrice;
+
+        let vatRateInput = row.querySelector('input[name*="vat_rate"]');
+        const vatRate = vatRateInput ? (parseFloat(vatRateInput.value) || 19) : 19;
+
+        lineTotalDisplay.textContent = lineTotal.toLocaleString('de-DE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €';
+
+        return {total: lineTotal, vatRate: vatRate};
+    }
+
+    // Funktion zur Neuberechnung aller Summen
+    function recalculateAll() {
+        let subtotal = 0;
+        const vatBreakdown = {}; // {vatRate: amount}
+
+        // Berechne Zwischensumme und sammle MwSt-Beträge
+        const rows = itemsTableBody.querySelectorAll('tr.item-row');
+        rows.forEach(row => {
+            // Überprüfe ob Zeile gelöscht werden soll
+            const deleteCheckbox = row.querySelector('input[type="checkbox"][name*="DELETE"]');
+            if (deleteCheckbox && deleteCheckbox.checked) {
+                row.style.opacity = '0.5';
+                row.style.textDecoration = 'line-through';
+                return;
+            } else {
+                row.style.opacity = '1';
+                row.style.textDecoration = 'none';
+            }
+
+            const lineData = calculateLineTotal(row);
+            subtotal += lineData.total;
+
+            // Gruppiere nach MwSt-Satz
+            const vatKey = lineData.vatRate.toFixed(2);
+            if (!vatBreakdown[vatKey]) {
+                vatBreakdown[vatKey] = {rate: lineData.vatRate, net: 0, vat: 0};
+            }
+            vatBreakdown[vatKey].net += lineData.total;
+        });
+
+        // Berechne MwSt für jeden Satz
+        let totalVat = 0;
+        for (let key in vatBreakdown) {
+            vatBreakdown[key].vat = vatBreakdown[key].net * (vatBreakdown[key].rate / 100);
+            totalVat += vatBreakdown[key].vat;
+        }
+
+        const total = subtotal + totalVat;
+
+        // Anzeige aktualisieren
+        document.getElementById('subtotalDisplay').textContent = subtotal.toLocaleString('de-DE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €';
+
+        // MwSt-Aufschlüsselung anzeigen
+        const vatBreakdownBody = document.getElementById('vatBreakdownBody');
+        vatBreakdownBody.innerHTML = '';
+
+        const sortedVatRates = Object.keys(vatBreakdown).sort((a, b) => parseFloat(a) - parseFloat(b));
+        sortedVatRates.forEach(key => {
+            const vat = vatBreakdown[key];
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="5" class="text-end">MwSt. ${vat.rate.toLocaleString('de-DE', {minimumFractionDigits: 2})}% von ${vat.net.toLocaleString('de-DE', {minimumFractionDigits: 2})} €:</td>
+                <td colspan="2">${vat.vat.toLocaleString('de-DE', {minimumFractionDigits: 2})} €</td>
+            `;
+            vatBreakdownBody.appendChild(row);
+        });
+
+        document.getElementById('totalDisplay').textContent = total.toLocaleString('de-DE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €';
+    }
+
+    // Autocomplete-Funktionalität
+    function initializeAutocomplete(inputElement) {
+        const dropdown = inputElement.parentElement.querySelector('.autocomplete-dropdown');
+        if (!dropdown) return;
+
+        let selectedIndex = -1;
+        let results = [];
+
+        inputElement.addEventListener('input', function() {
+            const query = this.value.trim();
+
+            clearTimeout(autocompleteTimeout);
+
+            if (query.length < 2) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            autocompleteTimeout = setTimeout(() => {
+                fetch(`{% url 'dashboard:product_autocomplete' %}?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        results = data.results;
+                        displayResults(results);
+                    });
+            }, 300);
+        });
+
+        function displayResults(items) {
+            if (items.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            dropdown.innerHTML = '';
+            items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.innerHTML = `
+                    <div class="autocomplete-item-name">${item.text}</div>
+                    <div class="autocomplete-item-details">SKU: ${item.sku} | ${item.price.toLocaleString('de-DE', {minimumFractionDigits: 2})} € | MwSt: ${item.vat_rate.toFixed(0)}%</div>
+                `;
+                div.dataset.index = index;
+                div.addEventListener('click', () => selectItem(item));
+                dropdown.appendChild(div);
+            });
+
+            dropdown.style.display = 'block';
+            selectedIndex = -1;
+        }
+
+        function selectItem(item) {
+            const row = inputElement.closest('tr');
+            inputElement.value = item.text;
+            row.querySelector('input[name*="unit_price"]').value = item.price.toFixed(2);
+            row.querySelector('input[name*="vat_rate"]').value = Math.round(item.vat_rate);
+            dropdown.style.display = 'none';
+            recalculateAll();
+        }
+
+        // Keyboard navigation
+        inputElement.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.autocomplete-item');
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateSelection(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                updateSelection(items);
+            } else if (e.key === 'Enter' && selectedIndex >= 0 && items.length > 0) {
+                e.preventDefault();
+                selectItem(results[selectedIndex]);
+            } else if (e.key === 'Escape') {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        function updateSelection(items) {
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('selected');
+                    item.scrollIntoView({block: 'nearest'});
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        // Close on click outside
+        document.addEventListener('click', function(e) {
+            if (!inputElement.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
+    // Initialize autocomplete for existing inputs
+    document.querySelectorAll('.autocomplete-product').forEach(input => {
+        initializeAutocomplete(input);
+    });
+
+    // Event Listener für Eingabefelder
+    itemsTableBody.addEventListener('input', recalculateAll);
+    itemsTableBody.addEventListener('change', recalculateAll);
+    vatRateInput.addEventListener('input', recalculateAll);
+
+    // Initiale Berechnung und Nummern
+    updatePositionNumbers();
+    recalculateAll();
+});
+</script>
+{% endblock %}

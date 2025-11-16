@@ -254,6 +254,107 @@ class Migration(migrations.Migration):
     ]
 ```
 
+### Migration 0020 - Add Location Choices to Precheck
+
+**Datei:** `apps/quotes/migrations/0020_add_location_choices.py`
+**Status:** ✅ Applied
+**Erstellt:** 2025-01-16
+
+**Zweck:** Fügt CHOICES zu inverter_location und storage_location Feldern hinzu
+
+**Änderungen:**
+- `Precheck.inverter_location`: CharField → CharField mit INVERTER_LOCATION_CHOICES
+- `Precheck.storage_location`: CharField → CharField mit STORAGE_LOCATION_CHOICES
+
+**Betroffene Felder:**
+```python
+INVERTER_LOCATION_CHOICES = [
+    ('basement', 'Keller'),
+    ('garage', 'Garage'),
+    ('attic', 'Dachboden'),
+    ('utility_room', 'Hauswirtschaftsraum'),
+    ('outdoor', 'Außenbereich (wettergeschützt)'),
+    ('other', 'Anderer Ort'),
+]
+
+STORAGE_LOCATION_CHOICES = [
+    ('basement', 'Keller'),
+    ('garage', 'Garage'),
+    ('attic', 'Dachboden'),
+    ('utility_room', 'Hauswirtschaftsraum'),
+    ('outdoor', 'Außenbereich (wettergeschützt)'),
+    ('other', 'Anderer Ort'),
+]
+```
+
+### Migration 0021 - Add same_as_inverter to Storage Location
+
+**Datei:** `apps/quotes/migrations/0021_alter_precheck_storage_location.py`
+**Status:** ✅ Applied
+**Erstellt:** 2025-01-16
+
+**Zweck:** Fügt 'same_as_inverter' Option zu STORAGE_LOCATION_CHOICES hinzu
+
+**Grund:** Template verwendet diesen Wert, führte zu Validierungsfehlern
+
+**Aktualisierte STORAGE_LOCATION_CHOICES:**
+```python
+STORAGE_LOCATION_CHOICES = [
+    ('same_as_inverter', 'Gleicher Ort wie Wechselrichter'),  # NEU
+    ('basement', 'Keller'),
+    ('garage', 'Garage'),
+    ('attic', 'Dachboden'),
+    ('utility_room', 'Hauswirtschaftsraum'),
+    ('outdoor', 'Außenbereich (wettergeschützt)'),
+    ('other', 'Anderer Ort'),
+]
+```
+
+### Migration 0022 - Add Notes to Quote
+
+**Datei:** `apps/quotes/migrations/0022_add_quote_notes.py`
+**Status:** ✅ Applied
+**Erstellt:** 2025-01-16
+
+**Zweck:** Fügt notes TextField zu Quote Model hinzu
+
+**Neues Feld:**
+```python
+notes = models.TextField(
+    blank=True,
+    help_text='Interne Notizen zu Sonderwünschen oder Anpassungen'
+)
+```
+
+**Use Case:** Erfassung von:
+- Kundenwünschen aus Precheck-Notizen
+- Gründen für manuelle Anpassungen
+- Hinweisen für andere Mitarbeiter
+
+### Migration 0023 - Add VAT Rate to QuoteItem
+
+**Datei:** `apps/quotes/migrations/0023_add_quoteitem_vat_rate.py`
+**Status:** ✅ Applied
+**Erstellt:** 2025-01-16
+
+**Zweck:** Fügt vat_rate Feld zu QuoteItem hinzu für individuelle MwSt.-Sätze
+
+**Neues Feld:**
+```python
+vat_rate = models.DecimalField(
+    max_digits=5,
+    decimal_places=2,
+    default=Decimal('19.00'),
+    help_text='MwSt.-Satz in Prozent'
+)
+```
+
+**Use Cases:**
+- Standardsatz: 19% (Elektroinstallation)
+- Ermäßigter Satz: 7% (bestimmte Lieferungen)
+- Nullsteuersatz: 0% (PV-Anlagen unter bestimmten Bedingungen)
+- Split-MwSt.-Berechnung bei gemischten Positionen
+
 ### Migration 0006 - Seed Wallbox Pricing
 
 **Datei:** `apps/quotes/migrations/0006_seed_wallbox_pricing.py`

@@ -11,6 +11,9 @@
 
 {% block header_actions %}
     <div class="d-flex gap-2">
+        <a href="{% url 'dashboard:quote_edit' pk=quote.id %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-edit"></i> Bearbeiten
+        </a>
         <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
             <i class="fas fa-print"></i> Drucken
         </button>

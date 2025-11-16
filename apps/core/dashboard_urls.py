@@ -28,6 +28,7 @@ urlpatterns = [
     # Quote Management
     path('quotes/', dashboard_views.QuoteListView.as_view(), name='quote_list'),
     path('quotes/<int:pk>/', dashboard_views.QuoteDetailView.as_view(), name='quote_detail'),
+    path('quotes/<int:pk>/edit/', dashboard_views.QuoteEditView.as_view(), name='quote_edit'),
 
     # Product Catalog - Categories
     path('catalog/categories/', dashboard_views.ProductCategoryListView.as_view(), name='category_list'),
@@ -41,4 +42,5 @@ urlpatterns = [
     path('catalog/products/create/', dashboard_views.ProductCreateView.as_view(), name='product_create'),
     path('catalog/products/<int:pk>/edit/', dashboard_views.ProductUpdateView.as_view(), name='product_update'),
     path('catalog/products/<int:pk>/delete/', dashboard_views.ProductDeleteView.as_view(), name='product_delete'),
+    path('api/products/autocomplete/', dashboard_views.ProductAutocompleteView.as_view(), name='product_autocomplete'),
 ]
