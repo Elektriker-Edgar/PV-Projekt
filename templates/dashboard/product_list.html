@@ -83,17 +83,20 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label">Suche</label>
-                        <div class="input-group">
+                        <div class="input-group position-relative" id="search-container">
                             <span class="input-group-text" style="background: white; border-right: none;">
                                 <i class="fas fa-search text-muted"></i>
                             </span>
                             <input
                                 type="text"
                                 name="search"
+                                id="product-search-input"
                                 class="form-control"
                                 placeholder="Name, SKU, Hersteller..."
                                 value="{{ search_query }}"
+                                autocomplete="off"
                                 style="border-left: none;">
+                            <div id="search-results-dropdown" class="search-dropdown" style="display: none;"></div>
                         </div>
                     </div>
 
@@ -487,6 +490,97 @@
         opacity: 0.5;
         pointer-events: none;
     }
+
+    /* Autocomplete Dropdown */
+    #search-container {
+        position: relative;
+    }
+
+    .search-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1050;
+        margin-top: 4px;
+        background: white;
+        border: 1px solid var(--neutral-300);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .search-dropdown-header {
+        padding: 8px 12px;
+        background: var(--neutral-50);
+        border-bottom: 1px solid var(--neutral-200);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--neutral-600);
+        text-transform: uppercase;
+    }
+
+    .search-dropdown-item {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--neutral-100);
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+
+    .search-dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    .search-dropdown-item:hover,
+    .search-dropdown-item.active {
+        background: var(--neutral-50);
+    }
+
+    .search-dropdown-item-name {
+        font-weight: 600;
+        color: var(--neutral-900);
+        font-size: 13px;
+        margin-bottom: 4px;
+    }
+
+    .search-dropdown-item-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--neutral-600);
+    }
+
+    .search-dropdown-item-sku {
+        background: var(--neutral-100);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: monospace;
+    }
+
+    .search-dropdown-empty {
+        padding: 20px;
+        text-align: center;
+        color: var(--neutral-500);
+        font-size: 13px;
+    }
+
+    .search-dropdown-footer {
+        padding: 8px 12px;
+        background: var(--neutral-50);
+        border-top: 1px solid var(--neutral-200);
+        text-align: center;
+        font-size: 11px;
+        color: var(--neutral-600);
+    }
+
+    .search-loading {
+        padding: 12px;
+        text-align: center;
+        color: var(--neutral-500);
+        font-size: 12px;
+    }
 </style>
 
 <script>
@@ -590,6 +684,157 @@
                 }
                 submitBulkAction('delete');
             });
+        }
+
+        // Autocomplete-Suche
+        const searchInput = document.getElementById('product-search-input');
+        const searchDropdown = document.getElementById('search-results-dropdown');
+        let searchTimeout = null;
+        let selectedIndex = -1;
+        let searchResults = [];
+
+        if (searchInput && searchDropdown) {
+            // Debounced search
+            searchInput.addEventListener('input', function () {
+                const query = this.value.trim();
+
+                clearTimeout(searchTimeout);
+
+                if (query.length < 2) {
+                    hideDropdown();
+                    return;
+                }
+
+                searchTimeout = setTimeout(() => {
+                    performSearch(query);
+                }, 300); // 300ms Verzögerung
+            });
+
+            // Keyboard navigation
+            searchInput.addEventListener('keydown', function (e) {
+                if (!searchDropdown.style.display || searchDropdown.style.display === 'none') {
+                    return;
+                }
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, searchResults.length - 1);
+                    updateSelectedItem();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, -1);
+                    updateSelectedItem();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedIndex >= 0 && searchResults[selectedIndex]) {
+                        selectResult(searchResults[selectedIndex]);
+                    } else {
+                        // Submit normal search
+                        searchInput.closest('form').submit();
+                    }
+                } else if (e.key === 'Escape') {
+                    hideDropdown();
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+                    hideDropdown();
+                }
+            });
+        }
+
+        function performSearch(query) {
+            // Show loading
+            searchDropdown.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Suche...</div>';
+            searchDropdown.style.display = 'block';
+
+            // Fetch results
+            fetch(`/dashboard/api/products/autocomplete/?q=${encodeURIComponent(query)}&include_inactive=true`)
+                .then(response => response.json())
+                .then(data => {
+                    searchResults = data.results || [];
+                    displayResults(searchResults);
+                })
+                .catch(error => {
+                    console.error('Autocomplete error:', error);
+                    searchDropdown.innerHTML = '<div class="search-dropdown-empty">Fehler beim Laden der Ergebnisse</div>';
+                });
+        }
+
+        function displayResults(results) {
+            if (results.length === 0) {
+                searchDropdown.innerHTML = '<div class="search-dropdown-empty"><i class="fas fa-search"></i> Keine Produkte gefunden</div>';
+                return;
+            }
+
+            let html = '<div class="search-dropdown-header">🔍 Gefunden: ' + results.length + ' Produkt' + (results.length !== 1 ? 'e' : '') + '</div>';
+
+            results.forEach((product, index) => {
+                const statusIcon = product.is_active
+                    ? '<i class="fas fa-circle" style="color: var(--success); font-size: 8px;"></i>'
+                    : '<i class="far fa-circle" style="color: var(--neutral-400); font-size: 8px;"></i>';
+
+                html += `
+                    <div class="search-dropdown-item" data-index="${index}">
+                        <div class="search-dropdown-item-name">
+                            ${statusIcon} ${escapeHtml(product.text)}
+                        </div>
+                        <div class="search-dropdown-item-meta">
+                            <span class="search-dropdown-item-sku">${escapeHtml(product.sku)}</span>
+                            ${product.category ? '<span>📂 ' + escapeHtml(product.category) + '</span>' : ''}
+                            ${product.manufacturer ? '<span>🏭 ' + escapeHtml(product.manufacturer) + '</span>' : ''}
+                            <span style="margin-left: auto; font-weight: 600; color: var(--primary-blue);">${product.price.toFixed(2)} €</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '<div class="search-dropdown-footer">↵ Enter zum Suchen | ↑↓ Navigation | ESC zum Schließen</div>';
+
+            searchDropdown.innerHTML = html;
+
+            // Add click handlers
+            searchDropdown.querySelectorAll('.search-dropdown-item').forEach(item => {
+                item.addEventListener('click', function () {
+                    const index = parseInt(this.dataset.index);
+                    selectResult(searchResults[index]);
+                });
+            });
+
+            selectedIndex = -1;
+        }
+
+        function updateSelectedItem() {
+            const items = searchDropdown.querySelectorAll('.search-dropdown-item');
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        function selectResult(product) {
+            // Set search input to product name and submit form
+            searchInput.value = product.text;
+            hideDropdown();
+            searchInput.closest('form').submit();
+        }
+
+        function hideDropdown() {
+            searchDropdown.style.display = 'none';
+            selectedIndex = -1;
+            searchResults = [];
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
     });
 </script>

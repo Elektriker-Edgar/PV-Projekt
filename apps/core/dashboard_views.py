@@ -1440,16 +1440,19 @@ class ProductAutocompleteView(LoginRequiredMixin, View):
 
     def get(self, request):
         query = request.GET.get('q', '').strip()
-        
+        include_inactive = request.GET.get('include_inactive', 'false').lower() == 'true'
+
         if len(query) < 2:
             return JsonResponse({'results': []})
-        
-        # Suche nach Name oder SKU
-        products = Product.objects.filter(
-            Q(name__icontains=query) | Q(sku__icontains=query),
-            is_active=True
-        ).select_related('category')[:10]
-        
+
+        # Suche nach Name, SKU oder Hersteller
+        filters = Q(name__icontains=query) | Q(sku__icontains=query) | Q(manufacturer__icontains=query)
+
+        if not include_inactive:
+            filters &= Q(is_active=True)
+
+        products = Product.objects.filter(filters).select_related('category').order_by('-is_active', 'name')[:10]
+
         results = []
         for product in products:
             results.append({
@@ -1460,6 +1463,8 @@ class ProductAutocompleteView(LoginRequiredMixin, View):
                 'vat_rate': float(product.vat_rate_percent),
                 'unit': product.unit,
                 'category': product.category.name if product.category else '',
+                'manufacturer': product.manufacturer or '',
+                'is_active': product.is_active,
             })
-        
+
         return JsonResponse({'results': results})

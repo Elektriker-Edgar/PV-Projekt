@@ -40,7 +40,9 @@
       "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py makemigrations quotes --name add_quote_notes)",
       "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py makemigrations:*)",
       "Bash(dir \"E:\\ANPR\\PV-Service\\Docs\" /b)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py makemigrations customers --name add_database_indexes)",
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py migrate)"
     ],
     "deny": [],
     "ask": []

@@ -31,6 +31,12 @@ class Customer(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            # Für Suche nach Email und Name
+            models.Index(fields=['email'], name='customer_email_idx'),
+            models.Index(fields=['name'], name='customer_name_idx'),
+            models.Index(fields=['customer_type', '-created_at'], name='customer_type_date_idx'),
+        ]
 
     def __str__(self):
         return self.name
@@ -78,6 +84,11 @@ class Site(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            # Für Filterung nach Kunde und Gebäudetyp
+            models.Index(fields=['customer', '-created_at'], name='site_customer_date_idx'),
+            models.Index(fields=['building_type'], name='site_building_idx'),
+        ]
 
     def __str__(self):
         return f"{self.customer.name} - {self.address}"

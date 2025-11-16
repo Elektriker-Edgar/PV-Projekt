@@ -309,6 +309,11 @@ class Precheck(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            # Für Filterung nach Site und Zeitbereich
+            models.Index(fields=['site', '-created_at'], name='precheck_site_date_idx'),
+            models.Index(fields=['-created_at'], name='precheck_created_idx'),
+        ]
 
     def __str__(self):
         return f"Vorprüfung {self.site.customer.name} - {self.desired_power_kw} kW"
@@ -406,6 +411,12 @@ class Quote(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            # Für Status-Filterung und Zeitbereichsabfragen
+            models.Index(fields=['status', '-created_at'], name='quote_status_date_idx'),
+            models.Index(fields=['created_by', 'status'], name='quote_user_status_idx'),
+            models.Index(fields=['-created_at'], name='quote_created_idx'),
+        ]
 
     def __str__(self):
         return f"Angebot {self.quote_number}"
@@ -466,6 +477,10 @@ class ProductCategory(models.Model):
         ordering = ['sort_order', 'name']
         verbose_name = 'Produktkategorie'
         verbose_name_plural = 'Produktkategorien'
+        indexes = [
+            models.Index(fields=['sort_order', 'is_active'], name='cat_sort_active_idx'),
+            models.Index(fields=['is_active', 'name'], name='cat_active_name_idx'),
+        ]
 
     def __str__(self):
         return self.name
@@ -551,6 +566,15 @@ class Product(models.Model):
         ordering = ['category__sort_order', 'category__name', 'name']
         verbose_name = 'Produkt'
         verbose_name_plural = 'Produkte'
+        indexes = [
+            # Für Suche und Filterung
+            models.Index(fields=['name'], name='product_name_idx'),
+            models.Index(fields=['manufacturer'], name='product_manuf_idx'),
+            models.Index(fields=['category', 'is_active'], name='product_cat_active_idx'),
+            models.Index(fields=['is_active', '-created_at'], name='product_active_date_idx'),
+            # Für Dashboard-Statistiken
+            models.Index(fields=['is_active', 'is_featured'], name='product_active_feat_idx'),
+        ]
 
     def __str__(self):
         return f"{self.sku} - {self.name}"
