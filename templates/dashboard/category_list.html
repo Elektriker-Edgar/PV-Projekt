@@ -21,61 +21,6 @@
         <p class="page-subtitle">Verwalten Sie Kategorien für den Produktkatalog</p>
     </div>
 
-    <!-- Statistics Row -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <div style="width: 48px; height: 48px; background: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-folder" style="font-size: 24px; color: var(--primary-blue);"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <div class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase;">Gesamt</div>
-                            <div style="font-size: 24px; font-weight: 700; color: var(--neutral-900);">{{ total_categories }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <div style="width: 48px; height: 48px; background: #d1fae5; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-check-circle" style="font-size: 24px; color: var(--success);"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <div class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase;">Aktiv</div>
-                            <div style="font-size: 24px; font-weight: 700; color: var(--neutral-900);">{{ active_categories }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <div style="width: 48px; height: 48px; background: #fef3c7; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-box" style="font-size: 24px; color: var(--warning);"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <div class="text-muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase;">Inaktiv</div>
-                            <div style="font-size: 24px; font-weight: 700; color: var(--neutral-900);">{{ total_categories|add:"-"|add:active_categories|default:0 }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Search/Filter Card -->
     <div class="card mb-4">
         <div class="card-body">

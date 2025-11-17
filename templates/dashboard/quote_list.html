@@ -81,6 +81,22 @@
         </div>
     </div>
 
+    <!-- Bulk Actions Bar -->
+    <div class="card mb-3" id="bulkActionsBar" style="display: none;">
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span id="selectedCount" class="fw-bold">0</span> Angebote ausgewählt
+                </div>
+                <div>
+                    <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+                        <i class="fas fa-trash"></i> Ausgewählte löschen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Results Card -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -102,6 +118,9 @@
                 <table class="table mb-0">
                     <thead>
                         <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" id="selectAll" class="form-check-input">
+                            </th>
                             <th>Angebotsnummer</th>
                             <th>Kunde</th>
                             <th>Datum</th>
@@ -115,6 +134,12 @@
                     <tbody>
                         {% for quote in quotes %}
                         <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input quote-checkbox" value="{{ quote.id }}"
+                                       data-quote-number="{{ quote.quote_number }}"
+                                       data-customer-name="{{ quote.precheck.site.customer.name }}"
+                                       data-total-gross="{{ quote.total_gross }}">
+                            </td>
                             <td>
                                 <div>
                                     <div style="font-weight: 600; color: var(--neutral-900);">
@@ -194,7 +219,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" class="text-center py-5">
+                            <td colspan="9" class="text-center py-5">
                                 <i class="fas fa-file-invoice" style="font-size: 48px; color: var(--neutral-300); margin-bottom: 16px;"></i>
                                 <p class="text-muted mb-0">Keine Angebote gefunden</p>
                                 <small class="text-muted">Versuchen Sie, Ihre Filter anzupassen</small>
@@ -293,11 +318,151 @@
     }
 </style>
 
+<!-- Bulk Delete Modal -->
+<div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Mehrere Angebote löschen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3"><strong>Möchten Sie die ausgewählten <span id="bulkDeleteCount">0</span> Angebote wirklich löschen?</strong></p>
+                <div class="alert alert-danger mb-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>ACHTUNG:</strong> Dies ist eine destruktive Operation!
+                </div>
+                <p class="mb-2"><strong>Folgende Angebote werden gelöscht:</strong></p>
+                <div id="bulkDeleteQuoteList" class="mb-3" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Wird per JavaScript gefüllt -->
+                </div>
+                <p class="mb-2"><strong>Gesamtwert der zu löschenden Angebote:</strong></p>
+                <div class="alert alert-info mb-0">
+                    <strong><span id="totalValue">0,00</span> €</strong> (Brutto)
+                </div>
+                <p class="text-danger mt-3 mb-0"><strong>Diese Aktion kann NICHT rückgängig gemacht werden!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Abbrechen
+                </button>
+                <form method="post" action="{% url 'dashboard:quote_bulk_delete' %}" id="bulkDeleteForm" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="quote_ids" id="bulkDeleteQuoteIds">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Endgültig löschen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function changeSort(value) {
     const url = new URL(window.location.href);
     url.searchParams.set('sort', value);
     window.location.href = url.toString();
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const quoteCheckboxes = document.querySelectorAll('.quote-checkbox');
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    const bulkDeleteModal = new bootstrap.Modal(document.getElementById('bulkDeleteModal'));
+
+    // Select All Functionality
+    selectAllCheckbox.addEventListener('change', function() {
+        quoteCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateBulkActionsBar();
+    });
+
+    // Individual Checkbox Change
+    quoteCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectAllState();
+            updateBulkActionsBar();
+        });
+    });
+
+    // Update Select All State
+    function updateSelectAllState() {
+        const totalCheckboxes = quoteCheckboxes.length;
+        const checkedCheckboxes = document.querySelectorAll('.quote-checkbox:checked').length;
+
+        selectAllCheckbox.checked = totalCheckboxes > 0 && checkedCheckboxes === totalCheckboxes;
+        selectAllCheckbox.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
+    }
+
+    // Update Bulk Actions Bar
+    function updateBulkActionsBar() {
+        const selectedCheckboxes = document.querySelectorAll('.quote-checkbox:checked');
+        const selectedCount = selectedCheckboxes.length;
+
+        if (selectedCount > 0) {
+            bulkActionsBar.style.display = 'block';
+            selectedCountSpan.textContent = selectedCount;
+        } else {
+            bulkActionsBar.style.display = 'none';
+        }
+    }
+
+    // Bulk Delete Button Click
+    bulkDeleteBtn.addEventListener('click', function() {
+        const selectedCheckboxes = document.querySelectorAll('.quote-checkbox:checked');
+        const quoteIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+        if (quoteIds.length === 0) {
+            return;
+        }
+
+        // Sammle Informationen über die ausgewählten Angebote
+        let totalValue = 0;
+        let quoteListHtml = '<ul class="list-unstyled">';
+
+        selectedCheckboxes.forEach(checkbox => {
+            const quoteNumber = checkbox.dataset.quoteNumber;
+            const customerName = checkbox.dataset.customerName;
+            const totalGross = parseFloat(checkbox.dataset.totalGross);
+
+            totalValue += totalGross;
+
+            quoteListHtml += `<li class="mb-2">
+                <strong>${escapeHtml(quoteNumber)}</strong> - ${escapeHtml(customerName)}
+                <span class="text-muted">(${totalGross.toFixed(2)} €)</span>
+            </li>`;
+        });
+
+        quoteListHtml += '</ul>';
+
+        // Fülle Modal-Inhalte
+        document.getElementById('bulkDeleteCount').textContent = quoteIds.length;
+        document.getElementById('bulkDeleteQuoteList').innerHTML = quoteListHtml;
+        document.getElementById('totalValue').textContent = totalValue.toFixed(2).replace('.', ',');
+        document.getElementById('bulkDeleteQuoteIds').value = quoteIds.join(',');
+
+        // Zeige Modal
+        bulkDeleteModal.show();
+    });
+
+    // Escape HTML für Sicherheit
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+});
 </script>
+
 {% endblock %}

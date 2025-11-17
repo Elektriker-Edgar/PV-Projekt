@@ -24,11 +24,13 @@ urlpatterns = [
     path('customers/', dashboard_views.CustomerListView.as_view(), name='customer_list'),
     path('customers/<int:pk>/', dashboard_views.CustomerDetailView.as_view(), name='customer_detail'),
     path('customers/<int:pk>/delete/', dashboard_views.CustomerDeleteView.as_view(), name='customer_delete'),
+    path('customers/bulk-delete/', dashboard_views.CustomerBulkDeleteView.as_view(), name='customer_bulk_delete'),
 
     # Quote Management
     path('quotes/', dashboard_views.QuoteListView.as_view(), name='quote_list'),
     path('quotes/<int:pk>/', dashboard_views.QuoteDetailView.as_view(), name='quote_detail'),
     path('quotes/<int:pk>/edit/', dashboard_views.QuoteEditView.as_view(), name='quote_edit'),
+    path('quotes/bulk-delete/', dashboard_views.QuoteBulkDeleteView.as_view(), name='quote_bulk_delete'),
 
     # Product Catalog - Categories
     path('catalog/categories/', dashboard_views.ProductCategoryListView.as_view(), name='category_list'),

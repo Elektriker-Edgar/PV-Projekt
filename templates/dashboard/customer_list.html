@@ -71,6 +71,22 @@
         </div>
     </div>
 
+    <!-- Bulk Actions Bar -->
+    <div class="card mb-3" id="bulkActionsBar" style="display: none;">
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span id="selectedCount" class="fw-bold">0</span> Kunden ausgewählt
+                </div>
+                <div>
+                    <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+                        <i class="fas fa-trash"></i> Ausgewählte löschen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Results Card -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -85,6 +101,9 @@
                 <table class="table mb-0">
                     <thead>
                         <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" id="selectAll" class="form-check-input">
+                            </th>
                             <th>ID</th>
                             <th>Name</th>
                             <th>Kontaktdaten</th>
@@ -98,6 +117,12 @@
                     <tbody>
                         {% for customer in customers %}
                         <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input customer-checkbox" value="{{ customer.id }}"
+                                       data-customer-name="{{ customer.name }}"
+                                       data-sites-count="{{ customer.sites.count }}"
+                                       data-prechecks-count="{{ customer.total_prechecks }}">
+                            </td>
                             <td>
                                 <span style="font-weight: 600; color: var(--neutral-900);">#{{ customer.id }}</span>
                             </td>
@@ -209,7 +234,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" class="text-center py-5">
+                            <td colspan="9" class="text-center py-5">
                                 <i class="fas fa-users" style="font-size: 48px; color: var(--neutral-300); margin-bottom: 16px;"></i>
                                 <p class="text-muted mb-0">Keine Kunden gefunden</p>
                                 <small class="text-muted">Versuchen Sie, Ihre Filter anzupassen</small>
@@ -307,4 +332,152 @@
         color: white;
     }
 </style>
+
+<!-- Bulk Delete Modal -->
+<div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Mehrere Kunden löschen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3"><strong>Möchten Sie die ausgewählten <span id="bulkDeleteCount">0</span> Kunden wirklich löschen?</strong></p>
+                <div class="alert alert-danger mb-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>ACHTUNG:</strong> Dies ist eine destruktive Operation!
+                </div>
+                <p class="mb-2"><strong>Folgende Kunden werden gelöscht:</strong></p>
+                <div id="bulkDeleteCustomerList" class="mb-3" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Wird per JavaScript gefüllt -->
+                </div>
+                <p class="mb-2"><strong>Insgesamt werden gelöscht:</strong></p>
+                <ul class="mb-0">
+                    <li><strong><span id="totalSites">0</span></strong> Standort(e)</li>
+                    <li><strong><span id="totalPrechecks">0</span></strong> Precheck(s)</li>
+                    <li>Alle verknüpften Angebote</li>
+                    <li>Alle hochgeladenen Dateien</li>
+                </ul>
+                <p class="text-danger mt-3 mb-0"><strong>Diese Aktion kann NICHT rückgängig gemacht werden!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Abbrechen
+                </button>
+                <form method="post" action="{% url 'dashboard:customer_bulk_delete' %}" id="bulkDeleteForm" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="customer_ids" id="bulkDeleteCustomerIds">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Endgültig löschen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const customerCheckboxes = document.querySelectorAll('.customer-checkbox');
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    const bulkDeleteModal = new bootstrap.Modal(document.getElementById('bulkDeleteModal'));
+
+    // Select All Functionality
+    selectAllCheckbox.addEventListener('change', function() {
+        customerCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateBulkActionsBar();
+    });
+
+    // Individual Checkbox Change
+    customerCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectAllState();
+            updateBulkActionsBar();
+        });
+    });
+
+    // Update Select All State
+    function updateSelectAllState() {
+        const totalCheckboxes = customerCheckboxes.length;
+        const checkedCheckboxes = document.querySelectorAll('.customer-checkbox:checked').length;
+
+        selectAllCheckbox.checked = totalCheckboxes > 0 && checkedCheckboxes === totalCheckboxes;
+        selectAllCheckbox.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
+    }
+
+    // Update Bulk Actions Bar
+    function updateBulkActionsBar() {
+        const selectedCheckboxes = document.querySelectorAll('.customer-checkbox:checked');
+        const selectedCount = selectedCheckboxes.length;
+
+        if (selectedCount > 0) {
+            bulkActionsBar.style.display = 'block';
+            selectedCountSpan.textContent = selectedCount;
+        } else {
+            bulkActionsBar.style.display = 'none';
+        }
+    }
+
+    // Bulk Delete Button Click
+    bulkDeleteBtn.addEventListener('click', function() {
+        const selectedCheckboxes = document.querySelectorAll('.customer-checkbox:checked');
+        const customerIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+        if (customerIds.length === 0) {
+            return;
+        }
+
+        // Sammle Informationen über die ausgewählten Kunden
+        let totalSites = 0;
+        let totalPrechecks = 0;
+        let customerListHtml = '<ul class="list-unstyled">';
+
+        selectedCheckboxes.forEach(checkbox => {
+            const name = checkbox.dataset.customerName;
+            const sitesCount = parseInt(checkbox.dataset.sitesCount);
+            const prechecksCount = parseInt(checkbox.dataset.prechecksCount);
+
+            totalSites += sitesCount;
+            totalPrechecks += prechecksCount;
+
+            customerListHtml += `<li class="mb-2">
+                <strong>${escapeHtml(name)}</strong>
+                <span class="text-muted">(${sitesCount} Standort(e), ${prechecksCount} Precheck(s))</span>
+            </li>`;
+        });
+
+        customerListHtml += '</ul>';
+
+        // Fülle Modal-Inhalte
+        document.getElementById('bulkDeleteCount').textContent = customerIds.length;
+        document.getElementById('bulkDeleteCustomerList').innerHTML = customerListHtml;
+        document.getElementById('totalSites').textContent = totalSites;
+        document.getElementById('totalPrechecks').textContent = totalPrechecks;
+        document.getElementById('bulkDeleteCustomerIds').value = customerIds.join(',');
+
+        // Zeige Modal
+        bulkDeleteModal.show();
+    });
+
+    // Escape HTML für Sicherheit
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+});
+</script>
+
 {% endblock %}

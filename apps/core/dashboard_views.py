@@ -920,6 +920,133 @@ class CustomerDeleteView(LoginRequiredMixin, DeleteView):
         return response
 
 
+class CustomerBulkDeleteView(LoginRequiredMixin, View):
+    """
+    Mehrfachlöschung von Kunden
+
+    WICHTIG: Löscht CASCADE für jeden Kunden:
+    - Alle Sites des Kunden
+    - Alle Prechecks aller Sites
+    - Alle Quotes aller Prechecks
+    - Alle hochgeladenen Dateien
+
+    WARNUNG: Dies ist eine destruktive Operation!
+    """
+    login_url = '/admin/login/'
+
+    def post(self, request, *args, **kwargs):
+        """
+        Verarbeitet die Mehrfachlöschung
+        """
+        # Extrahiere Kunden-IDs aus POST-Parameter
+        customer_ids_str = request.POST.get('customer_ids', '')
+
+        if not customer_ids_str:
+            messages.error(request, 'Keine Kunden ausgewählt.')
+            return redirect('dashboard:customer_list')
+
+        # Konvertiere String zu Liste von Integer-IDs
+        try:
+            customer_ids = [int(id.strip()) for id in customer_ids_str.split(',') if id.strip()]
+        except ValueError:
+            messages.error(request, 'Ungültige Kunden-IDs.')
+            return redirect('dashboard:customer_list')
+
+        if not customer_ids:
+            messages.error(request, 'Keine Kunden ausgewählt.')
+            return redirect('dashboard:customer_list')
+
+        # Hole alle Kunden
+        customers = Customer.objects.filter(id__in=customer_ids)
+
+        if not customers.exists():
+            messages.error(request, 'Keine gültigen Kunden gefunden.')
+            return redirect('dashboard:customer_list')
+
+        # Sammle Statistiken vor dem Löschen
+        total_customers = customers.count()
+        total_sites = 0
+        total_prechecks = 0
+        total_quotes = 0
+        customer_names = []
+
+        for customer in customers:
+            customer_names.append(customer.name)
+            total_sites += customer.sites.count()
+            total_prechecks += Precheck.objects.filter(site__customer=customer).count()
+            total_quotes += Quote.objects.filter(precheck__site__customer=customer).count()
+
+        # Lösche alle Kunden (CASCADE löscht alles verknüpfte)
+        customers.delete()
+
+        # Success-Message mit Statistiken
+        messages.success(
+            request,
+            f'{total_customers} Kunden wurden gelöscht. '
+            f'Entfernt: {total_sites} Standorte, {total_prechecks} Prechecks, {total_quotes} Angebote.'
+        )
+
+        return redirect('dashboard:customer_list')
+
+
+class QuoteBulkDeleteView(LoginRequiredMixin, View):
+    """
+    Mehrfachlöschung von Angeboten
+
+    WICHTIG: Löscht CASCADE:
+    - Alle QuoteItems des Angebots
+    - Alle verknüpften Dateien
+
+    WARNUNG: Dies ist eine destruktive Operation!
+    """
+    login_url = '/admin/login/'
+
+    def post(self, request, *args, **kwargs):
+        """
+        Verarbeitet die Mehrfachlöschung von Angeboten
+        """
+        # Extrahiere Angebots-IDs aus POST-Parameter
+        quote_ids_str = request.POST.get('quote_ids', '')
+
+        if not quote_ids_str:
+            messages.error(request, 'Keine Angebote ausgewählt.')
+            return redirect('dashboard:quote_list')
+
+        # Konvertiere String zu Liste von Integer-IDs
+        try:
+            quote_ids = [int(id.strip()) for id in quote_ids_str.split(',') if id.strip()]
+        except ValueError:
+            messages.error(request, 'Ungültige Angebots-IDs.')
+            return redirect('dashboard:quote_list')
+
+        if not quote_ids:
+            messages.error(request, 'Keine Angebote ausgewählt.')
+            return redirect('dashboard:quote_list')
+
+        # Hole alle Angebote
+        quotes = Quote.objects.filter(id__in=quote_ids)
+
+        if not quotes.exists():
+            messages.error(request, 'Keine gültigen Angebote gefunden.')
+            return redirect('dashboard:quote_list')
+
+        # Sammle Statistiken vor dem Löschen
+        total_quotes = quotes.count()
+        total_value = sum(quote.total_gross for quote in quotes)
+        quote_numbers = [quote.quote_number for quote in quotes]
+
+        # Lösche alle Angebote (CASCADE löscht alle QuoteItems)
+        quotes.delete()
+
+        # Success-Message mit Statistiken
+        messages.success(
+            request,
+            f'{total_quotes} Angebote wurden gelöscht. Gesamtwert: {total_value:.2f} € (Brutto)'
+        )
+
+        return redirect('dashboard:quote_list')
+
+
 # =============================================================================
 # PRODUCT CATALOG VIEWS - Produktkatalog-System
 # =============================================================================
