@@ -179,3 +179,16 @@ CORS_ALLOWED_ORIGINS = [
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+# ============================================================================
+# N8n Integration Settings
+# ============================================================================
+
+# N8n Webhook URL (wohin Django Webhooks sendet)
+N8N_WEBHOOK_URL = config('N8N_WEBHOOK_URL', default='')
+
+# API-Key für N8n-Authentifizierung (optional, für später)
+N8N_API_KEY = config('N8N_API_KEY', default='')
+
+# Basis-URL dieser Django-Instanz (für Callbacks in Webhooks)
+BASE_URL = config('BASE_URL', default='http://192.168.178.30:8025')

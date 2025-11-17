@@ -1,502 +1,602 @@
-# n8n-Integration: Implementierungsplan
+# N8n-Integration: Implementierungsplan
 
-**Status:** In Planung
-**Erstellt:** 2025-11-12
+**Status:** ✅ Phase 1 ABGESCHLOSSEN - Backend bereit für N8n
+**Erstellt:** 2025-11-18
 **Projekt:** EDGARD Elektro PV-Service
+**Architektur:** Django REST API ← → N8n (KI-gestützte Angebotserstellung)
 
 ---
 
-## 📋 TODO-Liste
+## 🎯 Architektur-Übersicht
 
-### Phase 1: Django Backend vorbereiten
-- [x] Webhook-Models in integrations/models.py erstellen
-- [ ] Webhook-Endpoint für Precheck-Submit implementieren
-- [ ] Signal-Handler für Quote-Freigabe erstellen
-- [ ] API-Endpoints für n8n registrieren
-- [ ] n8n-Workflow Dokumentation schreiben
+### Entscheidung: REST API statt direktem DB-Zugriff
 
-### Phase 2: n8n-Workflow-Design
-- [ ] Workflow 1: Precheck → Quote erstellen
-- [ ] Workflow 2: Quote-Status-Updates implementieren
-- [ ] Email-Templates designen
-- [ ] PDF-Generator in n8n integrieren
+**✅ GEWÄHLT: Django REST API als sichere Schnittstelle**
 
-### Phase 3: Email-Templates
-- [ ] Eingangsbestätigung (sofort nach Precheck)
-- [ ] Interne Prüf-Email (an Team)
-- [ ] Angebot freigegeben (an Kunde mit PDF)
-- [ ] Terminbestätigung (nach Termin-Buchung)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          ARCHITEKTUR                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  KUNDE                                                           │
+│    │                                                             │
+│    ↓ Füllt Precheck aus                                         │
+│  DJANGO                                                          │
+│    │ 1. Speichert in PostgreSQL                                 │
+│    │ 2. Signal → Webhook an N8n                                 │
+│    │                                                             │
+│    ↓                                                             │
+│  N8N (Workflow-Engine + KI)                                      │
+│    │ 1. Empfängt Webhook mit Precheck-ID                        │
+│    │ 2. Ruft Django API auf                                     │
+│    │    GET /api/integrations/precheck/123/                     │
+│    │    GET /api/integrations/pricing/                          │
+│    │ 3. KI-Agent prüft Vollständigkeit                          │
+│    │ 4. Entscheidung:                                           │
+│    │    ├─ Vollständig → Angebot erstellen                      │
+│    │    └─ Unvollständig → Kunde nachfragen                     │
+│    │                                                             │
+│    ↓                                                             │
+│  DJANGO API (Callback)                                           │
+│    │ POST /api/quotes/create-from-precheck/                     │
+│    │ → Speichert Angebot                                        │
+│    │ → Sendet E-Mail an Kunde                                   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-### Phase 4: Testing & Deployment
-- [ ] Webhook-Endpoints testen
-- [ ] n8n-Workflows testen
-- [ ] Email-Versand testen
-- [ ] Integration End-to-End testen
-- [ ] Dokumentation vervollständigen
+### Warum REST API statt direkter DB-Zugriff?
+
+| Kriterium | Direkte DB | REST API (✅ Gewählt) |
+|-----------|------------|----------------------|
+| **Sicherheit** | ⚠️ DB-Passwort in N8n | ✅ API-Token (widerrufbar) |
+| **Business Logic** | ❌ Umgangen | ✅ Integriert (Validierung, Signals) |
+| **Schema-Änderungen** | ❌ Brechen N8n | ✅ API-Versionierung möglich |
+| **Audit Logs** | ❌ Keine | ✅ Vollständig |
+| **Testbarkeit** | ⚠️ Komplex | ✅ Einfach |
+| **Wartbarkeit** | ❌ Schwierig | ✅ Einfach |
 
 ---
 
-## 🎯 Schritt-für-Schritt-Plan
+## ✅ Phase 1: Django Backend (ABGESCHLOSSEN)
 
-### **Phase 1: Django Backend vorbereiten**
+### 1.1 Models erstellt
 
-#### **Schritt 1.1: Webhook-Models erstellen**
-Dateien: `apps/integrations/models.py`
+**Datei:** `apps/integrations/models.py`
 
-Benötigte Models:
-```python
-- WebhookLog (Tracking aller n8n Calls)
-  - event_type (precheck_submitted, quote_approved, etc.)
-  - payload (JSONField)
-  - status (pending, success, failed)
-  - response (JSONField)
-  - created_at, updated_at
-
-- N8nWorkflowStatus (Status-Tracking pro Precheck/Quote)
-  - precheck (ForeignKey)
-  - quote (ForeignKey, optional)
-  - workflow_id (n8n workflow ID)
-  - status (initiated, in_review, approved, sent, failed)
-  - last_event_at
-```
-
-#### **Schritt 1.2: Webhook-Endpoints implementieren**
-Dateien: `apps/integrations/views.py`, `apps/integrations/urls.py`
-
-Benötigte Endpoints:
-```python
-POST /api/integrations/n8n/precheck-submitted/
-  - Empfängt Precheck-Daten nach Form-Submit
-  - Validiert Payload
-  - Triggert n8n-Workflow
-  - Gibt Status zurück
-
-POST /api/integrations/n8n/quote-approved/
-  - Empfängt Quote-Freigabe
-  - Triggert PDF-Generierung
-  - Triggert Kunden-Email
-
-GET /api/integrations/n8n/status/<precheck_id>/
-  - Gibt aktuellen Workflow-Status zurück
-```
-
-#### **Schritt 1.3: Signal-Handler für Quote-Freigabe**
-Dateien: `apps/quotes/signals.py`
+#### WebhookLog Model
+- Tracking aller Webhook-Calls (Django ↔ N8n)
+- Status: pending, success, failed, retry
+- Payload & Response als JSON
+- Audit-Trail für Debugging
 
 ```python
-@receiver(post_save, sender=Quote)
-def quote_approved_handler(sender, instance, **kwargs):
-    if instance.status == 'approved' and not kwargs.get('created'):
-        # Webhook an n8n senden
-        # Payload: Quote-Daten + PDF-URL + Kunde
+class WebhookLog(models.Model):
+    event_type = models.CharField(max_length=50)  # precheck_submitted, etc.
+    direction = models.CharField()  # outgoing/incoming
+    status = models.CharField()  # pending/success/failed/retry
+    payload = models.JSONField()
+    response = models.JSONField()
+    error_message = models.TextField()
+    retry_count = models.IntegerField()
+    precheck_id = models.IntegerField()  # Referenz
+    # ...
 ```
 
-#### **Schritt 1.4: API-Endpoints registrieren**
-Dateien: `apps/integrations/urls.py`, `edgard_site/urls.py`
+#### N8nWorkflowStatus Model
+- Status-Tracking pro Precheck/Quote
+- KI-Validierung-Ergebnisse
+- Workflow-Metadaten
 
 ```python
-# apps/integrations/urls.py
-urlpatterns = [
-    path('n8n/precheck-submitted/', views.precheck_submitted_webhook),
-    path('n8n/quote-approved/', views.quote_approved_webhook),
-    path('n8n/status/<int:precheck_id>/', views.workflow_status),
-]
-
-# edgard_site/urls.py
-path('api/integrations/', include('apps.integrations.urls')),
+class N8nWorkflowStatus(models.Model):
+    precheck = models.ForeignKey(Precheck)
+    workflow_id = models.CharField()  # N8n Execution ID
+    status = models.CharField()  # initiated, data_validation, etc.
+    ai_validation_result = models.JSONField()  # KI-Prüfung
+    metadata = models.JSONField()
+    # ...
 ```
 
----
+### 1.2 API-Endpoints erstellt
 
-### **Phase 2: n8n-Workflow-Design**
+**Datei:** `apps/integrations/api_views.py`
 
-#### **Workflow 1: Precheck → Quote Review**
+#### 1. GET /api/integrations/precheck/<id>/
+Liefert alle Daten eines Prechecks für N8n.
 
-```mermaid
-graph LR
-    A[Webhook Trigger] --> B[Daten validieren]
-    B --> C[WebhookLog erstellen]
-    C --> D[Interne Email an Team]
-    D --> E[Warten auf Freigabe]
-    E --> F{Freigegeben?}
-    F -->|Ja| G[Status: approved]
-    F -->|Nein| H[Status: rejected]
-```
-
-**n8n Nodes:**
-1. **Webhook-Trigger** (POST von Django)
-2. **Function Node:** Payload validieren
-3. **HTTP Request:** Django API - Status Update
-4. **Email Node:** Interne Benachrichtigung
-5. **Wait Node:** Warten auf manuelle Freigabe
-6. **IF Node:** Freigabe-Entscheidung
-7. **HTTP Request:** Workflow 2 triggern
-
-#### **Workflow 2: Quote Approved → Kunde benachrichtigen**
-
-```mermaid
-graph LR
-    A[Webhook Trigger] --> B[Quote-Daten laden]
-    B --> C[PDF generieren]
-    C --> D[PDF in Storage speichern]
-    D --> E[Kunden-Email mit PDF]
-    E --> F[Status an Django]
-```
-
-**n8n Nodes:**
-1. **Webhook-Trigger** (von Workflow 1 oder Django Signal)
-2. **HTTP Request:** Django API - Quote-Daten laden
-3. **PDF Generator Node:** Angebot als PDF
-4. **S3/MinIO Node:** PDF hochladen (optional)
-5. **Email Node:** Kunden-Email mit PDF-Anhang
-6. **HTTP Request:** Django API - Status Update
-
----
-
-### **Phase 3: Email-Templates**
-
-#### **Template 1: Eingangsbestätigung**
-**Trigger:** Sofort nach Precheck-Submit
-**An:** Kunde
-**Betreff:** Ihre PV-Anfrage ist bei uns eingegangen
-
-```html
-Guten Tag {customer_name},
-
-vielen Dank für Ihre Anfrage zu unserem PV-Elektroservice.
-
-Wir haben Ihre Daten erhalten und prüfen diese umgehend.
-Sie erhalten innerhalb von 24 Stunden ein unverbindliches Angebot.
-
-**Ihre Anfrage:**
-- Standort: {site_address}
-- WR-Leistung: {desired_power_kw} kW
-- Speicher: {storage_kwh} kWh
-- Wallbox: {wallbox_status}
-
-Bei Rückfragen erreichen Sie uns unter:
-Tel: {company_phone}
-Email: {company_email}
-
-Mit freundlichen Grüßen
-Ihr EDGARD Elektro Team
-```
-
-#### **Template 2: Interne Prüf-Email**
-**Trigger:** Nach Precheck-Submit
-**An:** Team/Admin
-**Betreff:** Neue PV-Anfrage #{precheck_id} - {customer_name}
-
-```html
-Neue PV-Anfrage eingegangen:
-
-**Kunde:**
-- Name: {customer_name}
-- Email: {customer_email}
-- Telefon: {customer_phone}
-
-**Projekt:**
-- Standort: {site_address}
-- Hauptsicherung: {main_fuse_ampere} A
-- Netzform: {grid_type}
-- WR-Leistung: {desired_power_kw} kW
-- Speicher: {storage_kwh} kWh
-- Wallbox: {wallbox_details}
-
-**Kalkulierter Preis:**
-- Paket: {package}
-- Netto: {total_net} €
-- Brutto: {total_gross} €
-
-**Aktionen:**
-[Angebot freigeben] [Rückfragen stellen] [Ablehnen]
-
-Dashboard: {dashboard_url}
-```
-
-#### **Template 3: Angebot freigegeben**
-**Trigger:** Nach manueller Freigabe
-**An:** Kunde
-**Betreff:** Ihr PV-Angebot von EDGARD Elektro
-
-```html
-Guten Tag {customer_name},
-
-anbei erhalten Sie unser Angebot für Ihr PV-Projekt.
-
-**Ihr Projekt:**
-- Paket: {package_name}
-- Leistung: {desired_power_kw} kW
-- Gesamtpreis: {total_gross} € (inkl. MwSt.)
-
-Das Angebot finden Sie im Anhang als PDF.
-
-**Nächste Schritte:**
-1. Angebot prüfen
-2. Termin vereinbaren: {scheduling_link}
-3. Vor-Ort-Besichtigung
-
-Das Angebot ist gültig bis {valid_until}.
-
-Bei Fragen stehen wir Ihnen gerne zur Verfügung.
-
-Mit freundlichen Grüßen
-Ihr EDGARD Elektro Team
-
-[Anhang: Angebot_{precheck_id}.pdf]
-```
-
-#### **Template 4: Terminbestätigung**
-**Trigger:** Nach Termin-Buchung
-**An:** Kunde
-**Betreff:** Terminbestätigung - PV-Installation
-
-```html
-Guten Tag {customer_name},
-
-wir bestätigen Ihren Termin:
-
-**Termin:**
-- Datum: {appointment_date}
-- Uhrzeit: {appointment_time}
-- Adresse: {site_address}
-- Dauer: ca. {duration} Stunden
-
-**Vorbereitung:**
-- Zugang zu Zählerschrank sicherstellen
-- Komponenten bereithalten (falls Eigenlieferung)
-- Parkplatz für Servicefahrzeug
-
-Bei Änderungen kontaktieren Sie uns bitte mindestens 24h vorher.
-
-Kalender-Eintrag im Anhang.
-
-Mit freundlichen Grüßen
-Ihr EDGARD Elektro Team
-
-[Anhang: Termin.ics]
-```
-
----
-
-## 🔧 Technische Details
-
-### Django → n8n Webhook-Payload Format
-
-#### Precheck-Submitted Event
+**Response:**
 ```json
 {
-  "event": "precheck_submitted",
-  "timestamp": "2025-11-12T14:30:00Z",
   "precheck_id": 123,
   "customer": {
+    "id": 1,
     "name": "Max Mustermann",
     "email": "max@example.com",
     "phone": "+49 40 12345678"
   },
   "site": {
     "address": "Musterstraße 1, 20095 Hamburg",
+    "building_type": "efh",
     "main_fuse_ampere": 35,
-    "grid_type": "3p"
+    "grid_type": "3p",
+    "has_photos": true,
+    "photo_count": 3,
+    "photos": [...]
   },
-  "system": {
-    "desired_power_kw": 10.0,
+  "project": {
+    "desired_power_kw": 6.0,
     "storage_kwh": 5.0,
     "has_wallbox": true,
-    "wallbox_class": "11kw",
-    "wallbox_mount": "wall",
-    "wallbox_cable_length": 15.0
+    "wallbox_power": "11kw",
+    "customer_notes": "..."
   },
   "pricing": {
-    "package": "pro",
-    "total_net": 3250.00,
-    "total_gross": 3867.50,
-    "breakdown": {
-      "base_package": 2290.00,
-      "wallbox": 1290.00,
-      "cable": 270.00,
-      "travel": 0.00
-    }
+    "totalNet": 4100.00,
+    "vatAmount": 779.00,
+    "total": 4879.00,
+    "breakdown": {...}
   },
-  "dashboard_url": "http://192.168.178.30:8025/dashboard/precheck/123/"
-}
-```
-
-#### Quote-Approved Event
-```json
-{
-  "event": "quote_approved",
-  "timestamp": "2025-11-12T15:45:00Z",
-  "quote_id": 456,
-  "precheck_id": 123,
-  "approved_by": "admin@edgard.de",
-  "customer": {
-    "name": "Max Mustermann",
-    "email": "max@example.com"
+  "completeness": {
+    "has_customer_data": true,
+    "has_customer_email": true,
+    "has_site_photos": true,
+    "has_meter_photo": true,
+    "has_power_data": true,
+    "has_pricing": true
   },
-  "quote": {
-    "pdf_url": "http://192.168.178.30:8025/media/quotes/quote_456.pdf",
-    "valid_until": "2025-12-12",
-    "total_gross": 3867.50
+  "metadata": {
+    "status": "pending",
+    "created_at": "2025-11-18T14:30:00Z"
   }
 }
 ```
 
-### n8n → Django Webhook-Payload Format
+**Features:**
+- ✅ Vollständige Kundendaten
+- ✅ Fotos mit absoluten URLs
+- ✅ Preisberechnung
+- ✅ **Completeness-Check** für KI-Validierung
+- ✅ Automatisches Logging (WebhookLog)
 
-#### Status-Update von n8n
+#### 2. GET /api/integrations/pricing/
+Liefert Preisdaten aus Produktkatalog.
+
+**Query-Parameter:**
+- `categories`: Filter nach Kategorien (komma-separiert)
+- `skus`: Filter nach SKUs (komma-separiert)
+- `search`: Volltextsuche
+
+**Response:**
 ```json
 {
-  "precheck_id": 123,
-  "status": "email_sent",
-  "workflow_id": "n8n-workflow-abc123",
-  "timestamp": "2025-11-12T16:00:00Z",
-  "details": {
-    "email_sent_to": "max@example.com",
-    "pdf_attached": true,
-    "delivery_status": "delivered"
-  }
+  "products": [
+    {
+      "id": 1,
+      "sku": "PCHK-INVERTER-TIER-5",
+      "name": "Wechselrichter 5kW Installation",
+      "category": "Precheck-Artikel",
+      "sales_price_net": 1500.00,
+      "vat_rate": 0.19,
+      "sales_price_gross": 1785.00,
+      "unit": "Pauschal"
+    },
+    ...
+  ],
+  "count": 42
 }
 ```
 
----
-
-## 🔐 Sicherheit & Authentifizierung
-
-### Webhook-Authentifizierung
-```python
-# Option 1: API Key in Header
-headers = {
-    'X-N8N-API-KEY': 'secret_key_here'
-}
-
-# Option 2: HMAC Signature
-import hmac
-import hashlib
-
-signature = hmac.new(
-    secret_key.encode(),
-    payload.encode(),
-    hashlib.sha256
-).hexdigest()
-
-headers = {
-    'X-Webhook-Signature': signature
-}
-```
-
-### Django Settings
-```python
-# settings.py
-N8N_WEBHOOK_URL = config('N8N_WEBHOOK_URL')
-N8N_API_KEY = config('N8N_API_KEY')
-N8N_WEBHOOK_SECRET = config('N8N_WEBHOOK_SECRET')
-```
-
----
-
-## 📊 Monitoring & Logging
-
-### WebhookLog Model
-```python
-class WebhookLog(models.Model):
-    event_type = models.CharField(max_length=50)
-    direction = models.CharField(
-        max_length=10,
-        choices=[('outgoing', 'To n8n'), ('incoming', 'From n8n')]
-    )
-    payload = models.JSONField()
-    response = models.JSONField(null=True, blank=True)
-    status = models.CharField(
-        max_length=20,
-        choices=[
-            ('pending', 'Pending'),
-            ('success', 'Success'),
-            ('failed', 'Failed'),
-            ('retry', 'Retry')
-        ]
-    )
-    error_message = models.TextField(blank=True)
-    retry_count = models.IntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-```
-
-### Admin-Dashboard Übersicht
-```python
-# apps/integrations/admin.py
-@admin.register(WebhookLog)
-class WebhookLogAdmin(admin.ModelAdmin):
-    list_display = ['event_type', 'direction', 'status', 'created_at']
-    list_filter = ['status', 'direction', 'event_type']
-    search_fields = ['payload', 'error_message']
-    readonly_fields = ['created_at', 'updated_at']
-```
-
----
-
-## 🚀 Deployment-Checkliste
-
-### Vor dem Go-Live
-- [ ] n8n installiert und konfiguriert
-- [ ] SMTP/Email-Provider konfiguriert
-- [ ] Webhook-URLs in Django settings
-- [ ] API-Keys generiert und gesichert
-- [ ] Email-Templates getestet
-- [ ] Test-Durchlauf mit echten Daten
-- [ ] Error-Handling & Retry-Logik getestet
-- [ ] Monitoring & Logging aktiv
-
-### Umgebungsvariablen
+**Beispiel-Aufrufe:**
 ```bash
-# .env
-N8N_WEBHOOK_URL=https://n8n.edgard.de/webhook/precheck
-N8N_API_KEY=your_secret_api_key_here
-N8N_WEBHOOK_SECRET=webhook_signature_secret
+# Alle Precheck-Artikel
+GET /api/integrations/pricing/?categories=Precheck-Artikel
 
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=noreply@edgard.de
-EMAIL_HOST_PASSWORD=your_email_password
-EMAIL_USE_TLS=True
-DEFAULT_FROM_EMAIL=noreply@edgard.de
+# Spezifische SKUs
+GET /api/integrations/pricing/?skus=PCHK-INVERTER-TIER-5,PCHK-STORAGE-TIER-3
+
+# Suche
+GET /api/integrations/pricing/?search=Wallbox
+```
+
+#### 3. GET /api/integrations/categories/
+Liefert alle Produktkategorien.
+
+#### 4. POST /api/integrations/test/webhook/
+Test-Endpoint zum Testen der Verbindung.
+
+### 1.3 Signal-Handler erstellt
+
+**Datei:** `apps/integrations/signals.py`
+
+**Trigger:** `post_save` auf `Precheck` Model
+
+**Workflow:**
+1. Neuer Precheck wird erstellt
+2. Signal feuert automatisch
+3. Webhook an N8n mit minimalen Daten (nur ID)
+4. N8n holt Rest via API
+
+```python
+@receiver(post_save, sender=Precheck)
+def precheck_submitted_handler(sender, instance, created, **kwargs):
+    """
+    Sendet Webhook an N8n wenn neuer Precheck erstellt wird.
+    """
+    if not created:
+        return
+
+    payload = {
+        'event': 'precheck_submitted',
+        'precheck_id': instance.id,
+        'api_endpoints': {
+            'precheck_data': f'/api/integrations/precheck/{instance.id}/',
+            'pricing_data': '/api/integrations/pricing/',
+        },
+        'metadata': {...}
+    }
+
+    # Webhook-Log erstellen
+    webhook_log = WebhookLog.objects.create(...)
+
+    # Workflow-Status erstellen
+    workflow_status = N8nWorkflowStatus.objects.create(...)
+
+    # Webhook senden
+    response = requests.post(settings.N8N_WEBHOOK_URL, json=payload)
+
+    # Erfolg/Fehler loggen
+    webhook_log.mark_success() / webhook_log.mark_failed()
+```
+
+**Features:**
+- ✅ Automatischer Trigger bei neuem Precheck
+- ✅ Fehlerbehandlung (Timeout, Connection Error, HTTP Error)
+- ✅ Retry-Logik vorbereitet
+- ✅ Vollständiges Logging
+
+### 1.4 URLs registriert
+
+**Datei:** `apps/integrations/urls.py`
+
+```python
+urlpatterns = [
+    path('precheck/<int:precheck_id>/', get_precheck_data),
+    path('pricing/', get_pricing_data),
+    path('categories/', get_product_categories),
+    path('test/webhook/', test_webhook_receiver),
+]
+```
+
+**Eingebunden in:** `edgard_site/urls.py`
+```python
+path('api/integrations/', include('apps.integrations.urls')),
+```
+
+**Verfügbare URLs:**
+- `http://192.168.178.30:8025/api/integrations/precheck/123/`
+- `http://192.168.178.30:8025/api/integrations/pricing/`
+- `http://192.168.178.30:8025/api/integrations/categories/`
+- `http://192.168.178.30:8025/api/integrations/test/webhook/`
+
+### 1.5 Admin-Interface erstellt
+
+**Datei:** `apps/integrations/admin.py`
+
+**Features:**
+- ✅ WebhookLog mit farbigen Status-Badges
+- ✅ N8nWorkflowStatus mit Timeline-Ansicht
+- ✅ Filter & Suche
+- ✅ JSON-Anzeige für Payload/Response
+
+**Zugriff:**
+`http://192.168.178.30:8025/admin/integrations/`
+
+### 1.6 Konfiguration
+
+**Datei:** `.env`
+
+```bash
+# N8n Integration
+N8N_WEBHOOK_URL=http://localhost:5678/webhook/precheck-submitted
+N8N_API_KEY=
+BASE_URL=http://192.168.178.30:8025
+```
+
+**Datei:** `edgard_site/settings.py`
+
+```python
+N8N_WEBHOOK_URL = config('N8N_WEBHOOK_URL', default='')
+N8N_API_KEY = config('N8N_API_KEY', default='')
+BASE_URL = config('BASE_URL', default='http://192.168.178.30:8025')
 ```
 
 ---
 
-## 📖 Referenzen
+## 🚀 Phase 2: N8n Setup (NÄCHSTE SCHRITTE)
 
-### Externe Dokumentation
-- [n8n Webhook Documentation](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/)
-- [Django Signals](https://docs.djangoproject.com/en/4.2/topics/signals/)
-- [DRF Webhooks](https://www.django-rest-framework.org/api-guide/views/)
+### 2.1 N8n Installation
 
-### Interne Dokumentation
-- [CLAUDE.md](CLAUDE.md) - Hauptdokumentation
-- [CLAUDE_API.md](CLAUDE_API.md) - API Details
-- [CLAUDE_DEPLOYMENT.md](CLAUDE_DEPLOYMENT.md) - Deployment Guide
+**Option A: Docker (empfohlen)**
+```bash
+docker run -it --rm \
+  --name n8n \
+  -p 5678:5678 \
+  -v ~/.n8n:/home/node/.n8n \
+  n8nio/n8n
+```
+
+**Option B: NPM**
+```bash
+npm install -g n8n
+n8n start
+```
+
+**Zugriff:** `http://localhost:5678`
+
+### 2.2 Workflow 1: Precheck-Datenvalidierung
+
+```
+[Webhook Trigger]
+  ↓
+  Empfängt: { precheck_id: 123, api_endpoints: {...} }
+  ↓
+[HTTP Request Node]
+  ↓
+  GET http://192.168.178.30:8025/api/integrations/precheck/123/
+  ↓
+[HTTP Request Node]
+  ↓
+  GET http://192.168.178.30:8025/api/integrations/pricing/
+  ↓
+[OpenAI/Claude Node] - KI-Validierung
+  ↓
+  Prompt: "Prüfe Vollständigkeit dieser PV-Anfrage..."
+  ↓
+  Response: { complete: true/false, missing_data: [...], confidence: 0.95 }
+  ↓
+[IF Node] - complete?
+  ↓                        ↓
+  JA                       NEIN
+  ↓                        ↓
+[Workflow 2]              [Email Node]
+Angebot erstellen         Nachfrage an Kunde
+```
+
+### 2.3 KI-Prompt (Beispiel)
+
+```
+System: Du bist ein Experte für PV-Anlagen-Installationen.
+
+User:
+Prüfe diese Kundenanfrage auf Vollständigkeit:
+
+Kundendaten:
+- Name: {{ $json.customer.name }}
+- Email: {{ $json.customer.email }}
+- Telefon: {{ $json.customer.phone }}
+
+Standort:
+- Adresse: {{ $json.site.address }}
+- Gebäudetyp: {{ $json.site.building_type }}
+- Hauptsicherung: {{ $json.site.main_fuse_ampere }} A
+- Netzform: {{ $json.site.grid_type }}
+
+Projekt:
+- WR-Leistung: {{ $json.project.desired_power_kw }} kW
+- Speicher: {{ $json.project.storage_kwh }} kWh
+- Wallbox: {{ $json.project.has_wallbox }}
+
+Fotos:
+- Anzahl: {{ $json.site.photo_count }}
+- Zählerkasten-Foto: {{ $json.completeness.has_meter_photo }}
+- HAK-Foto: {{ $json.completeness.has_hak_photo }}
+
+Fragen:
+1. Sind alle notwendigen Daten für ein qualifiziertes Angebot vorhanden?
+2. Welche Daten fehlen?
+3. Gibt es Unstimmigkeiten?
+4. Welche Fragen sollten wir stellen?
+
+Antwort als JSON:
+{
+  "complete": boolean,
+  "missing_data": [array of strings],
+  "plausibility_issues": [array],
+  "recommended_questions": [array],
+  "confidence_score": number (0-1)
+}
+```
+
+### 2.4 Workflow 2: Angebotserstellung
+
+```
+[Webhook Trigger / IF-Node aus Workflow 1]
+  ↓
+[HTTP Request] - Quote in Django erstellen
+  ↓
+  POST http://192.168.178.30:8025/api/quotes/create-from-precheck/
+  Body: { precheck_id: 123 }
+  ↓
+[OpenAI/Claude Node] - Angebots-Text generieren
+  ↓
+  Prompt: "Erstelle professionellen Angebots-Text für..."
+  ↓
+[PDF Generator Node]
+  ↓
+  HTML → PDF (Gotenberg, WeasyPrint, oder N8n-PDF-Node)
+  ↓
+[Email Node]
+  ↓
+  An: {{ $json.customer.email }}
+  Betreff: "Ihr PV-Angebot von EDGARD Elektro"
+  Anhang: angebot.pdf
+```
+
+### 2.5 Workflow 3: Nachfrage bei Unvollständigkeit
+
+```
+[Email Node]
+  ↓
+  An: {{ $json.customer.email }}
+  Betreff: "Rückfrage zu Ihrer PV-Anfrage"
+  ↓
+  Text:
+  Guten Tag {{ $json.customer.name }},
+
+  vielen Dank für Ihre Anfrage. Für ein qualifiziertes Angebot
+  benötigen wir noch folgende Informationen:
+
+  {% for item in $json.ai_validation.missing_data %}
+  - {{ item }}
+  {% endfor %}
+
+  Bitte ergänzen Sie diese Daten hier: {{ $json.update_link }}
+
+  Mit freundlichen Grüßen
+  EDGARD Elektro Team
+```
+
+---
+
+## 📊 Testing-Checkliste
+
+### Phase 1 (Django Backend) - ✅ ABGESCHLOSSEN
+
+- [x] Models erstellt (WebhookLog, N8nWorkflowStatus)
+- [x] Migrations erstellt
+- [x] API-Endpoints implementiert
+  - [x] GET /api/integrations/precheck/<id>/
+  - [x] GET /api/integrations/pricing/
+  - [x] GET /api/integrations/categories/
+  - [x] POST /api/integrations/test/webhook/
+- [x] Signal-Handler registriert
+- [x] URLs konfiguriert
+- [x] Admin-Interface erstellt
+- [x] .env Konfiguration
+
+### Phase 2 (N8n Setup) - 🚧 TODO
+
+- [ ] N8n installieren
+- [ ] Webhook-URL in .env konfigurieren
+- [ ] Test-Webhook senden
+- [ ] Workflow 1 erstellen (Datenvalidierung)
+- [ ] KI-Provider konfigurieren (OpenAI/Claude)
+- [ ] Workflow 2 erstellen (Angebotserstellung)
+- [ ] Workflow 3 erstellen (Nachfrage)
+- [ ] PDF-Generierung testen
+- [ ] E-Mail-Versand konfigurieren
+- [ ] End-to-End-Test
+
+---
+
+## 🧪 Manuelle Tests
+
+### Test 1: API-Endpoints testen
+
+```bash
+# Precheck-Daten abrufen
+curl http://192.168.178.30:8025/api/integrations/precheck/1/
+
+# Preisdaten abrufen
+curl http://192.168.178.30:8025/api/integrations/pricing/
+
+# Test-Webhook senden
+curl -X POST http://192.168.178.30:8025/api/integrations/test/webhook/ \
+  -H "Content-Type: application/json" \
+  -d '{"test": "data", "source": "manual"}'
+```
+
+### Test 2: Webhook von N8n simulieren
+
+```bash
+# Precheck erstellen über Preisrechner
+# → Signal feuert automatisch
+# → Webhook-Log im Admin prüfen
+```
+
+---
+
+## 🔐 Sicherheit (Für Production)
+
+### TODO: API-Key-Authentifizierung hinzufügen
+
+**Aktuell:** AllowAny (nur für interne Tests!)
+
+**Für Production:**
+
+```python
+# apps/integrations/authentication.py
+
+class N8nAPIKeyAuthentication(BaseAuthentication):
+    def authenticate(self, request):
+        api_key = request.headers.get('X-API-KEY')
+        if api_key != settings.N8N_API_KEY:
+            raise AuthenticationFailed('Invalid API Key')
+        return (AnonymousUser(), None)
+
+# In api_views.py
+@authentication_classes([N8nAPIKeyAuthentication])
+@permission_classes([IsAuthenticated])
+def get_precheck_data(request, precheck_id):
+    ...
+```
+
+**N8n HTTP Request Node Configuration:**
+```json
+{
+  "method": "GET",
+  "url": "http://192.168.178.30:8025/api/integrations/precheck/123/",
+  "headers": {
+    "X-API-KEY": "{{ $credentials.djangoApiKey }}"
+  }
+}
+```
+
+---
+
+## 📚 Weitere Dokumentation
+
+- **[CLAUDE_API.md](CLAUDE_API.md)** - API-Endpoints Details
+- **[CLAUDE_DATABASE.md](CLAUDE_DATABASE.md)** - Datenbank-Schema
+- **[CLAUDE.md](CLAUDE.md)** - Hauptdokumentation
 
 ---
 
 ## 🎯 Nächste Schritte
 
-1. **Entscheidung treffen:** Welche Implementierungs-Option?
-   - Option A: Sofort Django-Backend starten
-   - Option B: Erst n8n-Setup dokumentieren
-   - Option C: Parallele Agenten (schnellster Weg)
+### Sofort möglich:
 
-2. **Infrastruktur klären:**
-   - n8n Cloud oder Self-Hosted?
-   - Email-Provider festlegen
-   - PDF-Generator-Lösung wählen
+1. **Migrationen ausführen**
+   ```bash
+   python manage.py makemigrations integrations
+   python manage.py migrate
+   ```
 
-3. **Implementierung starten:**
-   - Models erstellen
-   - Webhooks implementieren
-   - n8n-Workflows aufsetzen
-   - Testing durchführen
+2. **API testen**
+   ```bash
+   # Precheck erstellen über Preisrechner
+   http://192.168.178.30:8025/precheck/
+
+   # API-Endpoint testen
+   curl http://192.168.178.30:8025/api/integrations/precheck/1/
+   ```
+
+3. **Admin-Interface prüfen**
+   ```
+   http://192.168.178.30:8025/admin/integrations/webhooklog/
+   http://192.168.178.30:8025/admin/integrations/n8nworkflowstatus/
+   ```
+
+### Nächste Phase:
+
+4. **N8n installieren**
+5. **Webhook-URL konfigurieren**
+6. **Ersten Workflow erstellen**
+7. **KI-Provider anbinden**
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-12
-**Nächstes Review:** Nach Phase 1 Abschluss
+**Letzte Aktualisierung:** 2025-11-18
+**Status:** ✅ Phase 1 abgeschlossen - Bereit für N8n Integration
+**Nächstes Review:** Nach N8n-Setup

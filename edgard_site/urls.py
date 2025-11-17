@@ -24,6 +24,7 @@ urlpatterns = [
     path('dashboard/', include('apps.core.dashboard_urls')),  # Admin-Dashboard
     path('', include('apps.quotes.web_urls')),
     path('api/', include('apps.quotes.api_urls')),
+    path('api/integrations/', include('apps.integrations.urls')),  # N8n Integration API
 ]
 
 if settings.DEBUG:

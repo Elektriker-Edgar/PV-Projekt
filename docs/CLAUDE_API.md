@@ -332,7 +332,181 @@ def create_precheck(request):
 
 ---
 
+## 🔌 N8n Integration API (NEU v2.0.0)
+
+**Datei:** `apps/integrations/api_views.py`
+
+### Endpoint 1: Precheck-Daten abrufen
+
+**URL:** `GET /api/integrations/precheck/<id>/`
+**Permissions:** AllowAny (für interne Tests)
+**Use Case:** N8n holt vollständige Precheck-Daten für KI-Validierung
+
+**Response:**
+```json
+{
+  "precheck_id": 123,
+  "customer": {
+    "id": 1,
+    "name": "Max Mustermann",
+    "email": "max@example.com",
+    "phone": "+49 40 12345678"
+  },
+  "site": {
+    "address": "Musterstraße 1, 20095 Hamburg",
+    "building_type": "efh",
+    "main_fuse_ampere": 35,
+    "grid_type": "3p",
+    "has_photos": true,
+    "photo_count": 3,
+    "photos": [
+      {
+        "id": 1,
+        "category": "meter_cabinet",
+        "url": "http://192.168.178.30:8025/media/precheck/meter.jpg"
+      }
+    ]
+  },
+  "project": {
+    "desired_power_kw": 6.0,
+    "storage_kwh": 5.0,
+    "has_wallbox": true,
+    "wallbox_power": "11kw",
+    "customer_notes": "..."
+  },
+  "pricing": {
+    "totalNet": 4100.00,
+    "vatAmount": 779.00,
+    "total": 4879.00
+  },
+  "completeness": {
+    "has_customer_data": true,
+    "has_customer_email": true,
+    "has_site_photos": true,
+    "has_meter_photo": true,
+    "has_power_data": true,
+    "has_pricing": true
+  },
+  "metadata": {
+    "status": "pending",
+    "created_at": "2025-11-18T14:30:00Z"
+  }
+}
+```
+
+**Features:**
+- ✅ Automatisches Logging (WebhookLog)
+- ✅ Completeness-Check für KI-Agent
+- ✅ Absolute Foto-URLs
+- ✅ Fehlerbehandlung (404 wenn Precheck nicht existiert)
+
+### Endpoint 2: Pricing-Daten abrufen
+
+**URL:** `GET /api/integrations/pricing/`
+**Query-Parameter:**
+- `categories`: Komma-separierte Kategorien (z.B. `?categories=Wechselrichter,Speicher`)
+- `skus`: Komma-separierte SKUs (z.B. `?skus=PCHK-INVERTER-TIER-5`)
+- `search`: Volltextsuche (z.B. `?search=Wallbox`)
+
+**Response:**
+```json
+{
+  "products": [
+    {
+      "id": 1,
+      "sku": "PCHK-INVERTER-TIER-5",
+      "name": "Wechselrichter 5kW Installation",
+      "category": "Precheck-Artikel",
+      "sales_price_net": 1500.00,
+      "sales_price_gross": 1785.00,
+      "vat_rate": 0.19,
+      "unit": "Pauschal"
+    }
+  ],
+  "count": 42,
+  "filters_applied": {
+    "categories": "Wechselrichter",
+    "skus": "",
+    "search": ""
+  }
+}
+```
+
+### Endpoint 3: Produktkategorien abrufen
+
+**URL:** `GET /api/integrations/categories/`
+
+**Response:**
+```json
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Precheck-Artikel",
+      "description": "...",
+      "product_count": 15
+    }
+  ],
+  "count": 7
+}
+```
+
+### Endpoint 4: Test-Webhook
+
+**URL:** `POST /api/integrations/test/webhook/`
+**Body:** Beliebige JSON-Daten
+
+**Response:**
+```json
+{
+  "status": "received",
+  "message": "Webhook erfolgreich empfangen",
+  "payload": {...},
+  "webhook_log_id": 123,
+  "timestamp": "2025-11-18T14:30:00Z"
+}
+```
+
+**Use Case:** N8n-Verbindung testen
+
+### Webhook-Signal: Precheck erstellt
+
+**Trigger:** `post_save` Signal auf `Precheck` Model
+**Ziel:** N8n Webhook-URL (aus `.env`)
+
+**Payload:**
+```json
+{
+  "event": "precheck_submitted",
+  "precheck_id": 123,
+  "api_base_url": "http://192.168.178.30:8025",
+  "api_endpoints": {
+    "precheck_data": "/api/integrations/precheck/123/",
+    "pricing_data": "/api/integrations/pricing/"
+  },
+  "metadata": {
+    "customer_email": "max@example.com",
+    "has_customer": true,
+    "has_site": true,
+    "timestamp": "2025-11-18T14:30:00Z"
+  }
+}
+```
+
+**Logging:**
+- Erstellt `WebhookLog` mit Status pending/success/failed
+- Erstellt `N8nWorkflowStatus` für Tracking
+
+**Fehlerbehandlung:**
+- Timeout (10s)
+- Connection Error
+- HTTP Error
+- Retry-Counter
+
+---
+
 **Zurück zur Hauptdokumentation:** [CLAUDE.md](CLAUDE.md)
 **Siehe auch:**
+- [N8N_INTEGRATION_PLAN.md](N8N_INTEGRATION_PLAN.md) - N8n Integration Details
 - [CLAUDE_FRONTEND.md](CLAUDE_FRONTEND.md) - Frontend & JavaScript
 - [CLAUDE_DATABASE.md](CLAUDE_DATABASE.md) - Datenbank & Migrationen
