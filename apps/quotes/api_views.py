@@ -69,8 +69,3 @@ def create_precheck(request):
 def approve_quote(request, pk):
     return JsonResponse({'detail': 'not implemented'}, status=501)
 
-
-@api_view(['POST'])
-def n8n_webhook(request):
-    return JsonResponse({'detail': 'ok'})
-
