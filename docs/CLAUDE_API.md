@@ -332,7 +332,7 @@ def create_precheck(request):
 
 ---
 
-## 🔌 N8n Integration API (NEU v2.0.0)
+## 🔌 N8n Integration API (v2.0.0 → v2.1.0)
 
 **Datei:** `apps/integrations/api_views.py`
 
@@ -502,6 +502,53 @@ def create_precheck(request):
 - Connection Error
 - HTTP Error
 - Retry-Counter
+
+### ⭐ Dashboard Integration (NEU v2.1.0)
+
+**Zugriff:** `http://192.168.178.30:8025/dashboard/settings/n8n/`
+
+#### N8n Einstellungen
+- Editierbare Webhook URL (Datenbank überschreibt `.env`)
+- API Key optional konfigurierbar
+- Integration aktivieren/deaktivieren
+- Statistik-Übersicht (Webhooks, Workflows)
+- Copy-to-Clipboard für API-Endpoints
+
+#### Webhook Test-Funktion
+- Manueller Test mit Precheck-ID Input
+- Sofortiges Feedback (Erfolg/Fehler mit Details)
+- Test-Webhooks werden mit `test_mode: true` markiert
+- Vollständiges Logging in WebhookLog
+
+#### Webhook Logs Übersicht
+- URL: `/dashboard/settings/n8n/webhook-logs/`
+- Filter: Status, Richtung, Event Type, Zeitraum
+- Detailansicht mit Payload & Response in Modal
+- Paginierung (50 Logs pro Seite)
+
+**Implementierung:**
+- **Models:** `N8nConfiguration` (Singleton)
+- **Forms:** `N8nConfigurationForm`, `WebhookTestForm`
+- **Views:** `N8nSettingsView` (GET/POST), `WebhookLogListView`
+- **Templates:** `n8n_settings.html`, `webhook_logs.html`
+
+### Wichtige Bugfixes (v2.1.0)
+
+**Problem:** `AttributeError: 'Precheck' object has no attribute 'customer'`
+
+**Gelöst in:**
+- `apps/core/dashboard_views.py:1837` (Test-Webhook)
+- `apps/integrations/signals.py:58` (Automatischer Webhook)
+- `apps/integrations/api_views.py:79-142` (API für N8n)
+
+**Fix:** Precheck → Site → Customer Beziehung korrigiert
+```python
+# Alt (❌ Fehler)
+precheck.customer.email
+
+# Neu (✅ Funktioniert)
+precheck.site.customer.email if (precheck.site and precheck.site.customer) else None
+```
 
 ---
 

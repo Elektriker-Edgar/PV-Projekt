@@ -27,7 +27,8 @@ from django.views.generic import (
 
 from apps.customers.models import Customer, Site
 from apps.quotes.models import Precheck, Quote, QuoteItem, ProductCategory, Product
-from apps.integrations.models import WebhookLog, N8nWorkflowStatus
+from apps.integrations.models import WebhookLog, N8nWorkflowStatus, N8nConfiguration
+from apps.integrations.forms import N8nConfigurationForm, WebhookTestForm
 from .forms import ProductCategoryForm, ProductForm, QuoteEditForm, QuoteItemFormSet
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -1695,30 +1696,34 @@ class WebhookLogListView(LoginRequiredMixin, ListView):
         return context
 
 
-class N8nSettingsView(LoginRequiredMixin, TemplateView):
+class N8nSettingsView(LoginRequiredMixin, View):
     """
     N8n Einstellungen und Konfiguration
 
     Zeigt:
-    - Aktuelle N8n Webhook URL
-    - API Key Status
-    - Verbindungstest
+    - Aktuelle N8n Webhook URL (editierbar)
+    - API Key Status (editierbar)
+    - Webhook-Test Funktion
     - Statistiken
     - Letzte Webhook-Aktivitäten
     """
     template_name = 'dashboard/n8n_settings.html'
     login_url = '/admin/login/'
 
-    def get_context_data(self, **kwargs):
+    def get(self, request):
+        """GET-Request: Zeige Settings-Seite"""
         from django.conf import settings
         import requests
 
-        context = super().get_context_data(**kwargs)
+        # N8n Konfiguration aus DB
+        config = N8nConfiguration.get_config()
 
-        # N8n Konfiguration
-        n8n_webhook_url = getattr(settings, 'N8N_WEBHOOK_URL', '')
-        n8n_api_key = getattr(settings, 'N8N_API_KEY', '')
-        base_url = getattr(settings, 'BASE_URL', '')
+        # Forms vorbereiten
+        config_form = N8nConfigurationForm(instance=config)
+        test_form = WebhookTestForm()
+
+        # Base URL aus settings
+        base_url = getattr(settings, 'BASE_URL', 'http://192.168.178.30:8025')
 
         # Statistiken
         now = timezone.now()
@@ -1745,22 +1750,23 @@ class N8nSettingsView(LoginRequiredMixin, TemplateView):
         completed_workflows = N8nWorkflowStatus.objects.filter(status='completed').count()
         failed_workflows = N8nWorkflowStatus.objects.filter(status='failed').count()
 
-        # N8n Verbindungstest (optional, nur wenn URL konfiguriert ist)
+        # N8n Verbindungsstatus
         connection_status = 'unknown'
         connection_message = 'Nicht getestet'
 
-        if n8n_webhook_url:
-            # Wir testen die Verbindung nicht automatisch, um keine unnötigen Anfragen zu senden
-            # Das kann manuell über einen Test-Button gemacht werden
+        if config.webhook_url:
             connection_status = 'configured'
-            connection_message = f'Webhook URL konfiguriert: {n8n_webhook_url}'
+            connection_message = f'Webhook URL konfiguriert: {config.webhook_url}'
         else:
             connection_status = 'not_configured'
             connection_message = 'Keine N8n Webhook URL konfiguriert'
 
-        context.update({
-            'n8n_webhook_url': n8n_webhook_url,
-            'n8n_api_key_configured': bool(n8n_api_key),
+        context = {
+            'config_form': config_form,
+            'test_form': test_form,
+            'config': config,
+            'n8n_webhook_url': config.webhook_url,
+            'n8n_api_key_configured': bool(config.api_key),
             'base_url': base_url,
             'total_webhooks': total_webhooks,
             'webhooks_today': webhooks_today,
@@ -1773,6 +1779,117 @@ class N8nSettingsView(LoginRequiredMixin, TemplateView):
             'failed_workflows': failed_workflows,
             'connection_status': connection_status,
             'connection_message': connection_message,
-        })
+        }
 
-        return context
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        """POST-Request: Speichere Settings oder teste Webhook"""
+        from django.conf import settings
+        import requests
+
+        # Prüfe welches Formular abgeschickt wurde
+        if 'save_config' in request.POST:
+            # Konfiguration speichern
+            config = N8nConfiguration.get_config()
+            config_form = N8nConfigurationForm(request.POST, instance=config)
+
+            if config_form.is_valid():
+                config_form.save()
+                messages.success(request, 'N8n Konfiguration erfolgreich gespeichert!')
+                return redirect('dashboard:n8n_settings')
+            else:
+                messages.error(request, 'Fehler beim Speichern der Konfiguration. Bitte überprüfen Sie Ihre Eingaben.')
+
+        elif 'test_webhook' in request.POST:
+            # Webhook-Test durchführen
+            test_form = WebhookTestForm(request.POST)
+
+            if test_form.is_valid():
+                precheck_id = test_form.cleaned_data['precheck_id']
+
+                # Prüfe ob Precheck existiert
+                try:
+                    precheck = Precheck.objects.get(id=precheck_id)
+                except Precheck.DoesNotExist:
+                    messages.error(request, f'Precheck #{precheck_id} nicht gefunden!')
+                    return redirect('dashboard:n8n_settings')
+
+                # Webhook URL holen
+                n8n_webhook_url = N8nConfiguration.get_webhook_url()
+                if not n8n_webhook_url:
+                    messages.error(request, 'Keine N8n Webhook URL konfiguriert!')
+                    return redirect('dashboard:n8n_settings')
+
+                # Test-Webhook senden
+                base_url = getattr(settings, 'BASE_URL', 'http://192.168.178.30:8025')
+
+                payload = {
+                    'event': 'precheck_submitted',
+                    'precheck_id': precheck.id,
+                    'test_mode': True,  # Markiere als Test
+                    'api_base_url': base_url,
+                    'api_endpoints': {
+                        'precheck_data': f'/api/integrations/precheck/{precheck.id}/',
+                        'pricing_data': '/api/integrations/pricing/',
+                    },
+                    'metadata': {
+                        'customer_email': precheck.site.customer.email if (precheck.site and precheck.site.customer) else None,
+                        'has_customer': bool(precheck.site and precheck.site.customer),
+                        'has_site': bool(precheck.site),
+                        'timestamp': timezone.now().isoformat(),
+                    }
+                }
+
+                # Log erstellen
+                webhook_log = WebhookLog.objects.create(
+                    event_type='precheck_test',
+                    direction='outgoing',
+                    status='pending',
+                    precheck_id=precheck.id,
+                    payload=payload,
+                )
+
+                try:
+                    response = requests.post(
+                        n8n_webhook_url,
+                        json=payload,
+                        headers={
+                            'Content-Type': 'application/json',
+                            'X-API-KEY': N8nConfiguration.get_api_key(),
+                        },
+                        timeout=10
+                    )
+
+                    response.raise_for_status()
+
+                    webhook_log.mark_success(response_data={
+                        'status_code': response.status_code,
+                        'response': response.json() if response.content else None,
+                    })
+
+                    messages.success(request, f'Test-Webhook erfolgreich gesendet! Precheck #{precheck_id} | Status: {response.status_code}')
+
+                except requests.exceptions.Timeout:
+                    webhook_log.mark_failed("Timeout (>10s)")
+                    messages.error(request, 'Test-Webhook Timeout! N8n hat nicht innerhalb von 10 Sekunden geantwortet.')
+
+                except requests.exceptions.ConnectionError as e:
+                    webhook_log.mark_failed(f"Connection Error: {str(e)}")
+                    messages.error(request, f'Test-Webhook Verbindungsfehler: N8n nicht erreichbar unter {n8n_webhook_url}')
+
+                except requests.exceptions.HTTPError as e:
+                    webhook_log.mark_failed(f"HTTP {e.response.status_code}: {e.response.text}")
+                    messages.error(request, f'Test-Webhook HTTP Fehler: {e.response.status_code} - {e.response.text[:200]}')
+
+                except Exception as e:
+                    webhook_log.mark_failed(f"Unexpected error: {str(e)}")
+                    messages.error(request, f'Test-Webhook Fehler: {str(e)}')
+
+                return redirect('dashboard:n8n_settings')
+
+            else:
+                messages.error(request, 'Ungültige Precheck ID!')
+
+        # Wenn kein gültiges Formular, redirect zurück
+        return redirect('dashboard:n8n_settings')

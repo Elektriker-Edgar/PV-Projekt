@@ -54,8 +54,9 @@
         </div>
     </div>
 
-    <!-- Configuration Cards -->
+    <!-- Configuration and Test Cards -->
     <div class="row mb-4">
+        <!-- Configuration Form -->
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header">
@@ -64,22 +65,45 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label" style="font-weight: 600; font-size: 13px;">N8n Webhook URL</label>
-                        {% if n8n_webhook_url %}
-                            <div class="input-group">
-                                <input type="text" class="form-control" value="{{ n8n_webhook_url }}" readonly style="background: var(--neutral-50);">
-                                <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('{{ n8n_webhook_url }}')">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </div>
-                        {% else %}
-                            <div class="alert alert-warning mb-0">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Keine Webhook URL konfiguriert. Bitte konfigurieren Sie <code>N8N_WEBHOOK_URL</code> in der .env Datei.
-                            </div>
-                        {% endif %}
-                    </div>
+                    <form method="post" action="{% url 'dashboard:n8n_settings' %}">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            {{ config_form.webhook_url.label_tag }}
+                            {{ config_form.webhook_url }}
+                            {% if config_form.webhook_url.help_text %}
+                            <small class="form-text text-muted">{{ config_form.webhook_url.help_text }}</small>
+                            {% endif %}
+                            {% if config_form.webhook_url.errors %}
+                            <div class="text-danger">{{ config_form.webhook_url.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ config_form.api_key.label_tag }}
+                            {{ config_form.api_key }}
+                            {% if config_form.api_key.help_text %}
+                            <small class="form-text text-muted">{{ config_form.api_key.help_text }}</small>
+                            {% endif %}
+                            {% if config_form.api_key.errors %}
+                            <div class="text-danger">{{ config_form.api_key.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            {{ config_form.is_active }}
+                            {{ config_form.is_active.label_tag }}
+                            {% if config_form.is_active.help_text %}
+                            <small class="form-text text-muted d-block">{{ config_form.is_active.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" name="save_config" class="btn btn-primary w-100">
+                            <i class="fas fa-save"></i> Konfiguration speichern
+                        </button>
+                    </form>
+
+                    <hr class="my-4">
 
                     <div class="mb-3">
                         <label class="form-label" style="font-weight: 600; font-size: 13px;">Django Base URL</label>
@@ -89,19 +113,6 @@
                                 <i class="fas fa-copy"></i>
                             </button>
                         </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label" style="font-weight: 600; font-size: 13px;">API Key</label>
-                        {% if n8n_api_key_configured %}
-                            <div class="alert alert-success mb-0">
-                                <i class="fas fa-check-circle"></i> API Key ist konfiguriert
-                            </div>
-                        {% else %}
-                            <div class="alert alert-info mb-0">
-                                <i class="fas fa-info-circle"></i> Kein API Key konfiguriert (optional für interne Tests)
-                            </div>
-                        {% endif %}
                     </div>
 
                     <div class="mb-0">
@@ -125,8 +136,47 @@
             </div>
         </div>
 
+        <!-- Webhook Test Form -->
         <div class="col-md-6">
-            <div class="card h-100">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-flask"></i> Webhook Test
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3" style="font-size: 13px;">
+                        Testen Sie die N8n Webhook-Integration mit einer existierenden Precheck-ID.
+                    </p>
+
+                    <form method="post" action="{% url 'dashboard:n8n_settings' %}">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            {{ test_form.precheck_id.label_tag }}
+                            {{ test_form.precheck_id }}
+                            {% if test_form.precheck_id.help_text %}
+                            <small class="form-text text-muted">{{ test_form.precheck_id.help_text }}</small>
+                            {% endif %}
+                            {% if test_form.precheck_id.errors %}
+                            <div class="text-danger">{{ test_form.precheck_id.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" name="test_webhook" class="btn btn-warning w-100">
+                            <i class="fas fa-paper-plane"></i> Test-Webhook senden
+                        </button>
+                    </form>
+
+                    <div class="alert alert-info mt-3 mb-0" style="font-size: 13px;">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Hinweis:</strong> Der Test-Webhook wird mit <code>test_mode: true</code> markiert.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Webhook Statistics -->
+            <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-chart-bar"></i> Webhook Statistiken

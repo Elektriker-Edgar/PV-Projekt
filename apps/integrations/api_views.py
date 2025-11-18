@@ -76,11 +76,11 @@ def get_precheck_data(request, precheck_id):
 
             # Kundendaten
             'customer': {
-                'id': precheck.customer.id if precheck.customer else None,
-                'name': precheck.customer.name if precheck.customer else None,
-                'email': precheck.customer.email if precheck.customer else None,
-                'phone': precheck.customer.phone if precheck.customer else None,
-            } if precheck.customer else None,
+                'id': precheck.site.customer.id if (precheck.site and precheck.site.customer) else None,
+                'name': precheck.site.customer.name if (precheck.site and precheck.site.customer) else None,
+                'email': precheck.site.customer.email if (precheck.site and precheck.site.customer) else None,
+                'phone': precheck.site.customer.phone if (precheck.site and precheck.site.customer) else None,
+            } if (precheck.site and precheck.site.customer) else None,
 
             # Standortdaten
             'site': {
@@ -137,9 +137,9 @@ def get_precheck_data(request, precheck_id):
 
             # Vollständigkeits-Check (für KI)
             'completeness': {
-                'has_customer_data': bool(precheck.customer),
-                'has_customer_email': bool(precheck.customer and precheck.customer.email),
-                'has_customer_phone': bool(precheck.customer and precheck.customer.phone),
+                'has_customer_data': bool(precheck.site and precheck.site.customer),
+                'has_customer_email': bool(precheck.site and precheck.site.customer and precheck.site.customer.email),
+                'has_customer_phone': bool(precheck.site and precheck.site.customer and precheck.site.customer.phone),
 
                 'has_site_data': bool(precheck.site),
                 'has_site_address': bool(precheck.site and precheck.site.address),

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.core.cache import cache
 
 
 class WebhookLog(models.Model):
@@ -212,3 +213,87 @@ class N8nWorkflowStatus(models.Model):
             self.completed_at = timezone.now()
 
         self.save()
+
+
+class N8nConfiguration(models.Model):
+    """
+    Singleton-Model für N8n Konfiguration.
+    Speichert Webhook URL und API Key in der Datenbank.
+
+    Diese Werte überschreiben die .env Konfiguration wenn gesetzt.
+    """
+
+    webhook_url = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text='N8n Webhook URL (wohin Django Webhooks sendet)',
+    )
+
+    api_key = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text='API-Key für N8n-Authentifizierung (optional)',
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text='N8n Integration aktiviert',
+    )
+
+    # Timestamps
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'N8n Konfiguration'
+        verbose_name_plural = 'N8n Konfiguration'
+
+    def __str__(self):
+        return f"N8n Config (Active: {self.is_active})"
+
+    def save(self, *args, **kwargs):
+        """Singleton-Pattern: Nur ein Config-Objekt erlaubt"""
+        self.pk = 1
+        super().save(*args, **kwargs)
+        # Cache leeren damit neue Config sofort verfügbar ist
+        cache.delete('n8n_config')
+
+    def delete(self, *args, **kwargs):
+        """Löschen verhindern - Config nur bearbeiten"""
+        pass
+
+    @classmethod
+    def get_config(cls):
+        """
+        Holt die N8n Config aus Cache oder Datenbank.
+        Erstellt ein leeres Config-Objekt wenn nicht vorhanden.
+        """
+        config = cache.get('n8n_config')
+        if config is None:
+            config, created = cls.objects.get_or_create(pk=1)
+            cache.set('n8n_config', config, 300)  # 5 Minuten Cache
+        return config
+
+    @classmethod
+    def get_webhook_url(cls):
+        """Gibt Webhook URL zurück (DB hat Priorität vor .env)"""
+        from django.conf import settings
+
+        config = cls.get_config()
+        if config.webhook_url:
+            return config.webhook_url
+
+        # Fallback auf .env
+        return getattr(settings, 'N8N_WEBHOOK_URL', '')
+
+    @classmethod
+    def get_api_key(cls):
+        """Gibt API Key zurück (DB hat Priorität vor .env)"""
+        from django.conf import settings
+
+        config = cls.get_config()
+        if config.api_key:
+            return config.api_key
+
+        # Fallback auf .env
+        return getattr(settings, 'N8N_API_KEY', '')

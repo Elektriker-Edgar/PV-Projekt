@@ -10,7 +10,7 @@ from django.dispatch import receiver
 from django.conf import settings
 
 from apps.quotes.models import Precheck
-from apps.integrations.models import WebhookLog, N8nWorkflowStatus
+from apps.integrations.models import WebhookLog, N8nWorkflowStatus, N8nConfiguration
 
 import requests
 import logging
@@ -36,7 +36,7 @@ def precheck_submitted_handler(sender, instance, created, **kwargs):
         return
 
     # Nur wenn N8n konfiguriert ist
-    n8n_webhook_url = getattr(settings, 'N8N_WEBHOOK_URL', None)
+    n8n_webhook_url = N8nConfiguration.get_webhook_url()
     if not n8n_webhook_url:
         logger.warning("N8N_WEBHOOK_URL nicht konfiguriert - Webhook wird nicht gesendet")
         return
@@ -55,8 +55,8 @@ def precheck_submitted_handler(sender, instance, created, **kwargs):
 
         # Minimale Metadaten (für Logging/Routing in N8n)
         'metadata': {
-            'customer_email': instance.customer.email if instance.customer else None,
-            'has_customer': bool(instance.customer),
+            'customer_email': instance.site.customer.email if (instance.site and instance.site.customer) else None,
+            'has_customer': bool(instance.site and instance.site.customer),
             'has_site': bool(instance.site),
             'timestamp': instance.created_at.isoformat(),
         }
@@ -88,7 +88,7 @@ def precheck_submitted_handler(sender, instance, created, **kwargs):
             headers={
                 'Content-Type': 'application/json',
                 # API-Key für Authentifizierung (optional)
-                'X-API-KEY': getattr(settings, 'N8N_API_KEY', ''),
+                'X-API-KEY': N8nConfiguration.get_api_key(),
             },
             timeout=10  # 10 Sekunden Timeout
         )

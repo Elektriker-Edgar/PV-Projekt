@@ -4,7 +4,7 @@ Django Admin für N8n Integration Models
 
 from django.contrib import admin
 from django.utils.html import format_html
-from apps.integrations.models import WebhookLog, N8nWorkflowStatus
+from apps.integrations.models import WebhookLog, N8nWorkflowStatus, N8nConfiguration
 
 
 @admin.register(WebhookLog)
@@ -78,3 +78,36 @@ class N8nWorkflowStatusAdmin(admin.ModelAdmin):
         'last_event_at',
         'completed_at',
     ]
+
+
+@admin.register(N8nConfiguration)
+class N8nConfigurationAdmin(admin.ModelAdmin):
+    """Admin-Interface für N8n Konfiguration"""
+
+    list_display = [
+        'id',
+        'webhook_url',
+        'is_active',
+        'updated_at',
+    ]
+
+    fields = [
+        'webhook_url',
+        'api_key',
+        'is_active',
+        'created_at',
+        'updated_at',
+    ]
+
+    readonly_fields = [
+        'created_at',
+        'updated_at',
+    ]
+
+    def has_add_permission(self, request):
+        """Nur ein Config-Objekt erlaubt (Singleton)"""
+        return not N8nConfiguration.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        """Config darf nicht gelöscht werden"""
+        return False

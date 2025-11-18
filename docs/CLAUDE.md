@@ -284,6 +284,38 @@ python-decouple==3.8
 
 ## 📝 Letzte Änderungen
 
+### Version 2.1.0 (2025-11-18) - N8n Dashboard Integration
+
+✅ **Dashboard Integration für N8n:**
+- N8n Einstellungs-Seite mit editierbarer Webhook URL
+- API Key Konfiguration direkt im Dashboard
+- Webhook Test-Funktion mit Precheck-ID Input
+- Statistik-Übersicht (Webhooks: Heute, 7 Tage, Gesamt)
+- Workflow-Statistiken (Aktiv, Abgeschlossen, Fehlgeschlagen)
+- Webhook Logs mit Filter & Detailansicht
+- Navigation: Sidebar → Einstellungen → N8n Integration
+
+✅ **Neue Models & Migrations:**
+- N8nConfiguration Model (Singleton-Pattern)
+- Migration 0002_n8nconfiguration
+- Datenbank-Config überschreibt `.env` automatisch
+- Cache-Optimierung (5 Minuten)
+
+✅ **Neue Forms & Views:**
+- N8nConfigurationForm, WebhookTestForm
+- N8nSettingsView (GET/POST)
+- WebhookLogListView (mit Filtern)
+- 2 neue Templates (n8n_settings.html, webhook_logs.html)
+
+✅ **Wichtige Bugfixes:**
+- Customer-Access-Fix: Precheck → Site → Customer
+- Defensive Checks in 3 Dateien (dashboard_views, signals, api_views)
+- AttributeError behoben: `precheck.customer.email` → `precheck.site.customer.email`
+
+**URLs:**
+- `/dashboard/settings/n8n/` - Einstellungen & Test
+- `/dashboard/settings/n8n/webhook-logs/` - Log-Übersicht
+
 ### Version 1.3.0 (2025-01-16)
 
 ✅ **Angebots-Bearbeitungssystem (NEU):**

@@ -1,7 +1,8 @@
 # N8n-Integration: Implementierungsplan
 
-**Status:** ✅ Phase 1 ABGESCHLOSSEN - Backend bereit für N8n
+**Status:** ✅ Phase 1 ABGESCHLOSSEN + Dashboard Integration (v2.1.0)
 **Erstellt:** 2025-11-18
+**Letzte Aktualisierung:** 2025-11-18 (v2.1.0)
 **Projekt:** EDGARD Elektro PV-Service
 **Architektur:** Django REST API ← → N8n (KI-gestützte Angebotserstellung)
 
@@ -58,7 +59,7 @@
 
 ---
 
-## ✅ Phase 1: Django Backend (ABGESCHLOSSEN)
+## ✅ Phase 1: Django Backend (ABGESCHLOSSEN + DASHBOARD)
 
 ### 1.1 Models erstellt
 
@@ -97,6 +98,31 @@ class N8nWorkflowStatus(models.Model):
     metadata = models.JSONField()
     # ...
 ```
+
+#### N8nConfiguration Model (⭐ NEU - v2.1.0)
+- **Singleton-Model** für Webhook-URL und API-Key
+- Datenbank-Konfiguration überschreibt `.env` Werte
+- Cache-Optimierung (5 Minuten)
+- Editierbar über Dashboard
+
+```python
+class N8nConfiguration(models.Model):
+    webhook_url = models.URLField()  # N8n Webhook URL
+    api_key = models.CharField()  # API-Key (optional)
+    is_active = models.BooleanField()  # Integration aktiviert
+
+    @classmethod
+    def get_webhook_url(cls):
+        """DB hat Priorität vor .env"""
+        config = cls.get_config()
+        return config.webhook_url or settings.N8N_WEBHOOK_URL
+```
+
+**Features:**
+- ✅ Singleton-Pattern (nur 1 Config erlaubt)
+- ✅ Automatisches Fallback auf `.env`
+- ✅ Cache-Invalidierung bei Änderungen
+- ✅ Kann nicht gelöscht werden
 
 ### 1.2 API-Endpoints erstellt
 
@@ -311,6 +337,87 @@ N8N_API_KEY = config('N8N_API_KEY', default='')
 BASE_URL = config('BASE_URL', default='http://192.168.178.30:8025')
 ```
 
+### 1.7 Dashboard Integration (⭐ NEU - v2.1.0)
+
+**Zugriff:** `http://192.168.178.30:8025/dashboard/settings/n8n/`
+
+#### Features
+
+**1. Editierbare N8n Konfiguration**
+- Webhook URL direkt im Dashboard änderbar (ohne .env-Zugriff)
+- API Key optional konfigurierbar
+- Integration aktivieren/deaktivieren per Checkbox
+- Datenbank-Werte überschreiben `.env` automatisch
+
+**2. Webhook Test-Funktion**
+- Manueller Test mit beliebiger Precheck-ID
+- Sofortiges Feedback (Erfolg/Fehler mit Details)
+- Test-Webhooks werden mit `test_mode: true` markiert
+- Vollständiges Logging in WebhookLog
+
+**3. Statistik-Übersicht**
+- Gesamtzahl Webhooks (Heute, 7 Tage, Gesamt)
+- Status-Verteilung (Erfolgreich, Fehlgeschlagen, Ausstehend)
+- Workflow-Statistiken (Aktiv, Abgeschlossen, Fehlgeschlagen)
+- Letzte 10 Webhook-Aktivitäten
+
+**4. Webhook Logs Übersicht**
+- Zugriff: `http://192.168.178.30:8025/dashboard/settings/n8n/webhook-logs/`
+- Filter nach Status, Richtung, Event Type, Zeitraum
+- Detailansicht mit Payload & Response
+- Paginierung (50 Logs pro Seite)
+
+#### Implementierte Dateien
+
+**Forms:** `apps/integrations/forms.py`
+```python
+class N8nConfigurationForm(forms.ModelForm):
+    """Formular für Webhook URL & API Key"""
+
+class WebhookTestForm(forms.Form):
+    """Formular für manuellen Webhook-Test"""
+    precheck_id = forms.IntegerField()
+```
+
+**Views:** `apps/core/dashboard_views.py`
+```python
+class N8nSettingsView(LoginRequiredMixin, View):
+    """POST: Speichere Config oder sende Test-Webhook"""
+
+class WebhookLogListView(LoginRequiredMixin, ListView):
+    """Liste aller Webhook-Logs mit Filtern"""
+```
+
+**Templates:**
+- `templates/dashboard/n8n_settings.html` - Konfiguration & Test
+- `templates/dashboard/webhook_logs.html` - Log-Übersicht
+
+**Navigation:** Sidebar → Einstellungen → N8n Integration
+
+#### Wichtige Bugfixes (v2.1.0)
+
+**Problem:** `AttributeError: 'Precheck' object has no attribute 'customer'`
+
+**Ursache:** Precheck hat keine direkte `customer` Beziehung.
+Korrekte Struktur: **Precheck → Site → Customer**
+
+**Gelöst in:**
+- `apps/core/dashboard_views.py` (Test-Webhook)
+- `apps/integrations/signals.py` (Automatischer Webhook)
+- `apps/integrations/api_views.py` (API für N8n)
+
+**Alt:**
+```python
+precheck.customer.email  # ❌ AttributeError
+```
+
+**Neu:**
+```python
+precheck.site.customer.email if (precheck.site and precheck.site.customer) else None  # ✅
+```
+
+Alle Customer-Zugriffe wurden mit defensiven Checks versehen.
+
 ---
 
 ## 🚀 Phase 2: N8n Setup (NÄCHSTE SCHRITTE)
@@ -461,19 +568,29 @@ Antwort als JSON:
 
 ## 📊 Testing-Checkliste
 
-### Phase 1 (Django Backend) - ✅ ABGESCHLOSSEN
+### Phase 1 (Django Backend) - ✅ ABGESCHLOSSEN (inkl. Dashboard v2.1.0)
 
-- [x] Models erstellt (WebhookLog, N8nWorkflowStatus)
-- [x] Migrations erstellt
+- [x] Models erstellt (WebhookLog, N8nWorkflowStatus, N8nConfiguration)
+- [x] Migrations erstellt (0001_initial, 0002_n8nconfiguration)
 - [x] API-Endpoints implementiert
   - [x] GET /api/integrations/precheck/<id>/
   - [x] GET /api/integrations/pricing/
   - [x] GET /api/integrations/categories/
   - [x] POST /api/integrations/test/webhook/
-- [x] Signal-Handler registriert
+- [x] Signal-Handler registriert (mit N8nConfiguration)
 - [x] URLs konfiguriert
-- [x] Admin-Interface erstellt
+- [x] Admin-Interface erstellt (WebhookLog, N8nWorkflowStatus, N8nConfiguration)
 - [x] .env Konfiguration
+- [x] **⭐ Dashboard Integration (NEU v2.1.0)**
+  - [x] N8n Settings View mit editierbarer Config
+  - [x] Webhook Test-Funktion mit Precheck-ID Input
+  - [x] Webhook Logs Übersicht mit Filtern
+  - [x] Statistik-Übersicht (Webhooks, Workflows)
+  - [x] Forms (N8nConfigurationForm, WebhookTestForm)
+  - [x] Templates (n8n_settings.html, webhook_logs.html)
+- [x] **Bugfixes (v2.1.0)**
+  - [x] Customer-Access-Fix (Precheck → Site → Customer)
+  - [x] Defensive Checks in allen 3 Dateien
 
 ### Phase 2 (N8n Setup) - 🚧 TODO
 
