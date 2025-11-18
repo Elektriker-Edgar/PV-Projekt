@@ -1,6 +1,16 @@
 from django import forms
 from django.utils import timezone
 from apps.customers.models import Customer, Site
+from apps.core.choices import (
+    BuildingType,
+    FeedInMode,
+    GridType,
+    GroundingChoice,
+    InverterLocation,
+    StorageLocation,
+    WallboxClass,
+    WallboxMount,
+)
 from .models import Precheck, PrecheckPhoto
 
 
@@ -71,7 +81,7 @@ class PrecheckForm(forms.Form):
     )
     # === GEBÄUDE & BAUZUSTAND ===
     building_type = forms.ChoiceField(
-        choices=[('', 'Bitte wählen...')] + list(Precheck.BUILDING_TYPE_CHOICES),
+        choices=[('', 'Bitte wählen...')] + list(BuildingType.choices),
         label="Gebäudetyp",
         widget=forms.Select(attrs={'class': 'form-control'}),
         required=False
@@ -98,7 +108,7 @@ class PrecheckForm(forms.Form):
         widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '63'})
     )
     grid_type = forms.ChoiceField(
-        choices=Site.GRID_TYPES,
+        choices=GridType.choices,
         label="Hausanschluss (optional)",
         widget=forms.Select(attrs={'class': 'form-control'}),
         required=False
@@ -125,13 +135,13 @@ class PrecheckForm(forms.Form):
     )
     has_grounding = forms.ChoiceField(
         required=False,
-        choices=[('', 'Bitte wählen...')] + list(Precheck.GROUNDING_CHOICES),
+        choices=[('', 'Bitte wählen...')] + list(GroundingChoice.choices),
         label="Erdung/Potentialausgleich",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     has_deep_earth = forms.ChoiceField(
         required=False,
-        choices=[('', 'Bitte wählen...')] + list(Precheck.GROUNDING_CHOICES),
+        choices=[('', 'Bitte wählen...')] + list(GroundingChoice.choices),
         label="Tiefenerder",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
@@ -145,13 +155,13 @@ class PrecheckForm(forms.Form):
     inverter_location = forms.ChoiceField(
         required=True,
         label="Montageort Wechselrichter",
-        choices=[('', 'Wählen Sie...')] + list(Precheck.INVERTER_LOCATION_CHOICES),
+        choices=[('', 'Wählen Sie...')] + list(InverterLocation.choices),
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     storage_location = forms.ChoiceField(
         required=False,
         label="Montageort Speicher",
-        choices=[('', 'Kein Speicher geplant')] + list(Precheck.STORAGE_LOCATION_CHOICES),
+        choices=[('', 'Kein Speicher geplant')] + list(StorageLocation.choices),
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     distance_meter_to_inverter = forms.DecimalField(
@@ -205,7 +215,7 @@ class PrecheckForm(forms.Form):
     )
     feed_in_mode = forms.ChoiceField(
         required=False,
-        choices=[('', 'Bitte wählen...')] + list(Precheck.FEED_IN_MODE_CHOICES),
+        choices=[('', 'Bitte wählen...')] + list(FeedInMode.choices),
         label="Einspeise-Modus",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
@@ -241,13 +251,13 @@ class PrecheckForm(forms.Form):
     )
     wallbox_power = forms.ChoiceField(
         required=False,
-        choices=Precheck.WALLBOX_CLASSES,
+        choices=WallboxClass.choices,
         label="Wallbox Leistungsklasse",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     wallbox_mount = forms.ChoiceField(
         required=False,
-        choices=Precheck.WALLBOX_MOUNT_TYPES,
+        choices=WallboxMount.choices,
         label="Montage-Art",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
@@ -442,7 +452,7 @@ class ExpressPackageForm(forms.Form):
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Straße, PLZ Ort'})
     )
     building_type = forms.ChoiceField(
-        choices=Site._meta.get_field('building_type').choices,
+        choices=BuildingType.choices,
         label="Gebäudetyp",
         widget=forms.Select(attrs={'class': 'form-control'})
     )

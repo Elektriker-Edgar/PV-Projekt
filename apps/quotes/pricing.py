@@ -3,6 +3,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, Optional
 
 from .models import Product, Precheck
+from .payloads import normalize_pricing_payload, payload_from_precheck
 
 
 VAT_RATE = Decimal("0.19")
@@ -240,49 +241,49 @@ def calculate_pricing(data: PricingInput) -> Dict[str, Decimal]:
 
 
 def pricing_input_from_request(data: Dict[str, Any]) -> PricingInput:
-    def dec(key: str, fallback: str = None) -> Decimal:
-        value = data.get(key)
-        if value in (None, "") and fallback:
-            value = data.get(fallback)
+    payload = normalize_pricing_payload(data)
+
+    def dec(field: str) -> Decimal:
+        value = payload.get(field)
         if value in (None, ""):
             value = "0"
         return Decimal(str(value))
 
     return PricingInput(
-        building_type=(data.get("building_type") or "efh").lower(),
-        site_address=data.get("site_address") or "",
-        main_fuse_ampere=int(data.get("main_fuse_ampere") or 0),
-        grid_type=(data.get("grid_type") or "").lower(),
-        distance_meter=dec("distance_meter_to_inverter", fallback="distance_meter_to_hak"),
+        building_type=(payload.get("building_type") or "efh").lower(),
+        site_address=payload.get("site_address") or "",
+        main_fuse_ampere=int(payload.get("main_fuse_ampere") or 0),
+        grid_type=(payload.get("grid_type") or "").lower(),
+        distance_meter=dec("distance_meter"),
         desired_power_kw=dec("desired_power_kw"),
         storage_kwh=dec("storage_kwh"),
-        own_components=_as_bool(data.get("own_components")),
-        has_wallbox=_as_bool(data.get("has_wallbox")),
-        wallbox_power=data.get("wallbox_power") or "",
-        wallbox_mount=data.get("wallbox_mount") or "",
-        wallbox_cable_installed=_as_bool(data.get("wallbox_cable_installed")),
+        own_components=_as_bool(payload.get("own_components")),
+        has_wallbox=_as_bool(payload.get("has_wallbox")),
+        wallbox_power=payload.get("wallbox_power") or "",
+        wallbox_mount=payload.get("wallbox_mount") or "",
+        wallbox_cable_installed=_as_bool(payload.get("wallbox_cable_installed")),
         wallbox_cable_length=dec("wallbox_cable_length"),
-        wallbox_pv_surplus=_as_bool(data.get("wallbox_pv_surplus")),
+        wallbox_pv_surplus=_as_bool(payload.get("wallbox_pv_surplus")),
     )
 
 
 def pricing_input_from_precheck(precheck: Precheck) -> PricingInput:
-    site = precheck.site
+    payload = payload_from_precheck(precheck)
     return PricingInput(
-        building_type=getattr(site, "building_type", "efh"),
-        site_address=getattr(site, "address", ""),
-        main_fuse_ampere=site.main_fuse_ampere,
-        grid_type=(site.grid_type or "").lower(),
-        distance_meter=site.distance_meter_to_hak,
-        desired_power_kw=precheck.desired_power_kw,
-        storage_kwh=precheck.storage_kwh or Decimal("0"),
-        own_components=precheck.own_components,
-        has_wallbox=getattr(precheck, "wallbox", False),
-        wallbox_power=getattr(precheck, "wallbox_class", "") or "",
-        wallbox_mount=getattr(precheck, "wallbox_mount", "") or "",
-        wallbox_cable_installed=getattr(precheck, "wallbox_cable_prepared", False),
-        wallbox_cable_length=getattr(precheck, "wallbox_cable_length_m", Decimal("0")) or Decimal("0"),
-        wallbox_pv_surplus=getattr(precheck, "wallbox_pv_surplus", False),
+        building_type=(payload.get("building_type") or "efh").lower(),
+        site_address=payload.get("site_address") or "",
+        main_fuse_ampere=int(payload.get("main_fuse_ampere") or 0),
+        grid_type=(payload.get("grid_type") or "").lower(),
+        distance_meter=Decimal(str(payload.get("distance_meter") or "0")),
+        desired_power_kw=Decimal(str(payload.get("desired_power_kw") or "0")),
+        storage_kwh=Decimal(str(payload.get("storage_kwh") or "0")),
+        own_components=_as_bool(payload.get("own_components")),
+        has_wallbox=_as_bool(payload.get("has_wallbox")),
+        wallbox_power=payload.get("wallbox_power") or "",
+        wallbox_mount=payload.get("wallbox_mount") or "",
+        wallbox_cable_installed=_as_bool(payload.get("wallbox_cable_installed")),
+        wallbox_cable_length=Decimal(str(payload.get("wallbox_cable_length") or "0")),
+        wallbox_pv_surplus=_as_bool(payload.get("wallbox_pv_surplus")),
     )
 
 

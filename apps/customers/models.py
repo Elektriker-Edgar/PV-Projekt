@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from apps.quotes.validators import validate_media_file
+from apps.core.choices import BuildingType, GridType
 
 
 class Customer(models.Model):
@@ -44,19 +45,14 @@ class Customer(models.Model):
 
 class Site(models.Model):
     """Installationsort"""
-    GRID_TYPES = [
-        ('1p', '1-Polig'),
-        ('3p', '3-Polig'),
-        ('unknown', 'Unbekannt'),
-    ]
-    
+    GRID_TYPES = GridType.choices
+
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='sites')
     address = models.TextField()
-    building_type = models.CharField(max_length=50, choices=[
-        ('efh', 'Einfamilienhaus'),
-        ('mfh', 'Mehrfamilienhaus'),
-        ('commercial', 'Gewerbe')
-    ])
+    building_type = models.CharField(
+        max_length=50,
+        choices=BuildingType.choices,
+    )
     construction_year = models.PositiveIntegerField(null=True, blank=True)
     main_fuse_ampere = models.PositiveIntegerField(help_text="Hauptsicherung in Ampere")
     grid_type = models.CharField(max_length=10, choices=GRID_TYPES, blank=True)

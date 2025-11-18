@@ -650,9 +650,6 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8f9fa
 <div class="invalid-feedback"></div>
 <div class="form-text">Straße, Hausnummer, PLZ, Ort</div>
 </div>
-
-<input type="hidden" id="site_address" name="site_address">
-
 <div class="form-floating">
 <textarea class="form-control" id="notes" name="notes" style="height:120px"></textarea>
 <label>Zusätzliche Informationen (optional)</label>
@@ -880,12 +877,6 @@ const isChecked=document.getElementById('has_heat_pump').checked;
 document.getElementById('heatPumpFields').style.display=isChecked?'block':'none';
 }
 
-function syncSiteAddress(){
-const addressField=document.getElementById('customer_address');
-const target=document.getElementById('site_address');
-if(target)target.value=addressField?addressField.value:'';
-}
-
 function toggleWallboxVisibility(){
 const isChecked=document.getElementById('has_wallbox').checked;
 document.getElementById('wallboxFields').style.display=isChecked?'block':'none';
@@ -894,6 +885,44 @@ saveFormData();
 
 function toggleWallboxCableLength(){
 document.getElementById('wallboxCableLengthField').style.display=document.getElementById('wallbox_cable_installed').checked?'none':'block';
+}
+
+const CANONICAL_FIELD_MAP={
+building_type:['building_type'],
+site_address:['site_address','customer_address'],
+main_fuse_ampere:['main_fuse_ampere'],
+grid_type:['grid_type'],
+distance_meter:['distance_meter','distance_meter_to_inverter','distance_meter_to_hak'],
+desired_power_kw:['desired_power_kw'],
+storage_kwh:['storage_kwh'],
+own_components:['own_components'],
+has_wallbox:['has_wallbox'],
+wallbox_power:['wallbox_power'],
+wallbox_mount:['wallbox_mount'],
+wallbox_cable_installed:['wallbox_cable_installed'],
+wallbox_cable_length:['wallbox_cable_length'],
+wallbox_pv_surplus:['wallbox_pv_surplus']
+};
+
+function buildCanonicalPayload(form){
+const payload={};
+const formData=new FormData(form);
+Object.entries(CANONICAL_FIELD_MAP).forEach(([canonical,fields])=>{
+const candidates=Array.isArray(fields)?fields:[fields];
+for(const name of candidates){
+const field=form.querySelector(`[name=\"${name}\"]`);
+if(!field)continue;
+if(field.type==='checkbox'){
+payload[canonical]=field.checked?'on':'';
+break;
+}
+const value=formData.get(name);
+if(value===null||value===''||value instanceof File)continue;
+payload[canonical]=value;
+break;
+}
+});
+return payload;
 }
 
 function calculateAndShowPrice(){
@@ -915,15 +944,16 @@ alert('Fehler bei der Preisberechnung. Bitte versuchen Sie es erneut.');
 
 function fetchPriceFromAPI(){
 const form=document.getElementById('precheckWizard');
-syncSiteAddress();
-const formData=new FormData(form);
-const addressField=document.getElementById('customer_address');
-formData.set('site_address',(addressField?addressField.value:'')||'');
+const canonicalPayload=buildCanonicalPayload(form);
+const params=new URLSearchParams();
+Object.entries(canonicalPayload).forEach(([key,value])=>{
+if(value!==undefined&&value!==null)params.append(key,value);
+});
 const csrf=form.querySelector('input[name="csrfmiddlewaretoken"]').value;
 return fetch('/api/pricing/preview/',{
 method:'POST',
 headers:{'X-CSRFToken':csrf},
-body:new URLSearchParams(formData)
+body:params
 })
 .then(response=>{
 if(!response.ok)throw new Error('API Error');
@@ -1408,12 +1438,15 @@ element.style.display='none';
 }
 
 function saveFormData(){
-const formData=new FormData(document.getElementById('precheckWizard'));
+const form=document.getElementById('precheckWizard');
+if(!form)return;
+const formData=new FormData(form);
 const data={};
 for(let[key,value]of formData.entries()){
 if(!(value instanceof File))data[key]=value;
 }
 if(priceData)data._priceData=priceData;
+data._canonical=buildCanonicalPayload(form);
 localStorage.setItem('precheckWizardData',JSON.stringify(data));
 }
 
@@ -1427,6 +1460,7 @@ priceData=data[key];
 if(priceData)updatePriceDisplay(priceData);
 return;
 }
+if(key==='_canonical')return;
 const field=document.getElementById(key);
 if(field&&field.type!=='file'){
 if(field.type==='checkbox'){
@@ -1448,7 +1482,6 @@ if(key==='has_grounding')toggleGroundingDetails();
 }
 });
 }
-syncSiteAddress();
 }
 
 document.getElementById('precheckWizard').addEventListener('submit',function(e){

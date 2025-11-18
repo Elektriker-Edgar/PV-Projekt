@@ -2,6 +2,15 @@ from django.db import models
 from django.utils import timezone
 from decimal import Decimal
 from apps.customers.models import Site
+from apps.core.choices import (
+    BuildingType,
+    FeedInMode,
+    GroundingChoice,
+    InverterLocation,
+    StorageLocation,
+    WallboxClass,
+    WallboxMount,
+)
 from apps.core.models import User
 from .validators import validate_media_file
 from .helpers import inverter_label_from_power
@@ -39,47 +48,14 @@ class Component(models.Model):
 
 class Precheck(models.Model):
     """Vorprüfung"""
-    WALLBOX_CLASSES = [
-        ('4kw', 'Wallbox bis 4 kW'),
-        ('11kw', 'Wallbox 11 kW'),
-        ('22kw', 'Wallbox 22 kW'),
-    ]
-    WALLBOX_MOUNT_TYPES = [
-        ('wall', 'Wandmontage'),
-        ('stand', 'Ständermontage'),
-    ]
-    BUILDING_TYPE_CHOICES = [
-        ('efh', 'Einfamilienhaus'),
-        ('mfh', 'Mehrfamilienhaus'),
-        ('commercial', 'Gewerbe'),
-    ]
-    GROUNDING_CHOICES = [
-        ('yes', 'Ja, vorhanden'),
-        ('no', 'Nein'),
-        ('unknown', 'Unbekannt'),
-    ]
-    FEED_IN_MODE_CHOICES = [
-        ('surplus', 'Überschusseinspeisung'),
-        ('full', 'Volleinspeisung'),
-        ('mixed', 'Gemischt'),
-    ]
-    INVERTER_LOCATION_CHOICES = [
-        ('basement', 'Keller'),
-        ('garage', 'Garage'),
-        ('attic', 'Dachboden'),
-        ('utility_room', 'Hauswirtschaftsraum'),
-        ('outdoor', 'Außenbereich (wettergeschützt)'),
-        ('other', 'Anderer Ort'),
-    ]
-    STORAGE_LOCATION_CHOICES = [
-        ('same_as_inverter', 'Gleicher Ort wie Wechselrichter'),
-        ('basement', 'Keller'),
-        ('garage', 'Garage'),
-        ('attic', 'Dachboden'),
-        ('utility_room', 'Hauswirtschaftsraum'),
-        ('outdoor', 'Außenbereich (wettergeschützt)'),
-        ('other', 'Anderer Ort'),
-    ]
+    WALLBOX_CLASSES = WallboxClass.choices
+    WALLBOX_MOUNT_TYPES = WallboxMount.choices
+    BUILDING_TYPE_CHOICES = BuildingType.choices
+    GROUNDING_CHOICES = GroundingChoice.choices
+    FEED_IN_MODE_CHOICES = FeedInMode.choices
+    INVERTER_LOCATION_CHOICES = InverterLocation.choices
+    STORAGE_LOCATION_CHOICES = StorageLocation.choices
+
 
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
 
@@ -89,7 +65,7 @@ class Precheck(models.Model):
         choices=BUILDING_TYPE_CHOICES,
         blank=True,
         default='',
-        help_text="Gebäudetyp"
+        help_text=""
     )
     construction_year = models.IntegerField(
         null=True,
