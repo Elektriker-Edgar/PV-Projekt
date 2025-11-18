@@ -43,7 +43,8 @@
       "Bash(dir:*)",
       "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py makemigrations customers --name add_database_indexes)",
       "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" manage.py migrate)",
-      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" \"E:\\ANPR\\PV-Service\\manage.py\" makemigrations:*)"
+      "Bash(\"E:\\ANPR\\PV-Service\\venv\\Scripts\\python.exe\" \"E:\\ANPR\\PV-Service\\manage.py\" makemigrations:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

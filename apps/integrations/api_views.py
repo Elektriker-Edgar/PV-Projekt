@@ -17,6 +17,8 @@ from django.db.models import Q
 
 from apps.quotes.models import Precheck, Product, ProductCategory
 from apps.integrations.models import WebhookLog
+from apps.quotes.pricing import calculate_pricing, PricingInput  # Für on-the-fly Preisberechnung
+from decimal import Decimal
 
 import logging
 
@@ -53,11 +55,14 @@ def get_precheck_data(request, precheck_id):
 
     try:
         # Precheck laden mit allen Relationen
+        # WICHTIG: Precheck hat keine direkte 'customer' Beziehung!
+        # Korrekte Struktur: Precheck → Site → Customer
+        # Fotos hängen direkt am Precheck (nicht am Site)
         precheck = Precheck.objects.select_related(
-            'customer',
             'site',
+            'site__customer',  # Customer über Site laden
         ).prefetch_related(
-            'site__precheck_photos'
+            'photos'  # PrecheckPhoto-Model mit related_name='photos'
         ).get(id=precheck_id)
 
         # Log API-Call
@@ -89,51 +94,62 @@ def get_precheck_data(request, precheck_id):
                 'building_type': precheck.site.building_type if precheck.site else None,
                 'main_fuse_ampere': precheck.site.main_fuse_ampere if precheck.site else None,
                 'grid_type': precheck.site.grid_type if precheck.site else None,
-                'grid_operator': precheck.site.grid_operator if precheck.site else None,
+                'distance_meter_to_hak': float(precheck.site.distance_meter_to_hak) if (precheck.site and precheck.site.distance_meter_to_hak) else None,
 
-                # Fotos
-                'has_photos': precheck.site.precheck_photos.exists() if precheck.site else False,
-                'photo_count': precheck.site.precheck_photos.count() if precheck.site else 0,
+                # Fotos (hängen direkt am Precheck, nicht am Site)
+                'has_photos': precheck.photos.exists(),
+                'photo_count': precheck.photos.count(),
                 'photos': [
                     {
                         'id': photo.id,
                         'category': photo.category,
-                        'url': request.build_absolute_uri(photo.image.url) if photo.image else None,
+                        'category_display': photo.get_category_display(),
+                        'url': request.build_absolute_uri(photo.photo.url) if photo.photo else None,
                     }
-                    for photo in precheck.site.precheck_photos.all()
-                ] if precheck.site else [],
+                    for photo in precheck.photos.all()
+                ],
             } if precheck.site else None,
 
-            # Projektdaten
+            # Projektdaten (aus individuellen Feldern)
             'project': {
-                'desired_power_kw': precheck.form_data.get('desired_power_kw'),
-                'storage_kwh': precheck.form_data.get('storage_kwh', 0),
-                'has_storage': float(precheck.form_data.get('storage_kwh', 0)) > 0,
+                'desired_power_kw': float(precheck.desired_power_kw) if precheck.desired_power_kw else None,
+                'storage_kwh': float(precheck.storage_kwh) if precheck.storage_kwh else 0,
+                'has_storage': bool(precheck.storage_kwh and precheck.storage_kwh > 0),
 
                 # Wallbox
-                'has_wallbox': precheck.form_data.get('has_wallbox', False),
-                'wallbox_power': precheck.form_data.get('wallbox_power'),
-                'wallbox_mount': precheck.form_data.get('wallbox_mount'),
-                'wallbox_cable_length': precheck.form_data.get('wallbox_cable_length'),
-                'wallbox_pv_surplus': precheck.form_data.get('wallbox_pv_surplus', False),
+                'has_wallbox': precheck.wallbox,
+                'wallbox_power': precheck.wallbox_class,  # '4kw', '11kw', '22kw'
+                'wallbox_mount': precheck.wallbox_mount,  # 'wall', 'stand'
+                'wallbox_cable_length': float(precheck.wallbox_cable_length_m) if precheck.wallbox_cable_length_m else None,
+                'wallbox_cable_prepared': precheck.wallbox_cable_prepared,
+                'wallbox_pv_surplus': precheck.wallbox_pv_surplus,
 
                 # Komponenten
-                'own_components': precheck.form_data.get('own_components', False),
+                'own_components': precheck.own_components,
+                'own_material_description': precheck.own_material_description,
 
                 # Distanzen
-                'distance_meter_to_inverter': precheck.form_data.get('distance_meter_to_inverter'),
-                'distance_meter_to_hak': precheck.form_data.get('distance_meter_to_hak'),
+                'distance_meter_to_inverter': float(precheck.distance_meter_to_inverter) if precheck.distance_meter_to_inverter else None,
 
                 # Locations
-                'inverter_location': precheck.form_data.get('inverter_location'),
-                'storage_location': precheck.form_data.get('storage_location'),
+                'inverter_location': precheck.inverter_location,
+                'inverter_location_display': precheck.get_inverter_location_display() if precheck.inverter_location else None,
+                'storage_location': precheck.storage_location,
+                'storage_location_display': precheck.get_storage_location_display() if precheck.storage_location else None,
+
+                # Weitere Details
+                'building_type': precheck.building_type,
+                'feed_in_mode': precheck.feed_in_mode,
+                'requires_backup_power': precheck.requires_backup_power,
+                'has_heat_pump': precheck.has_heat_pump,
+                'grid_operator': precheck.grid_operator,
 
                 # Notizen
-                'customer_notes': precheck.form_data.get('notes', ''),
+                'customer_notes': precheck.notes,
             },
 
-            # Preisdaten
-            'pricing': precheck.price_data or {},
+            # Preisdaten (on-the-fly Berechnung mit Pricing-Engine)
+            'pricing': {},  # Wird unten berechnet
 
             # Vollständigkeits-Check (für KI)
             'completeness': {
@@ -146,29 +162,57 @@ def get_precheck_data(request, precheck_id):
                 'has_main_fuse': bool(precheck.site and precheck.site.main_fuse_ampere),
                 'has_grid_type': bool(precheck.site and precheck.site.grid_type),
 
-                'has_photos': precheck.site.precheck_photos.exists() if precheck.site else False,
-                'has_meter_photo': precheck.site.precheck_photos.filter(category='meter_cabinet').exists() if precheck.site else False,
-                'has_hak_photo': precheck.site.precheck_photos.filter(category='hak').exists() if precheck.site else False,
+                # Fotos hängen direkt am Precheck
+                'has_photos': precheck.photos.exists(),
+                'has_meter_photo': precheck.photos.filter(category='meter_cabinet').exists(),
+                'has_hak_photo': precheck.photos.filter(category='hak').exists(),
 
-                'has_power_data': bool(precheck.form_data.get('desired_power_kw')),
-                'has_pricing': bool(precheck.price_data),
+                'has_power_data': bool(precheck.desired_power_kw),
+                'has_pricing': True,  # Wird immer on-the-fly berechnet
 
                 # Empfohlene Felder
-                'has_inverter_location': bool(precheck.form_data.get('inverter_location')),
-                'has_distance_data': bool(
-                    precheck.form_data.get('distance_meter_to_inverter') or
-                    precheck.form_data.get('distance_meter_to_hak')
-                ),
+                'has_inverter_location': bool(precheck.inverter_location),
+                'has_distance_data': bool(precheck.distance_meter_to_inverter),
             },
 
             # Metadaten
             'metadata': {
-                'status': precheck.status,
                 'created_at': precheck.created_at.isoformat(),
-                'updated_at': precheck.updated_at.isoformat() if hasattr(precheck, 'updated_at') else None,
-                'has_quote': hasattr(precheck, 'quotes') and precheck.quotes.exists(),
+                'updated_at': precheck.updated_at.isoformat(),
+                'has_quote': hasattr(precheck, 'quote'),  # OneToOneField ohne related_name → 'quote' (Singular)
+                'quote_status': precheck.quote.status if hasattr(precheck, 'quote') else None,
+                'package_choice': precheck.package_choice,
+                'is_express_package': precheck.is_express_package,
             },
         }
+
+        # Preisberechnung on-the-fly durchführen
+        try:
+            pricing_input = PricingInput(
+                building_type=precheck.building_type or 'efh',
+                site_address=precheck.site.address if precheck.site else '',
+                main_fuse_ampere=precheck.site.main_fuse_ampere if precheck.site else 35,
+                grid_type=precheck.site.grid_type if precheck.site else '3p',
+                distance_meter=Decimal(str(precheck.distance_meter_to_inverter)) if precheck.distance_meter_to_inverter else Decimal('0'),
+                desired_power_kw=Decimal(str(precheck.desired_power_kw)) if precheck.desired_power_kw else Decimal('0'),
+                storage_kwh=Decimal(str(precheck.storage_kwh)) if precheck.storage_kwh else Decimal('0'),
+                own_components=precheck.own_components,
+                has_wallbox=precheck.wallbox,
+                wallbox_power=precheck.wallbox_class or '',
+                wallbox_mount=precheck.wallbox_mount or 'wall',
+                wallbox_cable_installed=precheck.wallbox_cable_prepared,
+                wallbox_cable_length=Decimal(str(precheck.wallbox_cable_length_m)) if precheck.wallbox_cable_length_m else Decimal('0'),
+                wallbox_pv_surplus=precheck.wallbox_pv_surplus,
+            )
+            pricing_result = calculate_pricing(pricing_input)
+            # Decimal to float konvertieren für JSON-Serialisierung
+            response_data['pricing'] = {k: float(v) for k, v in pricing_result.items()}
+        except Exception as e:
+            logger.error(f"Error calculating pricing for precheck {precheck_id}: {e}", exc_info=True)
+            response_data['pricing'] = {
+                'error': 'Preisberechnung fehlgeschlagen',
+                'detail': str(e)
+            }
 
         logger.info(f"N8n requested precheck data: {precheck_id}")
         return Response(response_data)
