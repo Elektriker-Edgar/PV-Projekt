@@ -27,6 +27,7 @@ from django.views.generic import (
 
 from apps.customers.models import Customer, Site
 from apps.quotes.models import Precheck, Quote, QuoteItem, ProductCategory, Product
+from apps.integrations.models import WebhookLog, N8nWorkflowStatus
 from .forms import ProductCategoryForm, ProductForm, QuoteEditForm, QuoteItemFormSet
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -1595,3 +1596,183 @@ class ProductAutocompleteView(LoginRequiredMixin, View):
             })
 
         return JsonResponse({'results': results})
+
+
+# ============================================================================
+# N8n Integration Views
+# ============================================================================
+
+class WebhookLogListView(LoginRequiredMixin, ListView):
+    """
+    Liste aller N8n Webhook-Logs mit Such- und Filterfunktion
+
+    Features:
+    - Filter nach Status (success, failed, pending, retry)
+    - Filter nach Direction (outgoing, incoming)
+    - Filter nach Event Type
+    - Suche nach Precheck ID, Quote ID, Error Message
+    - Paginierung (50 pro Seite)
+    - Optimierte Queries
+    """
+    model = WebhookLog
+    template_name = 'dashboard/webhook_logs.html'
+    context_object_name = 'logs'
+    paginate_by = 50
+    login_url = '/admin/login/'
+
+    def get_queryset(self):
+        """
+        Optimierte Queryset mit Suche und Filterung
+        """
+        queryset = WebhookLog.objects.all().order_by('-created_at')
+
+        # Suchfunktion
+        search_query = self.request.GET.get('search', '').strip()
+        if search_query:
+            queryset = queryset.filter(
+                Q(event_type__icontains=search_query) |
+                Q(error_message__icontains=search_query) |
+                Q(precheck_id__icontains=search_query) |
+                Q(quote_id__icontains=search_query)
+            )
+
+        # Filter: Status
+        status_filter = self.request.GET.get('status', '').strip()
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+
+        # Filter: Direction
+        direction_filter = self.request.GET.get('direction', '').strip()
+        if direction_filter:
+            queryset = queryset.filter(direction=direction_filter)
+
+        # Filter: Event Type
+        event_type_filter = self.request.GET.get('event_type', '').strip()
+        if event_type_filter:
+            queryset = queryset.filter(event_type=event_type_filter)
+
+        # Filter: Zeitraum
+        time_filter = self.request.GET.get('time_range', '').strip()
+        if time_filter:
+            now = timezone.now()
+            if time_filter == 'today':
+                start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                queryset = queryset.filter(created_at__gte=start_time)
+            elif time_filter == 'week':
+                start_time = now - timedelta(days=7)
+                queryset = queryset.filter(created_at__gte=start_time)
+            elif time_filter == 'month':
+                start_time = now - timedelta(days=30)
+                queryset = queryset.filter(created_at__gte=start_time)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Statistiken für die Anzeige
+        total_count = self.get_queryset().count()
+        success_count = self.get_queryset().filter(status='success').count()
+        failed_count = self.get_queryset().filter(status='failed').count()
+        pending_count = self.get_queryset().filter(status='pending').count()
+
+        # Event Types für Filter-Dropdown
+        event_types = WebhookLog.objects.values_list('event_type', flat=True).distinct()
+
+        context.update({
+            'total_count': total_count,
+            'success_count': success_count,
+            'failed_count': failed_count,
+            'pending_count': pending_count,
+            'event_types': event_types,
+            'search_query': self.request.GET.get('search', ''),
+            'status_filter': self.request.GET.get('status', ''),
+            'direction_filter': self.request.GET.get('direction', ''),
+            'event_type_filter': self.request.GET.get('event_type', ''),
+            'time_range_filter': self.request.GET.get('time_range', ''),
+        })
+
+        return context
+
+
+class N8nSettingsView(LoginRequiredMixin, TemplateView):
+    """
+    N8n Einstellungen und Konfiguration
+
+    Zeigt:
+    - Aktuelle N8n Webhook URL
+    - API Key Status
+    - Verbindungstest
+    - Statistiken
+    - Letzte Webhook-Aktivitäten
+    """
+    template_name = 'dashboard/n8n_settings.html'
+    login_url = '/admin/login/'
+
+    def get_context_data(self, **kwargs):
+        from django.conf import settings
+        import requests
+
+        context = super().get_context_data(**kwargs)
+
+        # N8n Konfiguration
+        n8n_webhook_url = getattr(settings, 'N8N_WEBHOOK_URL', '')
+        n8n_api_key = getattr(settings, 'N8N_API_KEY', '')
+        base_url = getattr(settings, 'BASE_URL', '')
+
+        # Statistiken
+        now = timezone.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = now - timedelta(days=7)
+
+        total_webhooks = WebhookLog.objects.count()
+        webhooks_today = WebhookLog.objects.filter(created_at__gte=today_start).count()
+        webhooks_week = WebhookLog.objects.filter(created_at__gte=week_start).count()
+
+        # Status-Verteilung
+        status_stats = WebhookLog.objects.values('status').annotate(
+            count=Count('id')
+        ).order_by('status')
+
+        # Letzte Webhook-Logs
+        recent_logs = WebhookLog.objects.order_by('-created_at')[:10]
+
+        # Workflow-Statistiken
+        total_workflows = N8nWorkflowStatus.objects.count()
+        active_workflows = N8nWorkflowStatus.objects.filter(
+            status__in=['data_validation', 'quote_generation', 'customer_communication']
+        ).count()
+        completed_workflows = N8nWorkflowStatus.objects.filter(status='completed').count()
+        failed_workflows = N8nWorkflowStatus.objects.filter(status='failed').count()
+
+        # N8n Verbindungstest (optional, nur wenn URL konfiguriert ist)
+        connection_status = 'unknown'
+        connection_message = 'Nicht getestet'
+
+        if n8n_webhook_url:
+            # Wir testen die Verbindung nicht automatisch, um keine unnötigen Anfragen zu senden
+            # Das kann manuell über einen Test-Button gemacht werden
+            connection_status = 'configured'
+            connection_message = f'Webhook URL konfiguriert: {n8n_webhook_url}'
+        else:
+            connection_status = 'not_configured'
+            connection_message = 'Keine N8n Webhook URL konfiguriert'
+
+        context.update({
+            'n8n_webhook_url': n8n_webhook_url,
+            'n8n_api_key_configured': bool(n8n_api_key),
+            'base_url': base_url,
+            'total_webhooks': total_webhooks,
+            'webhooks_today': webhooks_today,
+            'webhooks_week': webhooks_week,
+            'status_stats': status_stats,
+            'recent_logs': recent_logs,
+            'total_workflows': total_workflows,
+            'active_workflows': active_workflows,
+            'completed_workflows': completed_workflows,
+            'failed_workflows': failed_workflows,
+            'connection_status': connection_status,
+            'connection_message': connection_message,
+        })
+
+        return context

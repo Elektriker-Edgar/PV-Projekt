@@ -45,4 +45,8 @@ urlpatterns = [
     path('catalog/products/<int:pk>/edit/', dashboard_views.ProductUpdateView.as_view(), name='product_update'),
     path('catalog/products/<int:pk>/delete/', dashboard_views.ProductDeleteView.as_view(), name='product_delete'),
     path('api/products/autocomplete/', dashboard_views.ProductAutocompleteView.as_view(), name='product_autocomplete'),
+
+    # N8n Integration - System Settings
+    path('settings/n8n/', dashboard_views.N8nSettingsView.as_view(), name='n8n_settings'),
+    path('settings/n8n/webhook-logs/', dashboard_views.WebhookLogListView.as_view(), name='webhook_logs'),
 ]

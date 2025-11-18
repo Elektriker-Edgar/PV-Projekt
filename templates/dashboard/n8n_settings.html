@@ -1,0 +1,318 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}N8n Einstellungen{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item"><a href="#">Systemeinstellungen</a></li>
+    <li class="breadcrumb-item active">N8n Integration</li>
+{% endblock %}
+
+{% block header_actions %}
+    <a href="{% url 'dashboard:webhook_logs' %}" class="btn btn-primary btn-sm">
+        <i class="fas fa-list"></i> Webhook Logs
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">N8n Integration Einstellungen</h1>
+        <p class="page-subtitle">Konfiguration und Überwachung der N8n-Workflow-Automatisierung</p>
+    </div>
+
+    <!-- Connection Status Card -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-2" style="font-weight: 600;">
+                                <i class="fas fa-plug"></i> Verbindungsstatus
+                            </h5>
+                            <p class="mb-0 text-muted">{{ connection_message }}</p>
+                        </div>
+                        <div>
+                            {% if connection_status == 'configured' %}
+                                <span class="badge" style="background: #d1fae5; color: #065f46; font-size: 14px; padding: 8px 16px;">
+                                    <i class="fas fa-check-circle"></i> Konfiguriert
+                                </span>
+                            {% elif connection_status == 'not_configured' %}
+                                <span class="badge" style="background: #fef3c7; color: #92400e; font-size: 14px; padding: 8px 16px;">
+                                    <i class="fas fa-exclamation-triangle"></i> Nicht konfiguriert
+                                </span>
+                            {% else %}
+                                <span class="badge badge-secondary" style="font-size: 14px; padding: 8px 16px;">
+                                    <i class="fas fa-question-circle"></i> Unbekannt
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cog"></i> Konfiguration
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; font-size: 13px;">N8n Webhook URL</label>
+                        {% if n8n_webhook_url %}
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="{{ n8n_webhook_url }}" readonly style="background: var(--neutral-50);">
+                                <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('{{ n8n_webhook_url }}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning mb-0">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Keine Webhook URL konfiguriert. Bitte konfigurieren Sie <code>N8N_WEBHOOK_URL</code> in der .env Datei.
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; font-size: 13px;">Django Base URL</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ base_url }}" readonly style="background: var(--neutral-50);">
+                            <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('{{ base_url }}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; font-size: 13px;">API Key</label>
+                        {% if n8n_api_key_configured %}
+                            <div class="alert alert-success mb-0">
+                                <i class="fas fa-check-circle"></i> API Key ist konfiguriert
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle"></i> Kein API Key konfiguriert (optional für interne Tests)
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-0">
+                        <h6 style="font-weight: 600; font-size: 13px; margin-bottom: 12px;">API Endpoints für N8n:</h6>
+                        <div style="background: var(--neutral-50); padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px;">
+                            <div class="mb-2">
+                                <strong>Precheck Daten:</strong><br>
+                                <code>{{ base_url }}/api/integrations/precheck/&lt;id&gt;/</code>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Pricing Daten:</strong><br>
+                                <code>{{ base_url }}/api/integrations/pricing/</code>
+                            </div>
+                            <div class="mb-0">
+                                <strong>Kategorien:</strong><br>
+                                <code>{{ base_url }}/api/integrations/categories/</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i> Webhook Statistiken
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div style="padding: 16px; background: #eff6ff; border-radius: 8px;">
+                                <p class="text-muted mb-1" style="font-size: 12px; font-weight: 600;">GESAMT</p>
+                                <h3 style="font-size: 32px; font-weight: 700; color: var(--primary-blue); margin: 0;">{{ total_webhooks }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div style="padding: 16px; background: #fef3c7; border-radius: 8px;">
+                                <p class="text-muted mb-1" style="font-size: 12px; font-weight: 600;">HEUTE</p>
+                                <h3 style="font-size: 32px; font-weight: 700; color: var(--warning); margin: 0;">{{ webhooks_today }}</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div style="padding: 16px; background: #d1fae5; border-radius: 8px;">
+                            <p class="text-muted mb-1" style="font-size: 12px; font-weight: 600;">LETZTE 7 TAGE</p>
+                            <h3 style="font-size: 32px; font-weight: 700; color: var(--success); margin: 0;">{{ webhooks_week }}</h3>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 style="font-weight: 600; font-size: 13px; margin-bottom: 12px;">Status-Verteilung:</h6>
+                        {% for stat in status_stats %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span style="font-size: 13px;">
+                                {% if stat.status == 'success' %}
+                                    <i class="fas fa-check-circle" style="color: var(--success);"></i> Erfolgreich
+                                {% elif stat.status == 'failed' %}
+                                    <i class="fas fa-times-circle" style="color: var(--danger);"></i> Fehlgeschlagen
+                                {% elif stat.status == 'pending' %}
+                                    <i class="fas fa-clock" style="color: var(--warning);"></i> Ausstehend
+                                {% elif stat.status == 'retry' %}
+                                    <i class="fas fa-redo" style="color: #8b5cf6;"></i> Wiederholen
+                                {% endif %}
+                            </span>
+                            <span class="badge badge-secondary">{{ stat.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <a href="{% url 'dashboard:webhook_logs' %}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-list"></i> Alle Logs anzeigen
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workflow Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-project-diagram"></i> Workflow Statistiken
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div style="padding: 20px; background: #eff6ff; border-radius: 8px; text-align: center;">
+                                <p class="text-muted mb-2" style="font-size: 12px; font-weight: 600;">GESAMT WORKFLOWS</p>
+                                <h2 style="font-size: 36px; font-weight: 700; color: var(--primary-blue); margin: 0;">{{ total_workflows }}</h2>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div style="padding: 20px; background: #fef3c7; border-radius: 8px; text-align: center;">
+                                <p class="text-muted mb-2" style="font-size: 12px; font-weight: 600;">AKTIV</p>
+                                <h2 style="font-size: 36px; font-weight: 700; color: var(--warning); margin: 0;">{{ active_workflows }}</h2>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div style="padding: 20px; background: #d1fae5; border-radius: 8px; text-align: center;">
+                                <p class="text-muted mb-2" style="font-size: 12px; font-weight: 600;">ABGESCHLOSSEN</p>
+                                <h2 style="font-size: 36px; font-weight: 700; color: var(--success); margin: 0;">{{ completed_workflows }}</h2>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div style="padding: 20px; background: #fee2e2; border-radius: 8px; text-align: center;">
+                                <p class="text-muted mb-2" style="font-size: 12px; font-weight: 600;">FEHLGESCHLAGEN</p>
+                                <h2 style="font-size: 36px; font-weight: 700; color: var(--danger); margin: 0;">{{ failed_workflows }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Webhook Activity -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">
+                        <i class="fas fa-history"></i> Letzte Webhook-Aktivitäten
+                    </h3>
+                    <a href="{% url 'dashboard:webhook_logs' %}" class="btn btn-sm btn-outline-primary">
+                        Alle anzeigen
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-container">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Event</th>
+                                    <th>Richtung</th>
+                                    <th>Status</th>
+                                    <th>Zeit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_logs %}
+                                <tr>
+                                    <td>
+                                        <span style="font-weight: 600;">#{{ log.id }}</span>
+                                    </td>
+                                    <td>{{ log.event_type }}</td>
+                                    <td>
+                                        {% if log.direction == 'outgoing' %}
+                                            <span class="badge badge-info">
+                                                <i class="fas fa-arrow-up"></i> Ausgehend
+                                            </span>
+                                        {% else %}
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-arrow-down"></i> Eingehend
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.status == 'success' %}
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-check"></i> Erfolgreich
+                                            </span>
+                                        {% elif log.status == 'failed' %}
+                                            <span class="badge badge-danger">
+                                                <i class="fas fa-times"></i> Fehler
+                                            </span>
+                                        {% elif log.status == 'pending' %}
+                                            <span class="badge badge-warning">
+                                                <i class="fas fa-clock"></i> Ausstehend
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div style="font-size: 13px;">
+                                            {{ log.created_at|date:"d.m.Y H:i:s" }}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <i class="fas fa-inbox" style="font-size: 32px; color: var(--neutral-300);"></i>
+                                        <p class="text-muted mb-0 mt-2">Noch keine Webhook-Aktivitäten</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success message
+        alert('In Zwischenablage kopiert: ' + text);
+    }, function(err) {
+        console.error('Fehler beim Kopieren: ', err);
+    });
+}
+</script>
+
+{% endblock %}

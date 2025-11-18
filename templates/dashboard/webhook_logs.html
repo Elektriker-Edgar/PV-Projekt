@@ -1,0 +1,416 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}N8n Webhook Logs{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard:n8n_settings' %}">N8n Einstellungen</a></li>
+    <li class="breadcrumb-item active">Webhook Logs</li>
+{% endblock %}
+
+{% block header_actions %}
+    <a href="{% url 'dashboard:n8n_settings' %}" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left"></i> Zurück zu Einstellungen
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">N8n Webhook Logs</h1>
+        <p class="page-subtitle">Überwachung aller Webhook-Kommunikationen zwischen Django und N8n</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1" style="font-size: 12px; font-weight: 600; text-transform: uppercase;">Gesamt</p>
+                            <h3 class="mb-0" style="font-size: 28px; font-weight: 700; color: var(--neutral-900);">{{ total_count }}</h3>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #eff6ff; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-exchange-alt" style="font-size: 20px; color: var(--primary-blue);"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1" style="font-size: 12px; font-weight: 600; text-transform: uppercase;">Erfolgreich</p>
+                            <h3 class="mb-0" style="font-size: 28px; font-weight: 700; color: var(--success);">{{ success_count }}</h3>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #d1fae5; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-check-circle" style="font-size: 20px; color: var(--success);"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1" style="font-size: 12px; font-weight: 600; text-transform: uppercase;">Fehlgeschlagen</p>
+                            <h3 class="mb-0" style="font-size: 28px; font-weight: 700; color: var(--danger);">{{ failed_count }}</h3>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #fee2e2; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-exclamation-circle" style="font-size: 20px; color: var(--danger);"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1" style="font-size: 12px; font-weight: 600; text-transform: uppercase;">Ausstehend</p>
+                            <h3 class="mb-0" style="font-size: 28px; font-weight: 700; color: var(--warning);">{{ pending_count }}</h3>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #fef3c7; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-clock" style="font-size: 20px; color: var(--warning);"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Suche</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: white; border-right: none;">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                            <input
+                                type="text"
+                                name="search"
+                                class="form-control"
+                                placeholder="Event Type, Precheck ID, Error..."
+                                value="{{ search_query }}"
+                                style="border-left: none;">
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">Alle Status</option>
+                            <option value="success" {% if status_filter == 'success' %}selected{% endif %}>Erfolgreich</option>
+                            <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Fehlgeschlagen</option>
+                            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Ausstehend</option>
+                            <option value="retry" {% if status_filter == 'retry' %}selected{% endif %}>Wiederholen</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Richtung</label>
+                        <select name="direction" class="form-select">
+                            <option value="">Alle Richtungen</option>
+                            <option value="outgoing" {% if direction_filter == 'outgoing' %}selected{% endif %}>Ausgehend</option>
+                            <option value="incoming" {% if direction_filter == 'incoming' %}selected{% endif %}>Eingehend</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Event Type</label>
+                        <select name="event_type" class="form-select">
+                            <option value="">Alle Events</option>
+                            {% for event in event_types %}
+                            <option value="{{ event }}" {% if event_type_filter == event %}selected{% endif %}>{{ event }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Zeitraum</label>
+                        <select name="time_range" class="form-select">
+                            <option value="">Alle Zeiträume</option>
+                            <option value="today" {% if time_range_filter == 'today' %}selected{% endif %}>Heute</option>
+                            <option value="week" {% if time_range_filter == 'week' %}selected{% endif %}>Letzte 7 Tage</option>
+                            <option value="month" {% if time_range_filter == 'month' %}selected{% endif %}>Letzte 30 Tage</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Filter anwenden
+                        </button>
+                        <a href="{% url 'dashboard:webhook_logs' %}" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i> Zurücksetzen
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Card -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title">
+                Webhook Logs
+                <span class="badge badge-secondary ms-2">{{ total_count }}</span>
+            </h3>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-container">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Event Type</th>
+                            <th>Richtung</th>
+                            <th>Status</th>
+                            <th>Precheck/Quote</th>
+                            <th>Retry</th>
+                            <th>Erstellt</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>
+                                <span style="font-weight: 600; color: var(--neutral-900);">#{{ log.id }}</span>
+                            </td>
+                            <td>
+                                <div style="font-weight: 500; color: var(--neutral-900); font-size: 13px;">
+                                    {{ log.event_type }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if log.direction == 'outgoing' %}
+                                    <span class="badge badge-info">
+                                        <i class="fas fa-arrow-up"></i> Ausgehend
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-arrow-down"></i> Eingehend
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.status == 'success' %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-check"></i> Erfolgreich
+                                    </span>
+                                {% elif log.status == 'failed' %}
+                                    <span class="badge badge-danger">
+                                        <i class="fas fa-times"></i> Fehler
+                                    </span>
+                                {% elif log.status == 'pending' %}
+                                    <span class="badge badge-warning">
+                                        <i class="fas fa-clock"></i> Ausstehend
+                                    </span>
+                                {% elif log.status == 'retry' %}
+                                    <span class="badge" style="background: #e0e7ff; color: #3730a3;">
+                                        <i class="fas fa-redo"></i> Wiederholen
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="font-size: 13px;">
+                                    {% if log.precheck_id %}
+                                    <div class="mb-1">
+                                        <span class="text-muted">Precheck:</span>
+                                        <a href="{% url 'dashboard:precheck_detail' log.precheck_id %}" class="text-primary">
+                                            #{{ log.precheck_id }}
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                    {% if log.quote_id %}
+                                    <div>
+                                        <span class="text-muted">Quote:</span>
+                                        <a href="{% url 'dashboard:quote_detail' log.quote_id %}" class="text-primary">
+                                            #{{ log.quote_id }}
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                    {% if not log.precheck_id and not log.quote_id %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span style="font-weight: 600; font-size: 15px;">{{ log.retry_count }}</span>
+                            </td>
+                            <td>
+                                <div style="font-size: 13px;">
+                                    <div style="font-weight: 500;">{{ log.created_at|date:"d.m.Y" }}</div>
+                                    <div class="text-muted" style="font-size: 11px;">{{ log.created_at|date:"H:i:s" }} Uhr</div>
+                                </div>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-primary" title="Details anzeigen"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#logDetailModal{{ log.id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+
+                                <!-- Log Detail Modal -->
+                                <div class="modal fade" id="logDetailModal{{ log.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">
+                                                    <i class="fas fa-file-alt"></i> Webhook Log Details #{{ log.id }}
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <strong>Event Type:</strong> {{ log.event_type }}<br>
+                                                    <strong>Richtung:</strong> {{ log.get_direction_display }}<br>
+                                                    <strong>Status:</strong> {{ log.get_status_display }}<br>
+                                                    <strong>Retry Count:</strong> {{ log.retry_count }}<br>
+                                                    <strong>Erstellt:</strong> {{ log.created_at|date:"d.m.Y H:i:s" }}<br>
+                                                    <strong>Aktualisiert:</strong> {{ log.updated_at|date:"d.m.Y H:i:s" }}
+                                                </div>
+
+                                                {% if log.error_message %}
+                                                <div class="mb-3">
+                                                    <strong class="text-danger">Fehlermeldung:</strong>
+                                                    <pre style="background: #fee2e2; padding: 12px; border-radius: 6px; font-size: 12px;">{{ log.error_message }}</pre>
+                                                </div>
+                                                {% endif %}
+
+                                                <div class="mb-3">
+                                                    <strong>Payload:</strong>
+                                                    <pre style="background: var(--neutral-100); padding: 12px; border-radius: 6px; font-size: 12px; max-height: 300px; overflow-y: auto;">{{ log.payload|pprint }}</pre>
+                                                </div>
+
+                                                {% if log.response %}
+                                                <div class="mb-3">
+                                                    <strong>Response:</strong>
+                                                    <pre style="background: var(--neutral-100); padding: 12px; border-radius: 6px; font-size: 12px; max-height: 300px; overflow-y: auto;">{{ log.response|pprint }}</pre>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    <i class="fas fa-times"></i> Schließen
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="fas fa-inbox" style="font-size: 48px; color: var(--neutral-300); margin-bottom: 16px;"></i>
+                                <p class="text-muted mb-0">Keine Webhook Logs gefunden</p>
+                                <small class="text-muted">Versuchen Sie, Ihre Filter anzupassen</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer" style="background: var(--neutral-50); padding: 16px 24px;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted" style="font-size: 13px;">
+                    Zeige {{ page_obj.start_index }} bis {{ page_obj.end_index }} von {{ page_obj.paginator.count }} Einträgen
+                </div>
+
+                <nav>
+                    <ul class="pagination mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .input-group-text {
+        border-color: var(--neutral-300);
+    }
+
+    .pagination {
+        gap: 4px;
+    }
+
+    .page-link {
+        border: 1px solid var(--neutral-200);
+        color: var(--neutral-600);
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: all 0.2s;
+        font-size: 13px;
+    }
+
+    .page-link:hover {
+        background: var(--neutral-100);
+        border-color: var(--neutral-300);
+        color: var(--neutral-900);
+    }
+
+    .page-item.active .page-link {
+        background: var(--primary-blue);
+        border-color: var(--primary-blue);
+        color: white;
+    }
+</style>
+
+{% endblock %}

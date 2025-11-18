@@ -511,9 +511,9 @@
 
             <div class="nav-section">
                 <div class="nav-section-title">Einstellungen</div>
-                <a href="#" class="nav-link">
-                    <i class="fas fa-cog"></i>
-                    <span>Systemeinstellungen</span>
+                <a href="{% url 'dashboard:n8n_settings' %}" class="nav-link {% if 'n8n' in request.resolver_match.url_name or 'webhook' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>N8n Integration</span>
                 </a>
                 <a href="#" class="nav-link">
                     <i class="fas fa-chart-bar"></i>
