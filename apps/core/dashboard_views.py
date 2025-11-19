@@ -1710,6 +1710,15 @@ class N8nSettingsView(LoginRequiredMixin, View):
     template_name = 'dashboard/n8n_settings.html'
     login_url = '/admin/login/'
 
+    def _redirect_with_prefill(self, precheck_value):
+        """Hilfsfunktion: Redirect mit optionaler Precheck ID."""
+        url = reverse('dashboard:n8n_settings')
+        value = str(precheck_value).strip() if precheck_value is not None else ''
+        if value:
+            query = urlencode({'precheck_id': value})
+            url = f"{url}?{query}"
+        return redirect(url)
+
     def get(self, request):
         """GET-Request: Zeige Settings-Seite"""
         from django.conf import settings
@@ -1720,7 +1729,11 @@ class N8nSettingsView(LoginRequiredMixin, View):
 
         # Forms vorbereiten
         config_form = N8nConfigurationForm(instance=config)
-        test_form = WebhookTestForm()
+        prefilled_precheck_id = request.GET.get('precheck_id')
+        if prefilled_precheck_id:
+            test_form = WebhookTestForm(initial={'precheck_id': prefilled_precheck_id})
+        else:
+            test_form = WebhookTestForm()
 
         # Base URL aus settings
         base_url = getattr(settings, 'BASE_URL', 'http://192.168.178.30:8025')
@@ -1813,13 +1826,13 @@ class N8nSettingsView(LoginRequiredMixin, View):
                     precheck = Precheck.objects.get(id=precheck_id)
                 except Precheck.DoesNotExist:
                     messages.error(request, f'Precheck #{precheck_id} nicht gefunden!')
-                    return redirect('dashboard:n8n_settings')
+                    return self._redirect_with_prefill(precheck_id)
 
                 # Webhook URL holen
                 n8n_webhook_url = N8nConfiguration.get_webhook_url()
                 if not n8n_webhook_url:
                     messages.error(request, 'Keine N8n Webhook URL konfiguriert!')
-                    return redirect('dashboard:n8n_settings')
+                    return self._redirect_with_prefill(precheck_id)
 
                 # Test-Webhook senden
                 base_url = getattr(settings, 'BASE_URL', 'http://192.168.178.30:8025')
@@ -1886,10 +1899,12 @@ class N8nSettingsView(LoginRequiredMixin, View):
                     webhook_log.mark_failed(f"Unexpected error: {str(e)}")
                     messages.error(request, f'Test-Webhook Fehler: {str(e)}')
 
-                return redirect('dashboard:n8n_settings')
+                return self._redirect_with_prefill(precheck_id)
 
             else:
                 messages.error(request, 'Ungültige Precheck ID!')
+                prefill_value = request.POST.get('precheck_id', '').strip()
+                return self._redirect_with_prefill(prefill_value)
 
         # Wenn kein gültiges Formular, redirect zurück
         return redirect('dashboard:n8n_settings')
