@@ -14,15 +14,15 @@
 
 | App | Model | Beschreibung | Wichtigste Felder |
 |-----|-------|--------------|-------------------|
-| `core` | User | Erweiterte User-Klasse | email, role, is_installer |
+| `core` | User | Erweiterte User-Klasse | username/email, role, phone |
 | `core` | Customer | Kundenstammdaten | name, email, phone, type |
-| `core` | Site | Installationsorte | address, customer, grid_operator |
+| `core` | Site | Installationsorte | customer, address, building_type, main_fuse_ampere |
 | `quotes` | **PriceConfig** | Preiskonfiguration | price_type, value, is_percentage |
 | `quotes` | **ProductCategory** | Produktkategorien | name, description, sort_order |
 | `quotes` | **Product** | Produktkatalog | sku, name, category, purchase_price, sales_price |
-| `quotes` | Quote | Angebote | customer, site, total_price, status |
-| `quotes` | Precheck | Vorprüfungen | customer, site, price_data |
-| `quotes` | Component | Komponenten-Katalog | type, manufacturer, model, price |
+| `quotes` | Quote | Angebote | precheck, quote_number, subtotal/total, status |
+| `quotes` | Precheck | Vorprüfungen | site, Leistungs- & Installationsdaten |
+| `quotes` | Component | Komponenten-Katalog | name, type, vendor, sku, unit_price |
 | `inventory` | InventoryItem | Lagerbestand | component, quantity, location |
 | `orders` | Order | Aufträge | quote, status, scheduled_date |
 | `grid` | GridOperator | Netzbetreiber | name, region, registration_url |
@@ -473,16 +473,33 @@ python manage.py migrate quotes 0005
 class Quote(models.Model):
     STATUS_CHOICES = [
         ('draft', 'Entwurf'),
+        ('review', 'In Prüfung'),
+        ('approved', 'Freigegeben'),
         ('sent', 'Versendet'),
-        ('approved', 'Genehmigt'),
+        ('accepted', 'Angenommen'),
         ('rejected', 'Abgelehnt'),
+        ('expired', 'Abgelaufen'),
     ]
 
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    precheck = models.OneToOneField(Precheck, on_delete=models.CASCADE)
+    quote_number = models.CharField(max_length=20, unique=True)
+
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('19.00'))
+    vat_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
-    created_at = models.DateTimeField(auto_now_add=True)
+    pdf_url = models.URLField(blank=True)
+
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_quotes')
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='approved_quotes')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    valid_until = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True, default='')
+
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 ```
 
@@ -492,16 +509,75 @@ class Quote(models.Model):
 
 ```python
 class Precheck(models.Model):
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, null=True, blank=True)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, null=True, blank=True)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
 
-    # Formular-Daten (JSON)
-    form_data = models.JSONField(default=dict)
-    price_data = models.JSONField(default=dict)
+    # Gebäude & Bauzustand
+    building_type = models.CharField(max_length=20, choices=BuildingType.choices, blank=True, default='')
+    construction_year = models.IntegerField(null=True, blank=True)
+    has_renovation = models.BooleanField(default=False)
+    renovation_year = models.IntegerField(null=True, blank=True)
 
-    # Status
-    status = models.CharField(max_length=20, default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
+    # Elektrik / Schutzmaßnahmen
+    has_sls_switch = models.BooleanField(default=False)
+    sls_switch_details = models.TextField(blank=True, default='')
+    has_surge_protection_ac = models.BooleanField(default=False)
+    surge_protection_ac_details = models.TextField(blank=True, default='')
+    has_surge_protection_dc = models.BooleanField(default=False)
+    has_grounding = models.CharField(max_length=10, choices=GroundingChoice.choices, blank=True, default='')
+    has_deep_earth = models.CharField(max_length=10, choices=GroundingChoice.choices, blank=True, default='')
+    grounding_details = models.TextField(blank=True, default='')
+
+    # Montageorte & Netz
+    inverter_location = models.CharField(max_length=50, choices=InverterLocation.choices, blank=True, default='')
+    storage_location = models.CharField(max_length=50, choices=StorageLocation.choices, blank=True, default='')
+    distance_meter_to_inverter = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    grid_operator = models.CharField(max_length=100, blank=True, default='')
+
+    # Anlagenleistung & Komponenten
+    desired_power_kw = models.DecimalField(max_digits=5, decimal_places=2)
+    storage_kwh = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    feed_in_mode = models.CharField(max_length=20, choices=FeedInMode.choices, blank=True, default='')
+    requires_backup_power = models.BooleanField(default=False)
+    backup_power_details = models.TextField(blank=True, default='')
+    own_components = models.BooleanField(default=False)
+    own_material_description = models.TextField(blank=True, default='')
+
+    # Zusatzgeräte / Wallbox
+    has_heat_pump = models.BooleanField(default=False)
+    heat_pump_cascade = models.BooleanField(default=False)
+    heat_pump_details = models.TextField(blank=True, default='')
+    wallbox = models.BooleanField(default=False)
+    wallbox_class = models.CharField(max_length=4, choices=WallboxClass.choices, blank=True, default='')
+    wallbox_mount = models.CharField(max_length=10, choices=WallboxMount.choices, blank=True, default='')
+    wallbox_cable_prepared = models.BooleanField(default=False)
+    wallbox_cable_length_m = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+
+    PACKAGE_CHOICES = [
+        ('', 'Kein Paket ausgewählt'),
+        ('basis', 'Basis-Paket'),
+        ('plus', 'Plus-Paket'),
+        ('pro', 'Pro-Paket'),
+    ]
+    package_choice = models.CharField(max_length=10, choices=PACKAGE_CHOICES, blank=True, default='')
+    is_express_package = models.BooleanField(default=False)
+    wallbox_pv_surplus = models.BooleanField(default=False)
+
+    # Uploads & sonstige Angaben
+    meter_cabinet_photo = models.FileField(upload_to='precheck/meter_cabinet/%Y/%m/', null=True, blank=True,
+                                           validators=[validate_media_file])
+    hak_photo = models.FileField(upload_to='precheck/hak/%Y/%m/', null=True, blank=True,
+                                 validators=[validate_media_file])
+    location_photo = models.FileField(upload_to='precheck/locations/%Y/%m/', null=True, blank=True,
+                                      validators=[validate_media_file])
+    cable_route_photo = models.FileField(upload_to='precheck/cables/%Y/%m/', null=True, blank=True,
+                                         validators=[validate_media_file])
+    component_files = models.TextField(default='[]', help_text="Legacy JSON mit Datenblättern")
+    preferred_timeframes = models.TextField(default='[]', help_text="JSON Liste gewünschter Zeitfenster")
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # (siehe models.py für alle weiteren Properties wie helper-Methoden & PrecheckPhoto)
 ```
 
 ### Component Model
@@ -510,17 +586,26 @@ class Precheck(models.Model):
 
 ```python
 class Component(models.Model):
-    TYPE_CHOICES = [
+    COMPONENT_TYPES = [
         ('inverter', 'Wechselrichter'),
-        ('storage', 'Speicher'),
-        ('wallbox', 'Wallbox'),
+        ('battery', 'Speicher'),
+        ('spd', 'Überspannungsschutz'),
+        ('meter', 'Zählerplatz'),
+        ('cable', 'Kabel'),
+        ('switch', 'Schalter'),
         ('other', 'Sonstiges'),
     ]
 
-    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
-    manufacturer = models.CharField(max_length=100)
-    model = models.CharField(max_length=100)
+    name = models.CharField(max_length=200)
+    type = models.CharField(max_length=20, choices=COMPONENT_TYPES)
+    vendor = models.CharField(max_length=100)
+    sku = models.CharField(max_length=100, unique=True)
+    datasheet_url = models.URLField(blank=True)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    compatible_with = models.ManyToManyField('self', blank=True, symmetrical=False)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 ```
 
 ---

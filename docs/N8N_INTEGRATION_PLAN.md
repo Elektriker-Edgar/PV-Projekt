@@ -73,15 +73,26 @@
 
 ```python
 class WebhookLog(models.Model):
-    event_type = models.CharField(max_length=50)  # precheck_submitted, etc.
-    direction = models.CharField()  # outgoing/incoming
-    status = models.CharField()  # pending/success/failed/retry
+    event_type = models.CharField(max_length=50, db_index=True)
+    direction = models.CharField(
+        max_length=10,
+        choices=[('outgoing', 'Django → N8n'), ('incoming', 'N8n → Django')],
+        default='outgoing',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=[('pending','pending'),('success','success'),('failed','failed'),('retry','retry')],
+        default='pending',
+        db_index=True,
+    )
     payload = models.JSONField()
-    response = models.JSONField()
-    error_message = models.TextField()
-    retry_count = models.IntegerField()
-    precheck_id = models.IntegerField()  # Referenz
-    # ...
+    response = models.JSONField(null=True, blank=True)
+    error_message = models.TextField(blank=True)
+    retry_count = models.IntegerField(default=0)
+    precheck_id = models.IntegerField(null=True, blank=True, db_index=True)
+    quote_id = models.IntegerField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
 ```
 
 #### N8nWorkflowStatus Model
@@ -91,12 +102,38 @@ class WebhookLog(models.Model):
 
 ```python
 class N8nWorkflowStatus(models.Model):
-    precheck = models.ForeignKey(Precheck)
-    workflow_id = models.CharField()  # N8n Execution ID
-    status = models.CharField()  # initiated, data_validation, etc.
-    ai_validation_result = models.JSONField()  # KI-Prüfung
-    metadata = models.JSONField()
-    # ...
+    STATUS_CHOICES = [
+        ('initiated', 'Workflow gestartet'),
+        ('data_validation', 'Daten werden validiert'),
+        ('incomplete', 'Daten unvollstaendig'),
+        ('waiting_customer', 'Wartet auf Kundenantwort'),
+        ('generating_quote', 'Angebot wird erstellt'),
+        ('quote_ready', 'Angebot fertig'),
+        ('sent_to_customer', 'An Kunde versendet'),
+        ('failed', 'Fehler aufgetreten'),
+    ]
+
+    precheck = models.ForeignKey(
+        'quotes.Precheck',
+        on_delete=models.CASCADE,
+        related_name='workflow_statuses',
+        null=True,
+        blank=True,
+    )
+    quote = models.ForeignKey(
+        'quotes.Quote',
+        on_delete=models.CASCADE,
+        related_name='workflow_statuses',
+        null=True,
+        blank=True,
+    )
+    workflow_id = models.CharField(max_length=100, blank=True)  # N8n Execution ID
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='initiated', db_index=True)
+    ai_validation_result = models.JSONField(null=True, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    last_event_at = models.DateTimeField(default=timezone.now)
+    completed_at = models.DateTimeField(null=True, blank=True)
 ```
 
 #### N8nConfiguration Model (⭐ NEU - v2.1.0)
@@ -107,9 +144,11 @@ class N8nWorkflowStatus(models.Model):
 
 ```python
 class N8nConfiguration(models.Model):
-    webhook_url = models.URLField()  # N8n Webhook URL
-    api_key = models.CharField()  # API-Key (optional)
-    is_active = models.BooleanField()  # Integration aktiviert
+    webhook_url = models.URLField(max_length=500, blank=True)
+    api_key = models.CharField(max_length=200, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod
     def get_webhook_url(cls):
