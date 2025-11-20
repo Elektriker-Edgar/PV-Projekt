@@ -1,0 +1,259 @@
+{
+  "name": "PV-Service: Precheck Validierung & Angebotserstellung",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "precheck-submitted",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: Precheck submitted",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "precheck-submitted"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.api_base_url + $json.body.api_endpoints.precheck_data }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "http-get-precheck-data",
+      "name": "HTTP: Precheck-Daten abrufen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [500, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "django-api-key",
+          "name": "Django API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrahiere Precheck-Daten für KI-Analyse\nconst data = $input.first().json;\n\n// Strukturiere Daten für KI-Prompt\nconst analysis_data = {\n  precheck_id: data.precheck_id,\n  \n  customer: {\n    name: data.customer?.name || 'N/A',\n    email: data.customer?.email || 'N/A',\n    phone: data.customer?.phone || 'N/A'\n  },\n  \n  site: {\n    address: data.site?.address || 'N/A',\n    building_type: data.site?.building_type || 'N/A',\n    main_fuse: data.site?.main_fuse_ampere || 'N/A',\n    grid_type: data.site?.grid_type || 'N/A',\n    photo_count: data.site?.photo_count || 0\n  },\n  \n  project: {\n    power_kw: data.project?.desired_power_kw || 'N/A',\n    storage_kwh: data.project?.storage_kwh || 0,\n    has_wallbox: data.project?.has_wallbox || false,\n    wallbox_power: data.project?.wallbox_power || 'N/A',\n    inverter_location: data.project?.inverter_location_display || 'N/A',\n    notes: data.project?.customer_notes || ''\n  },\n  \n  pricing: {\n    net_total: data.pricing?.net_total || 0,\n    gross_total: data.pricing?.gross_total || 0\n  },\n  \n  completeness: data.completeness || {}\n};\n\nreturn { json: { analysis_data, raw_data: data } };"
+      },
+      "id": "code-prepare-ai-data",
+      "name": "Code: Daten für KI vorbereiten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Du bist ein Experte für PV-Anlagen-Installationen bei EDGARD Elektro. Deine Aufgabe ist es, Kundenanfragen auf Vollständigkeit und Plausibilität zu prüfen.\n\nBewertungskriterien:\n1. **Pflichtdaten**: Kunde, Email, Adresse, Leistung, Hauptsicherung, Netzform\n2. **Fotos**: Mindestens Zählerschrank-Foto erforderlich\n3. **Technische Plausibilität**: \n   - WR-Leistung vs. Hauptsicherung (Faustregel: max. 70% der Sicherung)\n   - Speicher-Größe passend zur WR-Leistung\n   - Wallbox-Leistung vs. Hauptsicherung\n4. **Montageorte**: Sollten angegeben sein bei größeren Anlagen\n5. **Besonderheiten**: Notstrom, Wärmepumpe, eigene Komponenten\n\nGib eine klare Empfehlung:\n- VOLLSTÄNDIG: Alle Daten für Angebotserstellung vorhanden\n- RÜCKFRAGE: Wichtige Details fehlen oder sind unklar\n- ABLEHNUNG: Technisch nicht machbar oder außerhalb unseres Leistungsumfangs"
+            },
+            {
+              "role": "user",
+              "content": "Bewerte diese PV-Anfrage (ID: {{ $json.analysis_data.precheck_id }}):\n\nKunde: {{ $json.analysis_data.customer.name }} | {{ $json.analysis_data.customer.email }}\nStandort: {{ $json.analysis_data.site.address }}\nGebäude: {{ $json.analysis_data.site.building_type }} | Sicherung: {{ $json.analysis_data.site.main_fuse }}A | Netz: {{ $json.analysis_data.site.grid_type }}\nFotos: {{ $json.analysis_data.site.photo_count }}\n\nSystem: {{ $json.analysis_data.project.power_kw }}kW WR | {{ $json.analysis_data.project.storage_kwh }}kWh Speicher\nWallbox: {{ $json.analysis_data.project.has_wallbox }} ({{ $json.analysis_data.project.wallbox_power }})\nOrt WR: {{ $json.analysis_data.project.inverter_location }}\n\nPreis: {{ $json.analysis_data.pricing.gross_total }}€ Brutto\n\nVollständigkeit:\n{{ JSON.stringify($json.analysis_data.completeness, null, 2) }}\n\n---\nBEWERTE:\n1. Vollständigkeit (0-100%)\n2. Fehlende kritische Daten\n3. Technische Plausibilität (WR vs Sicherung, Speichergröße)\n4. Status: VOLLSTÄNDIG | RÜCKFRAGE | ABLEHNUNG\n5. Bei RÜCKFRAGE: Konkrete Fragen formulieren\n\nANTWORT NUR als JSON (ohne Markdown):\n{\"completeness_score\":85,\"status\":\"VOLLSTÄNDIG\",\"missing_data\":[],\"plausibility_issues\":[],\"recommended_questions\":[],\"recommendation\":\"Beschreibung\",\"priority\":\"mittel\"}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 3000
+        }
+      },
+      "id": "openai-validate",
+      "name": "OpenAI: Vollständigkeitsprüfung",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.3,
+      "position": [1000, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse KI-Antwort (mit Fehlerbehandlung)\nconst inputData = $input.first().json;\n\n// Ermittle korrekte Datenstruktur (n8n gibt manchmal unterschiedliche Formate zurück)\nlet aiResponse;\nif (Array.isArray(inputData)) {\n  // Format 1: Direktes Array von Choices\n  aiResponse = inputData[0]?.message?.content;\n} else if (inputData.choices && Array.isArray(inputData.choices)) {\n  // Format 2: Objekt mit .choices Array\n  aiResponse = inputData.choices[0]?.message?.content;\n} else if (inputData.message?.content) {\n  // Format 3: Direktes message Objekt\n  aiResponse = inputData.message.content;\n} else {\n  throw new Error('Unbekanntes Antwort-Format von OpenAI: ' + JSON.stringify(inputData).substring(0, 200));\n}\n\nif (!aiResponse) {\n  throw new Error('Leere Antwort von OpenAI');\n}\n\nlet aiData;\ntry {\n  // Versuch 1: Markdown-Block extrahieren (```json...```)\n  const jsonMatch = aiResponse.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    aiData = JSON.parse(jsonMatch[1]);\n  } else {\n    // Versuch 2: Direktes JSON (ohne Markdown)\n    aiData = JSON.parse(aiResponse.trim());\n  }\n  \n  // Validierung: Pflichtfelder vorhanden?\n  if (!aiData.status || aiData.completeness_score === undefined) {\n    throw new Error('Fehlende Pflichtfelder in KI-Antwort');\n  }\n  \n} catch (e) {\n  // Fallback bei Parse-Fehler\n  const responsePreview = typeof aiResponse === 'string' \n    ? aiResponse.substring(0, 200) \n    : JSON.stringify(aiResponse).substring(0, 200);\n    \n  aiData = {\n    status: 'RÜCKFRAGE',\n    recommendation: `KI-Antwort fehlerhaft: ${e.message}. Original: ${responsePreview}...`,\n    completeness_score: 50,\n    missing_data: ['KI-Validierung fehlgeschlagen'],\n    plausibility_issues: [],\n    recommended_questions: ['Bitte prüfen Sie die Anfrage manuell.'],\n    priority: 'hoch'\n  };\n}\n\nreturn { json: aiData };"
+      },
+      "id": "code-parse-ai-response",
+      "name": "Code: KI-Antwort parsen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equals",
+              "value2": "VOLLSTÄNDIG"
+            }
+          ]
+        }
+      },
+      "id": "if-complete",
+      "name": "IF: Vollständig?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1500, 300]
+    },
+    {
+      "parameters": {
+        "subject": "Neue PV-Anfrage: Angebot erstellen (ID: {{ $('Webhook: Precheck submitted').item.json.body.precheck_id }})",
+        "message": "Eine neue PV-Anfrage ist vollständig und kann bearbeitet werden.\n\n**BEWERTUNG:**\nVollständigkeit: {{ $json.completeness_score }}%\nStatus: {{ $json.status }}\nPriorität: {{ $json.priority }}\n\n**KUNDE:**\nName: {{ $('Code: Daten für KI vorbereiten').item.json.analysis_data.customer.name }}\nEmail: {{ $('Code: Daten für KI vorbereiten').item.json.analysis_data.customer.email }}\n\n**PROJEKT:**\nLeistung: {{ $('Code: Daten für KI vorbereiten').item.json.analysis_data.project.power_kw }} kW\nSpeicher: {{ $('Code: Daten für KI vorbereiten').item.json.analysis_data.project.storage_kwh }} kWh\nPreis (Brutto): {{ $('Code: Daten für KI vorbereiten').item.json.analysis_data.pricing.gross_total }} €\n\n**EMPFEHLUNG:**\n{{ $json.recommendation }}\n\n**NÄCHSTE SCHRITTE:**\n1. Angebot im Django-Dashboard erstellen: http://192.168.178.30:8025/dashboard/quotes/\n2. Precheck-ID: {{ $('Webhook: Precheck submitted').item.json.body.precheck_id }}\n\n---\nDieser Workflow wurde automatisch von n8n generiert.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "email-complete",
+      "name": "Email: Angebot erstellen",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1750, 200],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credentials",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "subject": "Rückfrage zu Ihrer PV-Anfrage ({{ $('Code: Daten für KI vorbereiten').item.json.analysis_data.customer.name }})",
+        "message": "Guten Tag {{ $('Code: Daten für KI vorbereiten').item.json.analysis_data.customer.name }},\n\nvielen Dank für Ihre Anfrage zu einer PV-Anlage.\n\nUm Ihnen ein qualifiziertes Angebot erstellen zu können, benötigen wir noch folgende Informationen:\n\n{{ $json.recommended_questions.map((q, i) => `${i+1}. ${q}`).join('\\n') }}\n\n{{ $json.missing_data.length > 0 ? '**Fehlende Daten:**\\n' + $json.missing_data.map((d, i) => `- ${d}`).join('\\n') : '' }}\n\nBitte antworten Sie auf diese E-Mail mit den fehlenden Informationen oder rufen Sie uns an unter: +49 40 XXX XXX\n\nWir freuen uns darauf, Ihr Projekt zu realisieren!\n\nMit freundlichen Grüßen\nIhr EDGARD Elektro Team\n\n---\nPrecheck-ID: {{ $('Webhook: Precheck submitted').item.json.body.precheck_id }}\nZeitpunkt: {{ $('Webhook: Precheck submitted').item.json.body.metadata.timestamp }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "email-followup",
+      "name": "Email: Rückfrage an Kunde",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1750, 400],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credentials",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"precheck_id\": $('Webhook: Precheck submitted').item.json.body.precheck_id, \"status\": $json.status, \"message\": \"Workflow completed successfully\" } }}"
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2000, 300]
+    }
+  ],
+  "connections": {
+    "Webhook: Precheck submitted": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Precheck-Daten abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Precheck-Daten abrufen": {
+      "main": [
+        [
+          {
+            "node": "Code: Daten für KI vorbereiten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Daten für KI vorbereiten": {
+      "main": [
+        [
+          {
+            "node": "OpenAI: Vollständigkeitsprüfung",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI: Vollständigkeitsprüfung": {
+      "main": [
+        [
+          {
+            "node": "Code: KI-Antwort parsen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: KI-Antwort parsen": {
+      "main": [
+        [
+          {
+            "node": "IF: Vollständig?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: Vollständig?": {
+      "main": [
+        [
+          {
+            "node": "Email: Angebot erstellen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email: Rückfrage an Kunde",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email: Angebot erstellen": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email: Rückfrage an Kunde": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
