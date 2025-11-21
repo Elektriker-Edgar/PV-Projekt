@@ -1,0 +1,66 @@
+﻿ID;Kategorie;Artikelnummer (SKU);Bezeichnung;Beschreibung;Einheit;Einkaufspreis (netto);Verkaufspreis (netto);MwSt.-Satz (%);Verkaufspreis (brutto);Marge (EUR);Marge (%);Lagerbestand;Mindestbestand;Hersteller;Lieferant;Aktiv;Hervorgehoben;Notizen;Erstellt am;Aktualisiert am
+7;Wechselrichter;INV-FRONIUS-5;Fronius Symo 5.0-3-M;;Stück;800;1200;19;1428;400;50;5;2;Fronius;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+8;Wechselrichter;INV-FRONIUS-10;Fronius Symo 10.0-3-M;;Stück;1200;1800;19;2142;600;50;5;2;Fronius;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+9;Wechselrichter;INV-KOSTAL-8;KOSTAL PLENTICORE plus 8.5;;Stück;900;1400;19;1666;500;55,55555556;5;2;KOSTAL;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+10;Wechselrichter;INV-SMA-6;SMA Sunny Tripower 6.0;;Stück;850;1300;19;1547;450;52,94117647;5;2;SMA;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+11;Speicher;BAT-BYD-5;BYD Battery-Box Premium HVS 5.1;;Stück;2500;3800;19;4522;1300;52;3;1;BYD;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+12;Speicher;BAT-BYD-10;BYD Battery-Box Premium HVS 10.2;;Stück;4500;6800;19;8092;2300;51,11111111;3;1;BYD;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+13;Speicher;BAT-VARTA-6;VARTA pulse neo 6.5;;Stück;2800;4200;19;4998;1400;50;3;1;VARTA;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+14;Kabel;CABLE-DC-6MM;DC-Kabel 6mm² (Solar);;Meter;2,5;5;19;5,95;2,5;100;250;50;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+15;Kabel;CABLE-DC-4MM;DC-Kabel 4mm² (Solar);;Meter;1,8;3,8;19;4,522;2;111,1111111;250;50;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+18;Installationsmaterial;INST-SPD-T1T2;Überspannungsschutz Typ 1+2;;Set;120;220;19;261,8;100;83,33333333;20;5;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+19;Installationsmaterial;INST-METER-UPG;Zählerplatz-Ertüchtigung;;Set;200;380;19;452,2;180;90;20;5;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+20;Installationsmaterial;INST-AC-WIRE;AC-Verkabelung Set;;Set;150;280;19;333,2;130;86,66666667;20;5;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+21;Installationsmaterial;INST-MOUNT-KIT;Montage-Set Dachhaken;;Set;80;150;19;178,5;70;87,5;20;5;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+22;Dienstleistungen;SVC-INSTALL-BASE;Installation Basis (< 5 kWp);;Pauschal;300;600;19;714;300;100;0;0;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+23;Dienstleistungen;SVC-INSTALL-MID;Installation Mittel (5-10 kWp);;Pauschal;500;950;19;1130,5;450;90;0;0;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+24;Dienstleistungen;SVC-INSTALL-LARGE;Installation Groß (> 10 kWp);;Pauschal;800;1500;19;1785;700;87,5;0;0;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+25;Dienstleistungen;SVC-PLANNING;Planung und Dokumentation;;Pauschal;100;250;19;297,5;150;150;0;0;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+26;Dienstleistungen;SVC-ELECTRICIAN;Elektrikerarbeit pro Stunde;;Stunde;45;85;19;101,15;40;88,88888889;0;0;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+28;Zubehör;ACC-WALLBOX-22KW;Wallbox 22kW;;Stück;800;1400;19;1666;600;75;10;3;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+29;Zubehör;ACC-MONITOR;Energie-Monitoring-System;;Stück;200;380;19;452,2;180;90;10;3;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+30;Zubehör;ACC-OPTIMIZER;Leistungsoptimierer;;Stück;50;95;19;113,05;45;90;10;3;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03
+31;Precheck;PCHK-PACKAGE-BASIS;Basis-Paket;Installationspaket Basis;Paket;0;890;19;1059,1;890;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 17:50;10.11.2025 23:58
+32;Precheck;PCHK-PACKAGE-PLUS;Plus-Paket;Installationspaket Plus;Paket;0;1490;19;1773,1;1490;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 17:50;10.11.2025 23:58
+33;Precheck;PCHK-PACKAGE-PRO;Pro-Paket;Installationspaket Pro;Paket;0;2290;19;2725,1;2290;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 17:50;10.11.2025 23:58
+34;Precheck;PCHK-TRAVEL-ZONE-0;Anfahrtszone 0 (Hamburg);Anfahrt innerhalb Hamburg;Pauschal;0;0;19;0;0;0;0;0;;;Ja;Nein;Precheck Preisbaustein (travel_zone_0);10.11.2025 17:50;10.11.2025 17:50
+35;Precheck;PCHK-TRAVEL-ZONE-30;Anfahrtszone 30 km;Anfahrt bis 30 km um Hamburg;Pauschal;0;50;19;59,5;50;0;0;0;;;Ja;Nein;Precheck Preisbaustein (travel_zone_30);10.11.2025 17:50;10.11.2025 17:50
+36;Precheck;PCHK-TRAVEL-ZONE-60;Anfahrtszone 60 km;Anfahrt bis 60 km um Hamburg;Pauschal;0;95;19;113,05;95;0;0;0;;;Ja;Nein;Precheck Preisbaustein (travel_zone_60);10.11.2025 17:50;10.11.2025 17:50
+37;Precheck;PCHK-SURCHARGE-TT-GRID;TT-Netz Zuschlag;Zusatzaufwand für TT-Netze;Pauschal;0;150;19;178,5;150;0;0;0;;;Ja;Nein;Precheck Preisbaustein (surcharge_tt_grid);10.11.2025 17:50;10.11.2025 17:50
+38;Precheck;PCHK-SURCHARGE-SELECTIVE-FUSE;Selektive Vorsicherung;Mehrkosten für selektive Vorsicherung;Pauschal;0;220;19;261,8;220;0;0;0;;;Ja;Nein;Precheck Preisbaustein (surcharge_selective_fuse);10.11.2025 17:50;10.11.2025 17:50
+39;Precheck;PCHK-MATERIAL-AC-WIRING;AC-Verkabelung;Material & Montage AC-Verkabelung;Pauschal;0;180;19;214,2;180;0;0;0;;;Ja;Nein;Precheck Preisbaustein (material_ac_wiring);10.11.2025 17:50;10.11.2025 17:50
+40;Precheck;PCHK-MATERIAL-SPD;Überspannungsschutz (SPD);Material & Einbau SPD;Pauschal;0;320;19;380,8;320;0;0;0;;;Ja;Nein;Precheck Preisbaustein (material_spd);10.11.2025 17:50;10.11.2025 17:50
+41;Precheck;PCHK-MATERIAL-METER-UPGRADE;Zählerplatz-Ertüchtigung;Material & Montage Zählerplatz;Pauschal;0;450;19;535,5;450;0;0;0;;;Ja;Nein;Precheck Preisbaustein (material_meter_upgrade);10.11.2025 17:50;10.11.2025 17:50
+42;Precheck;PCHK-MATERIAL-STORAGE-KWH;Speicherintegration pro kWh;Montage & Material für Speicher je kWh;kWh;0;800;19;952;800;0;0;0;;;Ja;Nein;Precheck Preisbaustein (material_storage_kwh);10.11.2025 17:50;10.11.2025 17:50
+43;Precheck;PCHK-WALLBOX-BASE-4KW;Wallbox Installation 4 kW;Basisinstallation bis 4 kW;Pauschal;0;300;19;357;300;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 17:50;10.11.2025 23:58
+44;Precheck;PCHK-WALLBOX-BASE-11KW;Wallbox Installation 11 kW;Standardinstallation 11 kW;Pauschal;0;500;19;595;500;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 17:50;16.11.2025 10:14
+45;Precheck;PCHK-WALLBOX-BASE-22KW;Wallbox Installation 22 kW;Schnellladung 22 kW;Pauschal;0;800;19;952;800;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 17:50;10.11.2025 23:58
+46;Precheck;PCHK-WALLBOX-STAND-MOUNT;Wallbox Ständer-Montage;Zuschlag für Ständer-Montage;Pauschal;0;350;19;416,5;350;0;0;0;;;Ja;Nein;Precheck Preisbaustein (wallbox_stand_mount);10.11.2025 17:50;10.11.2025 17:50
+47;Precheck;PCHK-WALLBOX-PV-SURPLUS;PV-Überschussladen;Konfiguration Überschussladen;Pauschal;0;200;19;238;200;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 17:50;10.11.2025 23:58
+48;Precheck;PCHK-CABLE-WR-UP-TO-5KW;Wechselrichter-Kabel bis 5 kW;Pro Meter WR-Kabel (bis 5 kW);Meter;0;15;19;17,85;15;0;0;0;;;Ja;Nein;Precheck Preisbaustein (cable_wr_up_to_5kw);10.11.2025 17:50;10.11.2025 17:50
+49;Precheck;PCHK-CABLE-WR-5-TO-10KW;Wechselrichter-Kabel 5-10 kW;Pro Meter WR-Kabel (5-10 kW);Meter;0;25;19;29,75;25;0;0;0;;;Ja;Nein;Precheck Preisbaustein (cable_wr_5_to_10kw);10.11.2025 17:50;10.11.2025 17:50
+50;Precheck;PCHK-CABLE-WR-ABOVE-10KW;Wechselrichter-Kabel über 10 kW;Pro Meter WR-Kabel (>10 kW);Meter;0;35;19;41,65;35;0;0;0;;;Ja;Nein;Precheck Preisbaustein (cable_wr_above_10kw);10.11.2025 17:50;10.11.2025 17:50
+51;Precheck;PCHK-CABLE-WB-4KW;Wallbox-Kabel bis 4 kW;Pro Meter Wallbox-Kabel (<4 kW);Meter;0;12;19;14,28;12;0;0;0;;;Ja;Nein;Precheck Preisbaustein (cable_wb_4kw);10.11.2025 17:50;10.11.2025 17:50
+52;Precheck;PCHK-CABLE-WB-11KW;Wallbox-Kabel 11 kW;Pro Meter Wallbox-Kabel (11 kW);Meter;0;20;19;23,8;20;0;0;0;;;Ja;Nein;Precheck Preisbaustein (cable_wb_11kw);10.11.2025 17:50;10.11.2025 17:50
+53;Precheck;PCHK-CABLE-WB-22KW;Wallbox-Kabel 22 kW;Pro Meter Wallbox-Kabel (22 kW);Meter;0;30;19;35,7;30;0;0;0;;;Ja;Nein;Precheck Preisbaustein (cable_wb_22kw);10.11.2025 17:50;10.11.2025 17:50
+54;Precheck;PCHK-DISCOUNT-COMPLETE-KIT;Rabatt Komplett-Kit;Rabatt bei Komplettlieferung (in % oder Euro);Prozent;0;15;19;17,85;15;0;0;0;;;Ja;Nein;Precheck Preisbaustein (discount_complete_kit);10.11.2025 17:50;10.11.2025 17:50
+63;Precheck;PCHK-BUILDING-EFH;Gebäude Einfamilienhaus;Standard ohne Aufschlag;Pauschal;0;0;19;0;0;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+64;Precheck;PCHK-BUILDING-MFH;Gebäude Mehrfamilienhaus;Zuschlag für Mehrfamilienhaus;Pauschal;0;100;19;119;100;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+65;Precheck;PCHK-BUILDING-COMMERCIAL;Gebäude Gewerbe;Zuschlag für Gewerbeobjekt;Pauschal;0;50;19;59,5;50;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+66;Precheck;PCHK-GRID-1P;Hausanschluss 1-polig;Aufpreis bei 1-poligem Anschluss;Pauschal;0;100;19;119;100;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+67;Precheck;PCHK-GRID-3P;Hausanschluss 3-polig;3-polig ohne Aufpreis;Pauschal;0;0;19;0;0;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+68;Precheck;PCHK-INVERTER-TIER-3;Wechselrichter bis 3 kW;Kompakter Wechselrichter;Pauschal;0;700;19;833;700;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+69;Precheck;PCHK-INVERTER-TIER-5;Wechselrichter bis 5 kW;WR mittelgroß;Pauschal;0;1000;19;1190;1000;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+70;Precheck;PCHK-INVERTER-TIER-10;Wechselrichter bis 10 kW;WR bis 10 kW;Pauschal;0;1500;19;1785;1500;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+71;Precheck;PCHK-INVERTER-TIER-20;Wechselrichter bis 20 kW;WR bis 20 kW;Pauschal;0;2000;19;2380;2000;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+72;Precheck;PCHK-INVERTER-TIER-30;Wechselrichter bis 30 kW;WR bis 30 kW;Pauschal;0;2200;19;2618;2200;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+73;Precheck;PCHK-STORAGE-TIER-3;Speicher bis 3 kWh;Kleiner Batteriespeicher;Pauschal;0;1000;19;1190;1000;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+74;Precheck;PCHK-STORAGE-TIER-5;Speicher bis 5 kWh;Mittlerer Batteriespeicher;Pauschal;0;1300;19;1547;1300;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+75;Precheck;PCHK-STORAGE-TIER-10;Speicher bis 10 kWh;Großer Batteriespeicher;Pauschal;0;2000;19;2380;2000;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+76;Precheck;PCHK-WR-CABLE-PM-LT10;Kabelpreis WR <10 kW;Preis pro Meter bis 10 kW;Meter;0;5;19;5,95;5;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+77;Precheck;PCHK-WR-CABLE-PM-LT20;Kabelpreis WR <20 kW;Preis pro Meter bis 20 kW;Meter;0;15;19;17,85;15;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+78;Precheck;PCHK-WR-CABLE-PM-LT30;Kabelpreis WR <30 kW;Preis pro Meter bis 30 kW;Meter;0;22;19;26,18;22;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+79;Precheck;PCHK-WALLBOX-CABLE-PM-LT11;Wallbox-Kabel <11 kW;Preis pro Meter bis 11 kW;Meter;0;7;19;8,33;7;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+80;Precheck;PCHK-WALLBOX-CABLE-PM-LT20;Wallbox-Kabel <22 kW;Preis pro Meter bis 22 kW;Meter;0;14;19;16,66;14;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+81;Precheck;PCHK-WALLBOX-MOUNT-STAND;Wallbox Ständermontage;Zuschlag für Ständer;Pauschal;0;200;19;238;200;0;0;0;;;Ja;Nein;Automatisch verwalteter Precheck-Baustein;10.11.2025 23:58;10.11.2025 23:58
+82;Wechselrichter;HUAWEI;MKSS;TEST WR;Stück;500;1000;19;1190;;;;;;;Ja;Nein;;10.11.2025 17:03;10.11.2025 17:03

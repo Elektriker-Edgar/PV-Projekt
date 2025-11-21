@@ -91,9 +91,15 @@ def get_precheck_data(request, precheck_id):
             'site': {
                 'id': precheck.site.id if precheck.site else None,
                 'address': precheck.site.address if precheck.site else None,
-                'building_type': precheck.site.building_type if precheck.site else None,
+                'building_type': {
+                    'value': precheck.site.building_type,
+                    'display': precheck.site.get_building_type_display()
+                } if (precheck.site and precheck.site.building_type) else None,
                 'main_fuse_ampere': precheck.site.main_fuse_ampere if precheck.site else None,
-                'grid_type': precheck.site.grid_type if precheck.site else None,
+                'grid_type': {
+                    'value': precheck.site.grid_type,
+                    'display': precheck.site.get_grid_type_display()
+                } if (precheck.site and precheck.site.grid_type) else None,
                 'distance_meter_to_hak': float(precheck.site.distance_meter_to_hak) if (precheck.site and precheck.site.distance_meter_to_hak) else None,
 
                 # Fotos (hängen direkt am Precheck, nicht am Site)
@@ -116,10 +122,16 @@ def get_precheck_data(request, precheck_id):
                 'storage_kwh': float(precheck.storage_kwh) if precheck.storage_kwh else 0,
                 'has_storage': bool(precheck.storage_kwh and precheck.storage_kwh > 0),
 
-                # Wallbox
+                # Wallbox mit Display-Namen
                 'has_wallbox': precheck.wallbox,
-                'wallbox_power': precheck.wallbox_class,  # '4kw', '11kw', '22kw'
-                'wallbox_mount': precheck.wallbox_mount,  # 'wall', 'stand'
+                'wallbox_class': {
+                    'value': precheck.wallbox_class,
+                    'display': precheck.get_wallbox_class_display()
+                } if precheck.wallbox_class else None,
+                'wallbox_mount': {
+                    'value': precheck.wallbox_mount,
+                    'display': precheck.get_wallbox_mount_display()
+                } if precheck.wallbox_mount else None,
                 'wallbox_cable_length': float(precheck.wallbox_cable_length_m) if precheck.wallbox_cable_length_m else None,
                 'wallbox_cable_prepared': precheck.wallbox_cable_prepared,
                 'wallbox_pv_surplus': precheck.wallbox_pv_surplus,
@@ -131,18 +143,38 @@ def get_precheck_data(request, precheck_id):
                 # Distanzen
                 'distance_meter_to_inverter': float(precheck.distance_meter_to_inverter) if precheck.distance_meter_to_inverter else None,
 
-                # Locations
-                'inverter_location': precheck.inverter_location,
-                'inverter_location_display': precheck.get_inverter_location_display() if precheck.inverter_location else None,
-                'storage_location': precheck.storage_location,
-                'storage_location_display': precheck.get_storage_location_display() if precheck.storage_location else None,
+                # Locations mit Display-Namen
+                'inverter_location': {
+                    'value': precheck.inverter_location,
+                    'display': precheck.get_inverter_location_display()
+                } if precheck.inverter_location else None,
+                'storage_location': {
+                    'value': precheck.storage_location,
+                    'display': precheck.get_storage_location_display()
+                } if precheck.storage_location else None,
 
-                # Weitere Details
-                'building_type': precheck.building_type,
-                'feed_in_mode': precheck.feed_in_mode,
+                # Weitere Details mit Display-Namen
+                'building_type': {
+                    'value': precheck.building_type,
+                    'display': precheck.get_building_type_display()
+                } if precheck.building_type else None,
+                'feed_in_mode': {
+                    'value': precheck.feed_in_mode,
+                    'display': precheck.get_feed_in_mode_display()
+                } if precheck.feed_in_mode else None,
                 'requires_backup_power': precheck.requires_backup_power,
                 'has_heat_pump': precheck.has_heat_pump,
                 'grid_operator': precheck.grid_operator,
+
+                # Erdung mit Display-Namen
+                'has_grounding': {
+                    'value': precheck.has_grounding,
+                    'display': precheck.get_has_grounding_display()
+                } if precheck.has_grounding else None,
+                'has_deep_earth': {
+                    'value': precheck.has_deep_earth,
+                    'display': precheck.get_has_deep_earth_display()
+                } if precheck.has_deep_earth else None,
 
                 # Notizen
                 'customer_notes': precheck.notes,
@@ -181,7 +213,10 @@ def get_precheck_data(request, precheck_id):
                 'updated_at': precheck.updated_at.isoformat(),
                 'has_quote': hasattr(precheck, 'quote'),  # OneToOneField ohne related_name → 'quote' (Singular)
                 'quote_status': precheck.quote.status if hasattr(precheck, 'quote') else None,
-                'package_choice': precheck.package_choice,
+                'package_choice': {
+                    'value': precheck.package_choice,
+                    'display': precheck.get_package_choice_display()
+                } if precheck.package_choice else None,
                 'is_express_package': precheck.is_express_package,
             },
         }
