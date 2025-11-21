@@ -408,7 +408,7 @@ def create_precheck(request):
 - `skus`: Komma-separierte SKUs (z.B. `?skus=PCHK-INVERTER-TIER-5`)
 - `search`: Volltextsuche (z.B. `?search=Wallbox`)
 
-**Response:**
+**Response:** (Reduziert für n8n - nur wichtigste Felder)
 ```json
 {
   "products": [
@@ -416,11 +416,13 @@ def create_precheck(request):
       "id": 1,
       "sku": "PCHK-INVERTER-TIER-5",
       "name": "Wechselrichter 5kW Installation",
+      "description": "Installation und Inbetriebnahme",
       "category": "Precheck-Artikel",
       "sales_price_net": 1500.00,
       "sales_price_gross": 1785.00,
       "vat_rate": 0.19,
-      "unit": "Pauschal"
+      "unit": "Pauschal",
+      "manufacturer": "EDGARD"
     }
   ],
   "count": 42,
@@ -431,6 +433,13 @@ def create_precheck(request):
   }
 }
 ```
+
+**Entfernte Felder** (nicht mehr in Response):
+- `category_id` - Nicht benötigt von n8n
+- `purchase_price_net` - Interne Kalkulation
+- `supplier` - Interne Information
+- `stock_quantity` - Nicht relevant für Angebotserstellung
+- `min_stock_level` - Nicht relevant für Angebotserstellung
 
 ### Endpoint 3: Produktkategorien abrufen
 

@@ -281,11 +281,13 @@ def get_pricing_data(request):
                 "id": 1,
                 "sku": "PCHK-INVERTER-TIER-5",
                 "name": "Wechselrichter 5kW Installation",
+                "description": "Installation und Inbetriebnahme",
                 "category": "Precheck-Artikel",
                 "sales_price_net": 1500.00,
-                "vat_rate": 0.19,
                 "sales_price_gross": 1785.00,
-                "unit": "Pauschal"
+                "vat_rate": 0.19,
+                "unit": "Pauschal",
+                "manufacturer": "EDGARD"
             },
             ...
         ],
@@ -323,7 +325,7 @@ def get_pricing_data(request):
                 Q(description__icontains=search_param)
             )
 
-        # Daten aufbereiten
+        # Daten aufbereiten (reduziert für n8n)
         products_data = [
             {
                 'id': product.id,
@@ -331,22 +333,11 @@ def get_pricing_data(request):
                 'name': product.name,
                 'description': product.description,
                 'category': product.category.name if product.category else None,
-                'category_id': product.category.id if product.category else None,
-
-                # Preise
                 'sales_price_net': float(product.sales_price_net),
                 'sales_price_gross': float(product.sales_price_gross),
-                'purchase_price_net': float(product.purchase_price_net),
                 'vat_rate': float(product.vat_rate),
-
-                # Weitere Daten
                 'unit': product.unit,
                 'manufacturer': product.manufacturer,
-                'supplier': product.supplier,
-
-                # Lagerbestand (optional)
-                'stock_quantity': product.stock_quantity,
-                'min_stock_level': product.min_stock_level,
             }
             for product in products
         ]
