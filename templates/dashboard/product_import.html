@@ -1,0 +1,224 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}CSV Import - Produkte{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item">Katalog</li>
+    <li class="breadcrumb-item"><a href="{% url 'dashboard:product_list' %}">Produkte</a></li>
+    <li class="breadcrumb-item active">CSV Import</li>
+{% endblock %}
+
+{% block header_actions %}
+    <a href="{% url 'dashboard:product_list' %}" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left"></i> Zurück zur Liste
+    </a>
+    <a href="{% url 'dashboard:product_export_csv' %}" class="btn btn-success btn-sm">
+        <i class="fas fa-file-csv"></i> Vorlage exportieren
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">CSV Import</h1>
+        <p class="page-subtitle">Importieren Sie Produkte aus einer CSV-Datei</p>
+    </div>
+
+    <!-- Info Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <i class="fas fa-info-circle"></i> Hinweise zum Import
+        </div>
+        <div class="card-body">
+            <h5>Wie funktioniert der Import?</h5>
+            <ul class="mb-3">
+                <li><strong>Format prüfen:</strong> Die CSV-Datei muss die korrekte Struktur haben (siehe Vorlage)</li>
+                <li><strong>Trennzeichen:</strong> Verwenden Sie Semikolon (;) als Trennzeichen</li>
+                <li><strong>Dezimalzahlen:</strong> Verwenden Sie Komma (,) für Dezimalzahlen (z.B. 19,99)</li>
+                <li><strong>ID vorhanden:</strong> Wenn die ID-Spalte eine gültige Produkt-ID enthält, wird das bestehende Produkt überschrieben</li>
+                <li><strong>ID fehlt/ungültig:</strong> Es wird ein neues Produkt angelegt (ID-Spalte kann leer sein oder eine nicht-existierende ID)</li>
+                <li><strong>Pflichtfelder:</strong> Kategorie, SKU (Artikelnummer), Bezeichnung sind erforderlich</li>
+                <li><strong>Kategorien:</strong> Kategorien werden automatisch erstellt, wenn sie nicht existieren</li>
+            </ul>
+
+            <h5 class="mt-4">Spaltenformat</h5>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Spalte</th>
+                            <th>Beschreibung</th>
+                            <th>Erforderlich</th>
+                            <th>Beispiel</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ID</strong></td>
+                            <td>Produkt-ID (leer lassen für neue Produkte)</td>
+                            <td><span class="badge bg-secondary">Optional</span></td>
+                            <td>1, 2, 3 oder leer</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Kategorie</strong></td>
+                            <td>Name der Produktkategorie</td>
+                            <td><span class="badge bg-danger">Pflicht</span></td>
+                            <td>Wechselrichter, Kabel, etc.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Artikelnummer (SKU)</strong></td>
+                            <td>Eindeutige Artikelnummer</td>
+                            <td><span class="badge bg-danger">Pflicht</span></td>
+                            <td>WR-001, KAB-5MM-25</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bezeichnung</strong></td>
+                            <td>Name des Produkts</td>
+                            <td><span class="badge bg-danger">Pflicht</span></td>
+                            <td>Wechselrichter 5kW</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Beschreibung</strong></td>
+                            <td>Ausführliche Produktbeschreibung</td>
+                            <td><span class="badge bg-secondary">Optional</span></td>
+                            <td>Hocheffizienter 3-phasen...</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Einheit</strong></td>
+                            <td>Stück, Meter, Stunde, kWh, kWp, Set, Paket, Pauschal, Prozent</td>
+                            <td><span class="badge bg-warning">Standard: Stück</span></td>
+                            <td>Stück, Meter</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Einkaufspreis (netto)</strong></td>
+                            <td>Netto-Einkaufspreis in EUR</td>
+                            <td><span class="badge bg-warning">Standard: 0</span></td>
+                            <td>450.00</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Verkaufspreis (netto)</strong></td>
+                            <td>Netto-Verkaufspreis in EUR</td>
+                            <td><span class="badge bg-warning">Standard: 0</span></td>
+                            <td>590.00</td>
+                        </tr>
+                        <tr>
+                            <td><strong>MwSt.-Satz (%)</strong></td>
+                            <td>0, 7 oder 19 (Prozent)</td>
+                            <td><span class="badge bg-warning">Standard: 19</span></td>
+                            <td>19</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="bg-light"><em>Weitere Spalten (Brutto, Margen) werden automatisch berechnet</em></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-warning mt-3">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Wichtig:</strong> Exportieren Sie zunächst die aktuelle Preisliste als CSV-Vorlage,
+                bevor Sie Änderungen vornehmen. Dies stellt sicher, dass das Format korrekt ist.
+                CSV-Dateien können mit Excel, LibreOffice Calc oder jedem Texteditor bearbeitet werden.
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Form Card -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0"><i class="fas fa-file-upload"></i> CSV-Datei hochladen</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="import-form">
+                {% csrf_token %}
+
+                <div class="mb-4">
+                    <label for="csv_file" class="form-label">
+                        <i class="fas fa-file-csv"></i> Wählen Sie eine CSV-Datei (.csv)
+                    </label>
+                    <input
+                        type="file"
+                        class="form-control"
+                        id="csv_file"
+                        name="csv_file"
+                        accept=".csv"
+                        required>
+                    <div class="form-text">
+                        Erlaubte Formate: .csv (max. 10 MB) - Trennzeichen: Semikolon (;)
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex">
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        <i class="fas fa-upload"></i> Import starten
+                    </button>
+                    <a href="{% url 'dashboard:product_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Abbrechen
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.table-responsive {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.page-subtitle {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+</style>
+
+<script>
+document.getElementById('import-form').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submit-btn');
+    const fileInput = document.getElementById('csv_file');
+
+    if (!fileInput.files || fileInput.files.length === 0) {
+        e.preventDefault();
+        alert('Bitte wählen Sie eine Datei aus.');
+        return false;
+    }
+
+    // Disable button and show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importiere...';
+});
+
+// File input change handler
+document.getElementById('csv_file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const fileSize = file.size / 1024 / 1024; // in MB
+        if (fileSize > 10) {
+            alert('Die Datei ist zu groß. Maximale Größe: 10 MB');
+            e.target.value = '';
+            return;
+        }
+
+        const fileName = file.name;
+        const fileExt = fileName.split('.').pop().toLowerCase();
+        if (fileExt !== 'csv') {
+            alert('Bitte wählen Sie eine gültige CSV-Datei (.csv) aus.');
+            e.target.value = '';
+            return;
+        }
+    }
+});
+</script>
+{% endblock %}

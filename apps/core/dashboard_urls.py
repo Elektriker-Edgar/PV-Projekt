@@ -46,6 +46,10 @@ urlpatterns = [
     path('catalog/products/<int:pk>/delete/', dashboard_views.ProductDeleteView.as_view(), name='product_delete'),
     path('api/products/autocomplete/', dashboard_views.ProductAutocompleteView.as_view(), name='product_autocomplete'),
 
+    # Product Catalog - CSV Import/Export
+    path('catalog/products/export-csv/', dashboard_views.ProductExportCSVView.as_view(), name='product_export_csv'),
+    path('catalog/products/import-csv/', dashboard_views.ProductImportCSVView.as_view(), name='product_import_csv'),
+
     # N8n Integration - System Settings
     path('settings/n8n/', dashboard_views.N8nSettingsView.as_view(), name='n8n_settings'),
     path('settings/n8n/webhook-logs/', dashboard_views.WebhookLogListView.as_view(), name='webhook_logs'),

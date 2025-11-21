@@ -1599,6 +1599,311 @@ class ProductAutocompleteView(LoginRequiredMixin, View):
         return JsonResponse({'results': results})
 
 
+class ProductExportCSVView(LoginRequiredMixin, View):
+    """
+    CSV Export für Produktliste
+    Exportiert alle Produkte mit allen Spalten als .csv Datei
+    """
+    login_url = '/admin/login/'
+
+    def get(self, request):
+        # Erstelle CSV Response
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+        response['Content-Disposition'] = f'attachment; filename=preisliste_{timestamp}.csv'
+
+        # UTF-8 BOM für korrekte Darstellung in Excel
+        response.write('\ufeff')
+
+        # Erstelle CSV Writer
+        writer = csv.writer(response, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+
+        # Definiere Header
+        headers = [
+            'ID',
+            'Kategorie',
+            'Artikelnummer (SKU)',
+            'Bezeichnung',
+            'Beschreibung',
+            'Einheit',
+            'Einkaufspreis (netto)',
+            'Verkaufspreis (netto)',
+            'MwSt.-Satz (%)',
+            'Verkaufspreis (brutto)',
+            'Marge (EUR)',
+            'Marge (%)',
+            'Lagerbestand',
+            'Mindestbestand',
+            'Hersteller',
+            'Lieferant',
+            'Aktiv',
+            'Hervorgehoben',
+            'Notizen',
+            'Erstellt am',
+            'Aktualisiert am',
+        ]
+
+        # Schreibe Header
+        writer.writerow(headers)
+
+        # Hole alle Produkte
+        products = Product.objects.select_related('category').order_by('category__sort_order', 'name')
+
+        # Schreibe Daten
+        for product in products:
+            writer.writerow([
+                product.id,
+                product.category.name if product.category else '',
+                product.sku,
+                product.name,
+                product.description,
+                product.get_unit_display(),
+                str(product.purchase_price_net).replace('.', ','),
+                str(product.sales_price_net).replace('.', ','),
+                str(product.vat_rate_percent).replace('.', ','),
+                str(product.sales_price_gross).replace('.', ','),
+                str(product.margin_amount).replace('.', ','),
+                str(product.margin_percentage).replace('.', ','),
+                product.stock_quantity if product.stock_quantity is not None else '',
+                product.min_stock_level if product.min_stock_level is not None else '',
+                product.manufacturer,
+                product.supplier,
+                'Ja' if product.is_active else 'Nein',
+                'Ja' if product.is_featured else 'Nein',
+                product.notes,
+                product.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                product.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+            ])
+
+        return response
+
+
+class ProductImportCSVView(LoginRequiredMixin, View):
+    """
+    CSV Import für Produktliste
+    Importiert Produkte aus .csv Datei
+    - Prüft Format
+    - Bei vorhandener ID: Artikel wird überschrieben
+    - Bei fehlender ID: Neuer Artikel wird angelegt
+    """
+    login_url = '/admin/login/'
+
+    def get(self, request):
+        """Zeige Import-Formular"""
+        return render(request, 'dashboard/product_import.html', {
+            'categories': ProductCategory.objects.filter(is_active=True).order_by('sort_order', 'name')
+        })
+
+    def post(self, request):
+        """Verarbeite CSV-Upload"""
+        import io
+
+        if 'csv_file' not in request.FILES:
+            messages.error(request, 'Bitte wählen Sie eine CSV-Datei aus.')
+            return redirect('dashboard:product_import')
+
+        csv_file = request.FILES['csv_file']
+
+        # Prüfe Dateiendung
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Bitte laden Sie eine gültige CSV-Datei (.csv) hoch.')
+            return redirect('dashboard:product_import')
+
+        try:
+            # Lese CSV-Datei mit UTF-8 Encoding
+            csv_file.seek(0)
+            decoded_file = io.TextIOWrapper(csv_file.file, encoding='utf-8-sig')
+            reader = csv.DictReader(decoded_file, delimiter=';')
+
+            # Prüfe Header
+            expected_headers = [
+                'ID',
+                'Kategorie',
+                'Artikelnummer (SKU)',
+                'Bezeichnung',
+                'Beschreibung',
+                'Einheit',
+                'Einkaufspreis (netto)',
+                'Verkaufspreis (netto)',
+                'MwSt.-Satz (%)',
+            ]
+
+            # Prüfe ob alle erforderlichen Spalten vorhanden sind
+            if not reader.fieldnames or not all(h in reader.fieldnames for h in expected_headers):
+                messages.error(
+                    request,
+                    'Das Format der CSV-Datei ist ungültig. Bitte verwenden Sie die exportierte Vorlage.'
+                )
+                return redirect('dashboard:product_import')
+
+            # Mapping für Einheiten
+            unit_mapping = {
+                'Stück': 'piece',
+                'Meter': 'meter',
+                'Stunde': 'hour',
+                'kWh': 'kwh',
+                'kWp': 'kwp',
+                'Set': 'set',
+                'Paket': 'package',
+                'Pauschal': 'lump_sum',
+                'Prozent': 'percent',
+            }
+
+            # Verarbeite Zeilen
+            created_count = 0
+            updated_count = 0
+            error_rows = []
+
+            for row_num, row in enumerate(reader, start=2):
+                try:
+                    # Lese Daten
+                    product_id = row.get('ID', '').strip()
+                    category_name = row.get('Kategorie', '').strip()
+                    sku = row.get('Artikelnummer (SKU)', '').strip()
+                    name = row.get('Bezeichnung', '').strip()
+                    description = row.get('Beschreibung', '').strip()
+                    unit_display = row.get('Einheit', '').strip()
+
+                    # Konvertiere Preise (ersetze Komma durch Punkt)
+                    purchase_price_str = row.get('Einkaufspreis (netto)', '0').strip().replace(',', '.')
+                    sales_price_str = row.get('Verkaufspreis (netto)', '0').strip().replace(',', '.')
+                    vat_rate_str = row.get('MwSt.-Satz (%)', '19').strip().replace(',', '.')
+
+                    purchase_price_net = float(purchase_price_str) if purchase_price_str else 0
+                    sales_price_net = float(sales_price_str) if sales_price_str else 0
+                    vat_rate_percent = float(vat_rate_str) if vat_rate_str else 19
+
+                    # Zusätzliche optionale Spalten
+                    stock_quantity_str = row.get('Lagerbestand', '').strip()
+                    min_stock_level_str = row.get('Mindestbestand', '').strip()
+                    stock_quantity = int(float(stock_quantity_str)) if stock_quantity_str else None
+                    min_stock_level = int(float(min_stock_level_str)) if min_stock_level_str else None
+
+                    manufacturer = row.get('Hersteller', '').strip()
+                    supplier = row.get('Lieferant', '').strip()
+                    is_active_str = row.get('Aktiv', '').strip()
+                    is_featured_str = row.get('Hervorgehoben', '').strip()
+                    notes = row.get('Notizen', '').strip()
+
+                    # Validierung
+                    if not sku or not name:
+                        error_rows.append(f'Zeile {row_num}: SKU und Bezeichnung sind Pflichtfelder')
+                        continue
+
+                    # Finde oder erstelle Kategorie
+                    category = None
+                    if category_name:
+                        category, _ = ProductCategory.objects.get_or_create(
+                            name=category_name,
+                            defaults={'is_active': True}
+                        )
+
+                    if not category:
+                        error_rows.append(f'Zeile {row_num}: Kategorie ist erforderlich')
+                        continue
+
+                    # Konvertiere Einheit
+                    unit = unit_mapping.get(unit_display, 'piece')
+
+                    # Konvertiere MwSt.-Satz von Prozent zu Dezimal
+                    vat_rate = Decimal(str(vat_rate_percent)) / 100
+
+                    # Konvertiere Boolean-Werte
+                    is_active = is_active_str in ['Ja', 'ja', True, 1, '1', 'TRUE', 'true']
+                    is_featured = is_featured_str in ['Ja', 'ja', True, 1, '1', 'TRUE', 'true']
+
+                    # Prüfe ob Produkt existiert (nach ID)
+                    if product_id and product_id.isdigit():
+                        try:
+                            product = Product.objects.get(id=int(product_id))
+                            # Update bestehendes Produkt
+                            product.category = category
+                            product.sku = sku
+                            product.name = name
+                            product.description = description
+                            product.unit = unit
+                            product.purchase_price_net = Decimal(str(purchase_price_net))
+                            product.sales_price_net = Decimal(str(sales_price_net))
+                            product.vat_rate = vat_rate
+                            if stock_quantity is not None:
+                                product.stock_quantity = int(stock_quantity)
+                            if min_stock_level is not None:
+                                product.min_stock_level = int(min_stock_level)
+                            product.manufacturer = manufacturer
+                            product.supplier = supplier
+                            product.is_active = is_active
+                            product.is_featured = is_featured
+                            product.notes = notes
+                            product.save()
+                            updated_count += 1
+                        except Product.DoesNotExist:
+                            # ID existiert nicht, erstelle neues Produkt ohne ID zu setzen
+                            product = Product.objects.create(
+                                category=category,
+                                sku=sku,
+                                name=name,
+                                description=description,
+                                unit=unit,
+                                purchase_price_net=Decimal(str(purchase_price_net)),
+                                sales_price_net=Decimal(str(sales_price_net)),
+                                vat_rate=vat_rate,
+                                stock_quantity=int(stock_quantity) if stock_quantity is not None else 0,
+                                min_stock_level=int(min_stock_level) if min_stock_level is not None else 0,
+                                manufacturer=manufacturer,
+                                supplier=supplier,
+                                is_active=is_active,
+                                is_featured=is_featured,
+                                notes=notes
+                            )
+                            created_count += 1
+                    else:
+                        # Keine ID vorhanden, erstelle neues Produkt
+                        product = Product.objects.create(
+                            category=category,
+                            sku=sku,
+                            name=name,
+                            description=description,
+                            unit=unit,
+                            purchase_price_net=Decimal(str(purchase_price_net)),
+                            sales_price_net=Decimal(str(sales_price_net)),
+                            vat_rate=vat_rate,
+                            stock_quantity=int(stock_quantity) if stock_quantity is not None else 0,
+                            min_stock_level=int(min_stock_level) if min_stock_level is not None else 0,
+                            manufacturer=manufacturer,
+                            supplier=supplier,
+                            is_active=is_active,
+                            is_featured=is_featured,
+                            notes=notes
+                        )
+                        created_count += 1
+
+                except Exception as e:
+                    error_rows.append(f'Zeile {row_num}: {str(e)}')
+                    continue
+
+            # Erfolgs-/Fehlermeldungen
+            if created_count > 0:
+                messages.success(request, f'{created_count} Produkt(e) wurden neu angelegt.')
+            if updated_count > 0:
+                messages.success(request, f'{updated_count} Produkt(e) wurden aktualisiert.')
+            if error_rows:
+                messages.warning(
+                    request,
+                    f'{len(error_rows)} Zeile(n) konnten nicht importiert werden:<br>' +
+                    '<br>'.join(error_rows[:10]) +
+                    (f'<br>...und {len(error_rows) - 10} weitere' if len(error_rows) > 10 else '')
+                )
+
+            if created_count == 0 and updated_count == 0:
+                messages.error(request, 'Es konnten keine Produkte importiert werden.')
+
+            return redirect('dashboard:product_list')
+
+        except Exception as e:
+            messages.error(request, f'Fehler beim Importieren der Datei: {str(e)}')
+            return redirect('dashboard:product_import')
+
+
 # ============================================================================
 # N8n Integration Views
 # ============================================================================

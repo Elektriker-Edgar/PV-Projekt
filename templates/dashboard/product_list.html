@@ -8,6 +8,14 @@
 {% endblock %}
 
 {% block header_actions %}
+    <div class="btn-group me-2">
+        <a href="{% url 'dashboard:product_export_csv' %}" class="btn btn-success btn-sm">
+            <i class="fas fa-file-csv"></i> CSV Export
+        </a>
+        <a href="{% url 'dashboard:product_import_csv' %}" class="btn btn-info btn-sm">
+            <i class="fas fa-file-upload"></i> CSV Import
+        </a>
+    </div>
     <a href="{% url 'dashboard:product_create' %}" class="btn btn-primary btn-sm">
         <i class="fas fa-plus"></i> Neues Produkt
     </a>
