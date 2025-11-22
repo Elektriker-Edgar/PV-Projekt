@@ -774,6 +774,15 @@ const ALLOWED_FILE_EXTENSIONS=['jpg','jpeg','png','pdf'];
 const precheckFileStorage={};
 window.precheckFileStorage=precheckFileStorage;
 
+function syncSiteAddress(){
+const siteField=document.getElementById('site_address');
+const customerField=document.getElementById('customer_address');
+if(!siteField||!customerField)return;
+if(!siteField.value.trim()){
+siteField.value=customerField.value;
+}
+}
+
 function formatCurrency(value){
 const number=Number(value||0);
 return number.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';

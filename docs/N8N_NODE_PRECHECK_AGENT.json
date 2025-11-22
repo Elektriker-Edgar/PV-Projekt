@@ -1,0 +1,204 @@
+﻿{
+  "name": "PV-Service: KI-Vorpruefung Precheck",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "precheck-ki-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-precheck-agent",
+      "name": "Webhook: Precheck Agent Intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        320
+      ],
+      "webhookId": "precheck-ki-agent"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Webhook: Precheck Agent Intake').item.json.body.api_base_url + $('Webhook: Precheck Agent Intake').item.json.body.api_endpoints.precheck_data }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "http-precheck-data",
+      "name": "HTTP: Precheck-Daten abrufen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        520,
+        320
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "django-api-key",
+          "name": "Django API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const precheck = $input.first().json || {};\nreturn { json: precheck };"
+      },
+      "id": "code-precheck-wrap",
+      "name": "Code: Precheck strukturieren",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        760,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const precheck = $input.first().json || {};\nconst webhook = $('Webhook: Precheck Agent Intake').item.json.body || {};\nconst prompt_input = {\n  precheck_id: precheck.precheck_id,\n  customer: precheck.customer || {},\n  site: precheck.site || {},\n  project: precheck.project || {},\n  pricing: precheck.pricing || {},\n  completeness: precheck.completeness || {},\n  metadata: precheck.metadata || {},\n  webhook_event: webhook.event || '',\n  webhook_metadata: webhook.metadata || {}\n};\nconst context = {\n  precheck_id: precheck.precheck_id,\n  customer_name: precheck.customer?.name || 'Kunde',\n  customer_email: precheck.customer?.email || '',\n  site_address: precheck.site?.address || '',\n  timestamp: webhook.metadata?.timestamp || new Date().toISOString()\n};\nreturn { json: { prompt_input, context } };"
+      },
+      "id": "code-prompt-input",
+      "name": "Code: Prompt Input erstellen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-5.0-mini",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Du bist ein erfahrener Elektromeister und Arbeitsvorbereiter fuer PV- und Wallbox-Projekte. Du erhaeltst komplette Precheck-Daten aus einem Django-System, pruefst sie auf Plausibilitaet und Vollstaendigkeit und bereitest strukturierte JSON-Ausgaben fuer nachgelagerte Agenten vor."
+            },
+            {
+              "role": "user",
+              "content": "Hier sind die Precheck-Daten:\n```json\n{{ JSON.stringify($json.prompt_input, null, 2) }}\n```\n\nBefolge strikt:\n1. Plausibilitaetspruefung: bewerten, ob Angaben zusammenpassen; Status nur \"plausibel\", \"risiko\" oder \"unvollstaendig\" verwenden; in \"issues\" jedes Problem mit Feld und Begruendung auflisten.\n2. Zaehleranlage beurteilen: ob modern, alt oder unklar; Hinweise dokumentieren und ggf. Empfehlungen geben.\n3. Installationsrisiken: konkrete Risiken oder offene Fragen inkl. Kategorie und Schwere (niedrig/mittel/hoch).\n4. Zusammenfassung: wichtigste Kunden-, Standort-, Projekt- und Preisinfos kurz beschreiben.\n5. Weitergabe: empfehlen, welcher Folge-Agent uebernehmen soll und warum.\n\nOutput nur als JSON ohne Markdown exakt im Format:\n{\"precheck_id\":64,\"plausibility\":{\"status\":\"plausibel\",\"issues\":[{\"field\":\"\",\"description\":\"\"}]},\"meter_cabinet_assessment\":{\"status\":\"modern\",\"evidence\":\"\",\"next_steps\":\"\"},\"installation_risks\":[{\"category\":\"\",\"description\":\"\",\"severity\":\"mittel\"}],\"customer_summary\":\"\",\"pricing_snapshot\":{\"net_total\":0,\"gross_total\":0,\"options\":{\"storage\":false,\"wallbox\":null,\"extras\":[]}},\"hand_off\":{\"recommended_next_agent\":\"angebot\",\"notes\":[\"\"]}}\n- Alle Texte auf Deutsch (ASCII Schreibweise ok).\n- Falls Daten fehlen, klar benennen.\n- Keine weiteren Kommentare."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 2200
+        }
+      },
+      "id": "openai-precheck-agent",
+      "name": "OpenAI: KI-Vorpruefung Elektro",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.3,
+      "position": [
+        1340,
+        320
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json;\nlet aiResponse;\nif (Array.isArray(inputData)) {\n  aiResponse = inputData[0]?.message?.content || inputData[0]?.text;\n} else if (inputData.choices && Array.isArray(inputData.choices)) {\n  aiResponse = inputData.choices[0]?.message?.content || inputData.choices[0]?.text;\n} else if (inputData.message?.content) {\n  aiResponse = inputData.message.content;\n} else if (inputData.text) {\n  aiResponse = inputData.text;\n}\nif (!aiResponse) {\n  throw new Error('Leere Antwort von OpenAI');\n}\nconst context = $('Code: Prompt Input erstellen').item.json.context || {};\nlet parsed;\ntry {\n  const match = aiResponse.match(/```json\\s*([\\s\\S]*?)```/i);\n  const jsonText = match ? match[1] : aiResponse;\n  parsed = JSON.parse(jsonText);\n} catch (error) {\n  parsed = {\n    precheck_id: context.precheck_id || null,\n    plausibility: {\n      status: 'risiko',\n      issues: [{ field: 'system', description: `Antwort konnte nicht geparst werden: ${error.message}` }]\n    },\n    meter_cabinet_assessment: {\n      status: 'unklar',\n      evidence: 'Fallback wegen Parser-Fehler',\n      next_steps: 'Bitte KI-Auswertung manuell pruefen.'\n    },\n    installation_risks: [],\n    customer_summary: 'Automatische Auswertung fehlgeschlagen.',\n    pricing_snapshot: { net_total: context.net_total || 0, gross_total: context.gross_total || 0, options: { storage: false, wallbox: null, extras: [] } },\n    hand_off: {\n      recommended_next_agent: 'korrespondenz',\n      notes: ['Parser-Fehler in der KI-Ausgabe.']\n    }\n  };\n}\nif (!parsed.precheck_id) {\n  parsed.precheck_id = context.precheck_id || null;\n}\nreturn { json: parsed };"
+      },
+      "id": "code-parse-agent",
+      "name": "Code: KI-Antwort validieren",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1660,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ Object.assign({ success: true, precheck_id: $('Code: Prompt Input erstellen').item.json.context.precheck_id }, $json) }}"
+      },
+      "id": "webhook-response-agent",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1980,
+        320
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook: Precheck Agent Intake": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Precheck-Daten abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Precheck-Daten abrufen": {
+      "main": [
+        [
+          {
+            "node": "Code: Precheck strukturieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Precheck strukturieren": {
+      "main": [
+        [
+          {
+            "node": "Code: Prompt Input erstellen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Prompt Input erstellen": {
+      "main": [
+        [
+          {
+            "node": "OpenAI: KI-Vorpruefung Elektro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI: KI-Vorpruefung Elektro": {
+      "main": [
+        [
+          {
+            "node": "Code: KI-Antwort validieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: KI-Antwort validieren": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

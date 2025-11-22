@@ -1,0 +1,10 @@
+{
+  "name": "DEBUG: Zeige Precheck-Daten",
+  "parameters": {
+    "jsCode": "// DEBUG: Zeigt die Struktur der empfangenen Daten\nconst inputData = $input.first().json;\n\nconsole.log('=== DEBUG: Empfangene Daten ===');\nconsole.log('Typ:', typeof inputData);\nconsole.log('Ist Array?', Array.isArray(inputData));\nconsole.log('Keys:', Object.keys(inputData));\nconsole.log('Erste 500 Zeichen:', JSON.stringify(inputData).substring(0, 500));\n\n// Versuche verschiedene Zugriffsmuster\nlet precheck = null;\n\nif (Array.isArray(inputData)) {\n  console.log('✅ inputData ist Array, nutze inputData[0]');\n  precheck = inputData[0];\n} else if (inputData.body && Array.isArray(inputData.body)) {\n  console.log('✅ inputData.body ist Array, nutze inputData.body[0]');\n  precheck = inputData.body[0];\n} else if (inputData.json && Array.isArray(inputData.json)) {\n  console.log('✅ inputData.json ist Array, nutze inputData.json[0]');\n  precheck = inputData.json[0];\n} else {\n  console.log('✅ inputData ist Objekt, nutze direkt');\n  precheck = inputData;\n}\n\nif (precheck) {\n  console.log('Precheck-ID gefunden:', precheck.precheck_id);\n  console.log('Kunde:', precheck.customer?.name);\n  console.log('PV-Leistung:', precheck.project?.desired_power_kw);\n} else {\n  console.log('❌ Kein Precheck gefunden!');\n}\n\nreturn { json: { debug: 'siehe Console', inputData: inputData } };"
+  },
+  "id": "debug1",
+  "name": "DEBUG",
+  "type": "n8n-nodes-base.code",
+  "typeVersion": 2
+}

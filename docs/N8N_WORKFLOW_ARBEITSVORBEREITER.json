@@ -1,0 +1,275 @@
+{
+  "name": "PV-Service: Arbeitsvorbereiter Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "precheck-submitted",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.api_base_url }}{{ $json.body.api_endpoints.precheck_data }}",
+        "options": {}
+      },
+      "id": "http1",
+      "name": "Get Precheck Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Bereite Daten für OpenAI vor\nconst inputData = $input.first().json;\n\n// Django API kann Array oder Objekt zurückgeben\nlet precheck;\nif (Array.isArray(inputData)) {\n  precheck = inputData[0];\n} else if (inputData.body && Array.isArray(inputData.body)) {\n  precheck = inputData.body[0];\n} else if (inputData.json && Array.isArray(inputData.json)) {\n  precheck = inputData.json[0];\n} else {\n  precheck = inputData;\n}\n\n// Validierung\nif (!precheck || !precheck.precheck_id) {\n  throw new Error(`Ungültige Precheck-Daten. Erhalten: ${JSON.stringify(inputData).substring(0, 200)}`);\n}\n\nconst userPrompt = `Bewerte folgende PV-Projekt-Daten:\n\nPRECHECK-ID: ${precheck.precheck_id}\n\nKUNDENDATEN:\n${JSON.stringify(precheck.customer, null, 2)}\n\nSTANDORTDATEN:\n${JSON.stringify(precheck.site, null, 2)}\n\nPROJEKTDATEN:\n${JSON.stringify(precheck.project, null, 2)}\n\nPREISDATEN:\n${JSON.stringify(precheck.pricing, null, 2)}\n\nVOLLSTÄNDIGKEIT:\n${JSON.stringify(precheck.completeness, null, 2)}\n\n---\n\nErstelle eine strukturierte Bewertung als JSON gemäß Schema.\nBesondere Aufmerksamkeit auf:\n- customer_notes (Kundenwünsche)\n- Kabelstrecken (distance_meter_to_inverter, wallbox_cable_length)\n- Hauptsicherung vs. Gesamtleistung\n\nWICHTIG: Antworte NUR mit gültigem JSON, keine Markdown-Code-Blöcke!`;\n\nreturn {\n  json: {\n    userPrompt: userPrompt,\n    precheckData: precheck\n  }\n};"
+      },
+      "id": "code1",
+      "name": "Prepare Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "text",
+        "operation": "message",
+        "model": {
+          "__rl": true,
+          "value": "gpt-4-turbo-preview",
+          "mode": "list",
+          "cachedResultName": "gpt-4-turbo-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Du bist ein erfahrener Arbeitsvorbereiter und Experte für Elektroinstallationen im Bereich Photovoltaik-Anlagen.\n\nDEINE EXPERTISE:\n- 15+ Jahre Erfahrung in Elektroinstallation\n- Spezialisierung: PV-Anlagen, Speichersysteme, Wallboxen\n- Kenntnisse: VDE-Normen, TAB, DIN-Normen\n- 500+ PV-Projekte erfolgreich umgesetzt\n\nBEWERTE:\n1. PLAUSIBILITÄT (0-100): PV-Leistung, Speicher, Hauptsicherung, Kabel\n2. VOLLSTÄNDIGKEIT (0-100): Alle Daten vorhanden?\n3. RISIKEN: Severity (low/medium/high)\n4. EMPFEHLUNGEN: Konkret & umsetzbar\n\nOUTPUT: Gib NUR gültiges JSON zurück mit Struktur:\n{\n  \"agent_type\": \"arbeitsvorbereiter\",\n  \"precheck_id\": NUMBER,\n  \"overall_status\": \"ok|review_needed|not_feasible\",\n  \"plausibility_check\": {\"overall_score\": NUMBER, \"checks\": [], \"issues\": []},\n  \"completeness_check\": {\"overall_score\": NUMBER},\n  \"installation_risks\": [{\"category\": \"\", \"severity\": \"\", \"description\": \"\"}],\n  \"recommendations\": [{\"priority\": \"\", \"title\": \"\", \"description\": \"\"}],\n  \"summary\": \"TEXT\",\n  \"requires_site_visit\": BOOLEAN,\n  \"estimated_effort_hours\": NUMBER\n}"
+            },
+            {
+              "role": "user",
+              "content": "={{ $json.userPrompt }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 4000
+        },
+        "jsonOutput": true
+      },
+      "id": "openai1",
+      "name": "OpenAI Agent",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "CONFIGURE_ME",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse und validiere Agent-Output\nconst inputData = $input.first().json;\n\n// Verschiedene Antwort-Formate unterstützen\nlet content;\nif (inputData.message && inputData.message.content) {\n  content = inputData.message.content;\n} else if (inputData.choices && inputData.choices[0]) {\n  content = inputData.choices[0].message.content;\n} else if (typeof inputData === 'string') {\n  content = inputData;\n} else {\n  content = JSON.stringify(inputData);\n}\n\n// Parse JSON (entferne Markdown falls vorhanden)\nlet assessment;\ntry {\n  const jsonMatch = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    assessment = JSON.parse(jsonMatch[1]);\n  } else {\n    assessment = JSON.parse(content);\n  }\n} catch (e) {\n  throw new Error(`JSON Parse Error: ${e.message}. Raw: ${content.substring(0, 200)}`);\n}\n\n// Validierung\nconst required = ['agent_type', 'overall_status', 'recommendations'];\nconst missing = required.filter(f => !assessment[f]);\nif (missing.length > 0) {\n  throw new Error(`Missing fields: ${missing.join(', ')}`);\n}\n\n// Metadaten\nassessment.processed_at = new Date().toISOString();\nassessment.workflow_execution_id = $execution.id;\n\n// Original Webhook-Daten\nconst webhookData = $('Webhook').item.json.body;\nassessment.webhook_metadata = {\n  test_mode: webhookData.test_mode || false,\n  customer_email: webhookData.metadata?.customer_email || ''\n};\n\nreturn { json: assessment };"
+      },
+      "id": "code2",
+      "name": "Parse & Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.overall_status }}",
+              "value2": "ok"
+            }
+          ]
+        }
+      },
+      "id": "if1",
+      "name": "Status = OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// E-Mail für Status OK\nconst assessment = $input.first().json;\nconst precheck = $('Prepare Data').first().json.precheckData;\n\nconst emailBody = `✅ NEUE PV-ANFRAGE - BEREIT FÜR ANGEBOTSERSTELLUNG\n\nKunde: ${precheck.customer.name}\nE-Mail: ${precheck.customer.email}\nStandort: ${precheck.site.address}\n\nSystem:\n- WR: ${precheck.project.desired_power_kw} kW\n- Speicher: ${precheck.project.storage_kwh} kWh\n- Wallbox: ${precheck.project.has_wallbox ? 'Ja' : 'Nein'}\n- Preis: ${precheck.pricing.gross_total} € Brutto\n\nBewertung:\n✅ Status: PROJEKT KANN DURCHGEFÜHRT WERDEN\nPlausibilität: ${assessment.plausibility_check?.overall_score || 0}%\nAufwand: ${assessment.estimated_effort_hours || 0}h\n\nEmpfehlungen:\n${(assessment.recommendations || []).map(r => `• ${r.title}`).join('\\n')}\n\nZusammenfassung:\n${assessment.summary || 'Keine Details'}\n\n---\nPrecheck-ID: ${assessment.precheck_id}\nWorkflow: ${assessment.workflow_execution_id}\n`;\n\nreturn {\n  json: {\n    to: 'team@edgard-elektro.de',\n    subject: `✅ PV-Anfrage #${assessment.precheck_id} - Angebot erstellen`,\n    body: emailBody,\n    assessment: assessment\n  }\n};"
+      },
+      "id": "code3",
+      "name": "Email OK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// E-Mail für Status Review/Not Feasible\nconst assessment = $input.first().json;\nconst precheck = $('Prepare Data').first().json.precheckData;\n\nconst status = assessment.overall_status;\nconst emoji = status === 'not_feasible' ? '🔴' : '⚠️';\nconst statusText = status === 'not_feasible' ? 'NICHT DURCHFÜHRBAR' : 'REVIEW ERFORDERLICH';\nconst recipient = status === 'not_feasible' ? 'management@edgard-elektro.de' : 'sales@edgard-elektro.de';\n\nconst emailBody = `${emoji} NEUE PV-ANFRAGE - ${statusText}\n\nKunde: ${precheck.customer.name}\nE-Mail: ${precheck.customer.email}\nStandort: ${precheck.site.address}\n\nSystem:\n- WR: ${precheck.project.desired_power_kw} kW\n- Speicher: ${precheck.project.storage_kwh} kWh\n- Preis: ${precheck.pricing.gross_total} € Brutto\n\nBewertung:\n${emoji} Status: ${statusText}\nPlausibilität: ${assessment.plausibility_check?.overall_score || 0}%\n\nRisiken:\n${(assessment.installation_risks || []).map(r => `${r.severity === 'high' ? '🔴' : '🟡'} ${r.description}`).join('\\n')}\n\nEmpfehlungen:\n${(assessment.recommendations || []).map(r => `• ${r.title}`).join('\\n')}\n\nZusammenfassung:\n${assessment.summary || 'Keine Details'}\n\n---\nPrecheck-ID: ${assessment.precheck_id}\nWorkflow: ${assessment.workflow_execution_id}\n\n${status === 'not_feasible' ? '❗ PROJEKT AKTUELL NICHT DURCHFÜHRBAR' : '⚠️ AKTION ERFORDERLICH'}\n`;\n\nreturn {\n  json: {\n    to: recipient,\n    subject: `${emoji} PV-Anfrage #${assessment.precheck_id} - ${statusText}`,\n    body: emailBody,\n    assessment: assessment\n  }\n};"
+      },
+      "id": "code4",
+      "name": "Email Review/Not Feasible",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 400]
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@edgard-elektro.de",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}"
+      },
+      "id": "email1",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1650, 300],
+      "credentials": {
+        "smtp": {
+          "id": "CONFIGURE_ME",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": true,\n  \"precheck_id\": $json.assessment.precheck_id,\n  \"overall_status\": $json.assessment.overall_status,\n  \"plausibility_score\": $json.assessment.plausibility_check?.overall_score || 0,\n  \"requires_site_visit\": $json.assessment.requires_site_visit || false,\n  \"estimated_effort_hours\": $json.assessment.estimated_effort_hours || 0,\n  \"message\": \"Arbeitsvorbereiter-Bewertung abgeschlossen\"\n} }}"
+      },
+      "id": "respond1",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Precheck Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Precheck Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse & Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Validate": {
+      "main": [
+        [
+          {
+            "node": "Status = OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status = OK?": {
+      "main": [
+        [
+          {
+            "node": "Email OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email Review/Not Feasible",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email OK": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Review/Not Feasible": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-21T14:00:00.000Z",
+  "versionId": "1"
+}
